@@ -1,4 +1,5 @@
 Imports System.Runtime.CompilerServices
+Imports System.Text.RegularExpressions
 Imports System.Xaml
 
 Public Module ModBase
@@ -1112,6 +1113,8 @@ Public Module ModBase
     ''' 注意：性能较差，不应大量使用。
     ''' </summary>
     Public Function GetObjectFromXML(Str As String) As Object
+        '兼容修改程序集名称后的运行时 XAML：PCL 命名空间始终绑定到当前程序集
+        Str = Regex.Replace(Str, "clr-namespace:PCL;assembly=[^""']*", "clr-namespace:PCL;assembly=" & Reflection.Assembly.GetExecutingAssembly().GetName().Name)
         Str = Str. '兼容旧版自定义事件写法
             Replace("EventType=""", "local:CustomEventService.EventType=""").
             Replace("EventData=""", "local:CustomEventService.EventData=""").

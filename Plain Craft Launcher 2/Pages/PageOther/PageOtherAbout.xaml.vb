@@ -11,10 +11,7 @@ Public Class PageOtherAbout
         IsLoaded = True
 
         ItemAboutPcl.Info = ItemAboutPcl.Info.Replace("%VERSION%", VersionDisplay).Replace("%VERSIONCODE%", VersionCode).Replace("%BRANCH%", CInt(BuildType))
-        If BuildType = BuildTypes.Debug Then
-            BtnDonateDonate.Visibility = Visibility.Collapsed
-            BtnDonateOutput.Visibility = Visibility.Visible
-        End If
+        BtnDonateOutput.Visibility = Visibility.Collapsed
 
     End Sub
 

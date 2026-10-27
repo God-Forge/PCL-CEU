@@ -6,12 +6,8 @@ Public Class PageSetupSystem
         '重复加载部分
         PanBack.ScrollToHome()
 
-        If BuildType = BuildTypes.Release Then
-            PanDonate.Visibility = Visibility.Collapsed
-        Else
-            PanDonate.Visibility = Visibility.Visible
-            ItemSystemUpdateDownload.Content = "在有新版本时自动下载（更新快照版前需要先输入土豆码）"
-        End If
+        PanDonate.Visibility = Visibility.Collapsed
+        ItemSystemUpdateDownload.Content = "在有新版本时自动下载"
 
         '非重复加载部分
         Static IsLoaded As Boolean = False

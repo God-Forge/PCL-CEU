@@ -6,12 +6,12 @@ Public Module ModBase
 #Region "声明"
 
     '下列版本信息由更新器自动修改
-    Public Const VersionBaseName As String = "2.99.0.0" '显示用版本名
+    Public Const VersionBaseName As String = "3.0.0-CEU" '显示用版本名
     Public Const CommitHash As String = "" 'Commit Hash，由 GitHub Workflow 自动替换
 #If RELEASE Then
-    Public Const VersionCode As Integer = 413 '正式版
+    Public Const VersionCode As Integer = 500 '正式版
 #Else
-    Public Const VersionCode As Integer = 414 '快照版
+    Public Const VersionCode As Integer = 501 '快照版
 #End If
 
     '版本信息
@@ -43,7 +43,7 @@ Public Module ModBase
     ''' <summary>
     ''' 程序内嵌图片文件夹路径，以 / 结尾。
     ''' </summary>
-    Public PathImage As String = "pack://application:,,,/Plain Craft Launcher 2;component/Images/"
+    Public PathImage As String = "pack://application:,,,/Images/"
     ''' <summary>
     ''' 程序的缓存文件夹路径，以 \ 结尾。
     ''' </summary>

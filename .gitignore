@@ -342,3 +342,11 @@ ASALocalRun/
 healthchecksdb
 
 MaskFiles/
+
+# PCL CEU runtime data
+/PCL/
+/.minecraft/
+/Setup.ini
+/Log*.txt
+/logs/
+/PCL2-*.exe

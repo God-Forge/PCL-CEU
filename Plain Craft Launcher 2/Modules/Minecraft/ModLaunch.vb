@@ -251,9 +251,10 @@ NextInner:
                 Select Case Settings.Get(Of Integer)("SystemLaunchCount")
                     Case 10, 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800, 2000
                         If MyMsgBox("PCL 已经为你启动了 " & Settings.Get(Of Integer)("SystemLaunchCount") & " 次游戏啦！" & vbCrLf &
-                                    "如果 PCL 还算好用的话，能不能考虑赞助一下 PCL……" & vbCrLf &
+                                    "如果 PCL 还算好用的话，能不能考虑赞助一下 PCL 的原作者龙腾猫跃……" & vbCrLf &
+                                    "本改版不收取任何赞助，所有赞助都将用于支持 PCL 原作者。" & vbCrLf &
                                     "如果没有大家的支持，PCL 很难在免费、无任何广告的情况下维持数年的更新（磕头）……！",
-                                    Settings.Get(Of Integer)("SystemLaunchCount") & " 次启动！", "支持 PCL！", "但是我拒绝") = 1 Then
+                                    Settings.Get(Of Integer)("SystemLaunchCount") & " 次启动！", "支持原作者！", "但是我拒绝") = 1 Then
                             OpenWebsite("https://meloong.com/afd/a/LTCat")
                         End If
                 End Select

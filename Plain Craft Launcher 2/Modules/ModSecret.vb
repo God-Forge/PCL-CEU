@@ -15,7 +15,6 @@ Friend Module ModSecret
 
 #Region "网络鉴权"
 
-    Public Const RestrictMcDownload As Boolean = True
     Friend Function SecretCdnSign(UrlWithMark As String) As String
         If Not UrlWithMark.EndsWithF("{CDN}") Then Return UrlWithMark
         Return UrlWithMark.Replace("{CDN}", "").Replace(" ", "%20")
@@ -67,6 +66,11 @@ Friend Module ModSecret
 
     Public Sub ThemeRefresh(Optional NewTheme As Integer = -1)
         Try
+            'CEU：按 LICENCE 要求，主色相固定为蓝色，且不提供主题切换
+            ColorHue = 210
+            ColorSat = 85
+            ColorLightAdjust = 0
+            ColorHueTopbarDelta = 0
             If ThemeNow = NewTheme AndAlso NewTheme >= 0 Then Return
             If NewTheme >= 0 Then ThemeNow = NewTheme
 
@@ -135,7 +139,7 @@ Friend Module ModSecret
     Friend Sub ThemeCheckAll(EffectSetup As Boolean)
     End Sub
     Friend Function ThemeCheckOne(Id As Integer) As Boolean
-        Return True
+        Return False
     End Function
     Friend Function ThemeUnlock(Id As Integer, Optional ShowDoubleHint As Boolean = True, Optional UnlockHint As String = Nothing) As Boolean
         Return False

@@ -139,6 +139,9 @@
   <data name="Help" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Help.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="McASelector" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\McASelector.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="Imazen.WebP" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Imazen.WebP.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

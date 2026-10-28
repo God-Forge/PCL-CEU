@@ -1,12 +1,33 @@
-<local:MyPageRight x:Class="PageOtherTest"
+<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:PCL"
-    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    mc:Ignorable="d" x:Class="PageOtherTest"
     PanScroll="PanBack">
     <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
-        <TextBlock Text="为便于维护，开源内容中不包含百宝箱功能……" HorizontalAlignment="Center" FontSize="15" Height="30" VerticalAlignment="Center" />
+        <StackPanel Margin="25,10">
+            <local:MyCard Margin="0,15" Title="MCA Selector 区块编辑器">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="MCA Selector 2.9 可以查看、删除、导入和导出 Minecraft 世界区块。它由 Querz 开发，以 MIT 许可证分发。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <TextBlock Text="首次启动会从 PCL 内置资源中解压约 56 MB 的 MCA Selector 与 Java 运行时，之后会直接启动，无需重复解压。"
+                               TextWrapping="Wrap" LineHeight="18" Margin="0,6,0,0" />
+                    <TextBlock Text="注意：MCA Selector 会直接修改世界存档，操作前请先备份存档。"
+                               TextWrapping="Wrap" LineHeight="18" Margin="0,6,0,0" Foreground="{DynamicResource ColorBrush3}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <local:MyButton x:Name="BtnLaunch" Text="启动 MCA Selector" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnSaves" Text="打开当前实例存档文件夹" MinWidth="190" Height="35" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnChooseWorld" Text="选择世界文件夹..." MinWidth="170" Height="35" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnHome" Text="MCA Selector 项目主页" MinWidth="190" Height="35" />
+                    </StackPanel>
+                    <TextBlock Text="MCA Selector 2.9 © 2018-2026 Querz，MIT License。项目地址：https://github.com/Querz/mcaselector"
+                               TextWrapping="Wrap" Margin="0,16,0,0" Opacity="0.7" FontSize="12" />
+                </StackPanel>
+            </local:MyCard>
+        </StackPanel>
     </local:MyScrollViewer>
 </local:MyPageRight>

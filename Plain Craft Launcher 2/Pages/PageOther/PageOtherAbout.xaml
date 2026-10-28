@@ -539,6 +539,7 @@
                 <StackPanel Margin="25,39,23,20">
                     <TextBlock Text="第三方修改声明" TextWrapping="Wrap" Margin="0,6,0,4" FontWeight="Bold" />
                     <TextBlock Margin="0,0,0,2" LineHeight="17" Text="本改版为第三方基于 Plain Craft Launcher (PCL) 独立修改的版本，并非 PCL 官方发布，与官方无关。原始版权归成都瓜皮龙科技有限公司及贡献者所有；本改版遵循《PCL 存储库合理使用指南》，并继续以 LICENCE 文件作为使用指南。本改版源代码以 Git 仓库形式随发布公开。" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,6,0,2" LineHeight="17" Text="本改版内置 MCA Selector 2.9（© 2018-2026 Querz，MIT License）用于区块编辑；其许可证文本随内置文件一同分发。" TextWrapping="Wrap" />
                     <TextBlock Text="匿名数据收集" TextWrapping="Wrap" Margin="0,10,0,4" FontWeight="Bold" />
                     <TextBlock Margin="0,0,0,2" LineHeight="17" Text="本改版未启用 PCL 的匿名数据收集功能。PCL 原版的说明如下：当下载失败、PCL 出错、游戏崩溃等事件时，PCL 会匿名上报信息，以通知龙猫 “哦吼，出错了”，让龙猫能更好地修 Bug……（PCL 不会上传或收集任何个人信息，包括上报的东西里面也没有！）&#xa;你可以在 设置 → 其他 → 启动器 中关闭上报，不过龙猫就不知道你遇到了什么 Bug 了……&#xa;详情：https://github.com/Meloong-Git/PCL/discussions/7036" TextWrapping="Wrap" />
                     <TextBlock Text="隐私声明与个人信息保护政策" TextWrapping="Wrap" Margin="0,10,0,4" FontWeight="Bold" />

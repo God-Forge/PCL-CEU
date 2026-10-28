@@ -16,7 +16,7 @@
 - 输出文件：`PCL2-3.2.0ceu.exe`
 - 程序集版本：`3.2.0.0`
 
-## 本改版的主要调整
+## 本改版的主要调整（与开源版相比）
 
 - 移除 Minecraft 下载相关的限制逻辑。
 - 调整版本号、程序集名称与输出文件名。
@@ -55,3 +55,20 @@ $env:MSBuildSDKsPath = "C:\Users\neolx\.dotnet10\sdk\10.0.403\Sdks"
 ```powershell
 git submodule update --init --recursive
 ```
+
+## C# 重构进度
+
+Phase 1 已开始：
+
+- 新增 `PCL.Core` C# 类库（net48，C# 13），用于承载逐步从 VB.NET 迁移的业务逻辑。
+- `ModValidate` 的校验规则已迁移到 `PCL.Core/Validation/Validation.cs`，VB 侧仅保留兼容入口。
+- 相关 XAML 已改用 `xmlns:core="clr-namespace:PCL;assembly=PCL.Core"`。
+- 新增 `PCL.Core.Tests`，覆盖输入校验规则。
+
+运行测试：
+
+```powershell
+& "C:\Users\neolx\.dotnet10\dotnet.exe" run --project "PCL.Core.Tests\PCL.Core.Tests.csproj" -c Release
+```
+
+下一步计划：资源模块 DTO/搜索服务、崩溃日志解析核心。

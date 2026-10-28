@@ -926,13 +926,20 @@
     <ProjectReference Include="..\PCLCS\PCLCS.csproj">
       <Project>{32de4aaf-f4d6-42c5-9604-19236de96c69}</Project>
       <Name>PCLCS</Name>
-      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\PCL.Core\PCL.Core.csproj">
+      <Project>{a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d}</Project>
+      <Name>PCL.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PCLCS\bin\PCLCS.dll">
       <LogicalName>PCLCS.dll</LogicalName>
       <Link>Resources\PCLCS.dll</Link>
+    </None>
+    <None Include="..\PCL.Core\bin\PCL.Core.dll">
+      <LogicalName>PCL.Core.dll</LogicalName>
+      <Link>Resources\PCL.Core.dll</Link>
     </None>
     <None Include="..\PCLCS\bin\MeloongCore.dll">
       <LogicalName>MeloongCore.dll</LogicalName>

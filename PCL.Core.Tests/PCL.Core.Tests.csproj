@@ -21,4 +21,9 @@
         <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Reference Include="System.IO.Compression" />
+        <Reference Include="System.IO.Compression.FileSystem" />
+    </ItemGroup>
+
 </Project>

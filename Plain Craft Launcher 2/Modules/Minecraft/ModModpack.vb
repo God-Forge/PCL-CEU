@@ -1,5 +1,6 @@
 Imports System.Collections.ObjectModel
 Imports System.Text.RegularExpressions
+Imports PCL.Core.Modpack
 
 Public Module ModModpack
 
@@ -33,44 +34,12 @@ Public Module ModModpack
             Dim TargetFolder As String = $"{McFolderSelected}versions\{InstanceName}\"
             If TargetFolder.Contains("!") OrElse TargetFolder.Contains(";") Then Hint("游戏路径中不能含有感叹号或分号：" & TargetFolder, HintType.Red) : Throw New OperationCanceledException
             '获取整合包种类与关键 Json
-            Dim PackType As Integer = -1
+            Dim PackType As ModpackType = ModpackType.Unknown
             Try
                 Archive = FileUtils.OpenZip(File)
-                '从根目录判断整合包类型
-                If Archive.GetEntry("mcbbs.packmeta") IsNot Nothing Then PackType = 3 : Exit Try 'MCBBS 整合包（优先于 manifest.json 判断）
-                If Archive.GetEntry("mmc-pack.json") IsNot Nothing Then PackType = 2 : Exit Try 'MMC 整合包（优先于 manifest.json 判断，#4194）
-                If Archive.GetEntry("modrinth.index.json") IsNot Nothing Then PackType = 4 : Exit Try 'Modrinth 整合包
-                If Archive.GetEntry("manifest.json") IsNot Nothing Then
-                    Dim Json As JObject = Archive.GetEntry("manifest.json").Open().ReadString(Encoding.UTF8).DeserializeJson()
-                    If Json("addons") Is Nothing Then
-                        PackType = 0 : Exit Try 'CurseForge 整合包
-                    Else
-                        PackType = 3 : Exit Try 'MCBBS 整合包
-                    End If
-                End If
-                If Archive.GetEntry("modpack.json") IsNot Nothing Then PackType = 1 : Exit Try 'HMCL 整合包
-                If Archive.GetEntry("modpack.zip") IsNot Nothing OrElse Archive.GetEntry("modpack.mrpack") IsNot Nothing Then PackType = 9 : Exit Try '带启动器的压缩包
-                '从一级目录判断整合包类型
-                For Each Entry In Archive.Entries
-                    Dim PathSplits As String() = Entry.FullName.Split("/")
-                    ArchiveBaseFolder = PathSplits(0) & "/"
-                    '确定为一级目录下
-                    If PathSplits.Count <> 2 Then Continue For
-                    '判断是否为关键文件
-                    If PathSplits(1) = "mcbbs.packmeta" Then PackType = 3 : Exit Try 'MCBBS 整合包（优先于 manifest.json 判断）
-                    If PathSplits(1) = "mmc-pack.json" Then PackType = 2 : Exit Try 'MMC 整合包（优先于 manifest.json 判断，#4194）
-                    If PathSplits(1) = "modrinth.index.json" Then PackType = 4 : Exit Try 'Modrinth 整合包
-                    If PathSplits(1) = "manifest.json" Then
-                        Dim Json As JObject = Entry.Open().ReadString(Encoding.UTF8).DeserializeJson()
-                        If Json("addons") Is Nothing Then
-                            PackType = 0 : Exit Try 'CurseForge 整合包
-                        Else
-                            PackType = 3 : ArchiveBaseFolder = "overrides/" : Exit Try 'MCBBS 整合包
-                        End If
-                    End If
-                    If PathSplits(1) = "modpack.json" Then PackType = 1 : Exit Try 'HMCL 整合包
-                    If PathSplits(1) = "modpack.zip" OrElse PathSplits(1) = "modpack.mrpack" Then PackType = 9 : Exit Try '带启动器的压缩包
-                Next
+                Dim Info = ModpackInspector.Inspect(Archive)
+                PackType = Info.Type
+                ArchiveBaseFolder = Info.BaseFolder
             Catch ex As Exception
                 If ex.GetDisplay(True).Contains("Error.WinIOError") Then
                     Throw New Exception("打开整合包文件失败", ex)
@@ -82,22 +51,22 @@ Public Module ModModpack
             End Try
             '执行对应的安装方法
             Select Case PackType
-                Case 0
+                Case ModpackType.CurseForge
                     Logger.Info("整合包种类：CurseForge")
                     Return InstallPackCurseForge(File, Archive, ArchiveBaseFolder, InstanceName, Logo)
-                Case 1
+                Case ModpackType.HMCL
                     Logger.Info("整合包种类：HMCL")
                     Return InstallPackHMCL(File, Archive, ArchiveBaseFolder)
-                Case 2
+                Case ModpackType.MMC
                     Logger.Info("整合包种类：MMC")
                     Return InstallPackMMC(File, Archive, ArchiveBaseFolder)
-                Case 3
+                Case ModpackType.MCBBS
                     Logger.Info("整合包种类：MCBBS")
                     Return InstallPackMCBBS(File, Archive, ArchiveBaseFolder, InstanceName)
-                Case 4
+                Case ModpackType.Modrinth
                     Logger.Info("整合包种类：Modrinth")
                     Return InstallPackModrinth(File, Archive, ArchiveBaseFolder, InstanceName, Logo)
-                Case 9
+                Case ModpackType.LauncherPack
                     Logger.Info("整合包种类：带启动器的压缩包")
                     Return InstallPackLauncherPack(File, Archive, ArchiveBaseFolder)
                 Case Else

@@ -98,6 +98,13 @@ Phase 1 已开始：
 - 相关 XAML 已改用 `xmlns:core="clr-namespace:PCL;assembly=PCL.Core"`。
 - 新增 `PCL.Core.Tests`，覆盖输入校验、今日人品与内存状态。
 
+Phase 2 已开始：
+
+- 整合包类型识别已迁移到 `PCL.Core/Modpack/ModpackInspector.cs`。
+- `ModModpack.ModpackInstall` 已改为调用 C# 识别器，支持 CurseForge、HMCL、MMC、MCBBS、Modrinth、启动器整合包与普通压缩包。
+- 新增测试覆盖根目录/一级目录识别、基础目录与未知压缩包。
+- 下一步：整合包文件树/覆写目录解析、Java 版本要求服务、ResourceVersion 数据层。
+
 运行测试：
 
 ```powershell

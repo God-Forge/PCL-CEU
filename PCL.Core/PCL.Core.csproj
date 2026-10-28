@@ -36,6 +36,14 @@
         <ProjectReference Include="..\MeloongCore\Shared\MeloongCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Reference Include="System.IO.Compression" />
+        <Reference Include="System.IO.Compression.FileSystem" />
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>..\Plain Craft Launcher 2\Resources\Newtonsoft.Json.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>$(DefineConstants);SNAPSHOT</DefineConstants>
     </PropertyGroup>

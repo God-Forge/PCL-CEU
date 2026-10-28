@@ -18,6 +18,7 @@ Public Class MyMsgText
                 Btn1.ColorType = MyButton.ColorState.Red
                 LabTitle.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushRedLight")
             End If
+            If Converter.IsWarnText Then LabCaption.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushRedLight")
             Btn2.Text = Converter.Button2
             Btn3.Text = Converter.Button3
             Btn2.Visibility = If(Converter.Button2 = "", Visibility.Collapsed, Visibility.Visible)

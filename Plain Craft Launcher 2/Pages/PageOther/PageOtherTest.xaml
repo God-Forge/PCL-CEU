@@ -8,7 +8,14 @@
     PanScroll="PanBack">
     <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
         <StackPanel Margin="25,10">
-            <local:MyCard Margin="0,15" Title="MCA Selector 区块编辑器">
+            <local:MyCard Margin="0,15,0,0" Title="今日人品">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="使用当天的 Unix 时间戳作为随机种子，生成 0~100 的人品值。每天的结果固定；低于 10 时弹窗会变为红色警告。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <local:MyButton x:Name="BtnJrrp" Text="测测今日人品" MinWidth="170" Height="35" ColorType="Highlight" HorizontalAlignment="Left" Margin="0,16,0,0" />
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,15,0,15" Title="MCA Selector 区块编辑器">
                 <StackPanel Margin="21,40,21,16">
                     <TextBlock Text="MCA Selector 2.9 可以查看、删除、导入和导出 Minecraft 世界区块。它由 Querz 开发，以 MIT 许可证分发。"
                                TextWrapping="Wrap" LineHeight="18" />

@@ -15,6 +15,10 @@ Public Class PageOtherTest
         End Get
     End Property
 
+    Private Sub BtnJrrp_Click(sender As Object, e As EventArgs) Handles BtnJrrp.Click
+        Jrrp()
+    End Sub
+
     Private Sub BtnLaunch_Click(sender As Object, e As EventArgs) Handles BtnLaunch.Click
         LaunchMcASelector()
     End Sub
@@ -90,8 +94,27 @@ Public Class PageOtherTest
     Public Shared Sub StartCustomDownload(Url As String, FileName As String, Optional Folder As String = Nothing)
         Hint("为便于维护，开源内容中不包含百宝箱功能……")
     End Sub
+    ''' <summary>
+    ''' 今日人品：以当地日期的 Unix 时间戳（天）作为种子，生成 0~100 的人品值。
+    ''' </summary>
     Public Shared Sub Jrrp()
-        Hint("为便于维护，开源内容中不包含百宝箱功能……")
+        Dim UnixDay As Long = New DateTimeOffset(Date.Now.Date).ToUnixTimeSeconds() \ 86400
+        Dim Seed As Integer = CInt(UnixDay Mod Integer.MaxValue)
+        Dim Value As Integer = New Random(Seed).Next(0, 101)
+        Dim Comment As String
+        Select Case Value
+            Case 0 To 9
+                Comment = "今天运气不太行，出门小心……"
+            Case 10 To 29
+                Comment = "普普通通的一天。"
+            Case 30 To 59
+                Comment = "还不错，保持好心情！"
+            Case 60 To 89
+                Comment = "运气不错，适合做点大事！"
+            Case Else
+                Comment = "欧皇附体！今天想做什么都可以！"
+        End Select
+        MyMsgBox("今日人品：" & Value & vbCrLf & vbCrLf & Comment, "今日人品", IsWarn:=Value < 10, IsWarnText:=Value < 10)
     End Sub
     Public Shared Sub RubbishClear()
         Hint("为便于维护，开源内容中不包含百宝箱功能……")

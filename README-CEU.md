@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`3.3.0-CEU`
-- 输出文件：`PCL2-3.3.0ceu.exe`
-- 程序集版本：`3.3.0.0`
+- 版本号：`3.4.0-CEU`
+- 输出文件：`PCL2-3.4.0ceu.exe`
+- 程序集版本：`3.4.0.0`
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -25,6 +25,36 @@
 - 内置 MCA Selector 2.9 区块编辑器（含 Java 运行时），可在“更多 → 百宝箱”中启动。
 - 在“百宝箱”中加入“今日人品”：以当地日期对应的 Unix 时间戳为种子，每天生成固定的 0~100 人品值。
 - 在“百宝箱”中加入“内存优化”：对应 RAMMap 的 Empty 功能，支持清空工作集、系统工作集、已修改页列表、待机列表、优先级 0 待机列表等。
+- 新增命令行模式，支持 `--help`、`--version`、`--luck`、`--mca`、`--memory` 等命令。
+
+## 命令行模式
+
+以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
+
+```powershell
+.\PCL2-3.4.0ceu.exe --help
+.\PCL2-3.4.0ceu.exe --version
+.\PCL2-3.4.0ceu.exe --luck
+.\PCL2-3.4.0ceu.exe --mca
+.\PCL2-3.4.0ceu.exe --memory
+```
+
+| 命令 | 说明 |
+|---|---|
+| `--help`、`-h`、`/?` | 显示命令行帮助 |
+| `--version`、`-v` | 显示版本、版本代码与程序集版本 |
+| `--luck`、`--jrrp` | 输出今日人品值与评语 |
+| `--mca`、`--mca-selector` | 启动内置 MCA Selector 区块编辑器 |
+| `--memory` | 执行内存优化；退出码为释放的 KB（0 表示无明显变化） |
+| `--update ...` | PCL 内部自动更新命令，供更新器调用（高级） |
+| `--gpu <java.exe>` | PCL 内部显卡设置命令（高级） |
+
+说明：
+
+- `--memory` 底层调用与“百宝箱 → 内存优化”相同的逻辑；系统级清理需要管理员权限，普通权限下会尽力清空可访问进程的工作集。
+- `--mca` 首次运行会从内置资源解压 MCA Selector 与 Java 运行时，之后直接启动。
+- `--luck` 的结果按当地日期固定，同一天多次运行结果一致。
+- `--help`、`--version`、`--luck` 在独立控制台中运行时会等待按键后退出；从 `cmd`/PowerShell 等已有控制台运行时直接输出。
 
 ## 第三方组件
 
@@ -63,8 +93,10 @@ Phase 1 已开始：
 
 - 新增 `PCL.Core` C# 类库（net48，C# 13），用于承载逐步从 VB.NET 迁移的业务逻辑。
 - `ModValidate` 的校验规则已迁移到 `PCL.Core/Validation/Validation.cs`，VB 侧仅保留兼容入口。
+- “今日人品”的计算已迁移到 `PCL.Core/Tools/DailyLuck.cs`。
+- 内存优化核心已放在 `PCL.Core/Memory/MemoryOptimizer.cs`。
 - 相关 XAML 已改用 `xmlns:core="clr-namespace:PCL;assembly=PCL.Core"`。
-- 新增 `PCL.Core.Tests`，覆盖输入校验规则。
+- 新增 `PCL.Core.Tests`，覆盖输入校验、今日人品与内存状态。
 
 运行测试：
 

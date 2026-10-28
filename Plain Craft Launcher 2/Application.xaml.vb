@@ -9,7 +9,8 @@ Public Class Application
             '核心初始化
             MeloongCore.Main.Init("PCL")
             MeloongCore.Wpf.Main.Init()
-            If Not (e.Args.Contains("--update") OrElse e.Args.Contains("--gpu") OrElse e.Args.Contains("--memory")) Then '若是通过命令行调用，则不检查单例、不轮换日志（#9137）
+            Dim IsCommandLine As Boolean = e.Args.Length > 0 AndAlso e.Args(0).StartsWith("--")
+            If Not IsCommandLine Then '若是通过命令行调用，则不检查单例、不轮换日志（#9137）
                 WaitingMutex(e)
                 Logger.Instance = New PclLogger With {.logFolder = Paths.BaseThenName, .MinLevel = If(ModeDebug, LogLevel.Trace, LogLevel.Info)}
             End If
@@ -52,18 +53,23 @@ Public Class Application
                     End Try
                 ElseIf e.Args(0) = "--memory" Then
                     '内存优化
+                    ModCommandLine.InitConsole(False)
                     Dim Ram = My.Computer.Info.AvailablePhysicalMemory
                     Try
+                        Console.WriteLine("正在执行内存优化……")
                         PageOtherTest.MemoryOptimizeInternal(False)
                     Catch ex As Exception
+                        Console.WriteLine("内存优化失败：" & ex.Message)
                         MsgBox(ex.Message, MsgBoxStyle.Critical, "内存优化失败")
                         Environment.Exit(-1)
                     End Try
-                    If My.Computer.Info.AvailablePhysicalMemory < Ram Then '避免 ULong 相减出现负数
-                        Environment.Exit(0)
-                    Else
-                        Environment.Exit((My.Computer.Info.AvailablePhysicalMemory - Ram) / 1024) '返回清理的内存量（K）
-                    End If
+                    Dim After = My.Computer.Info.AvailablePhysicalMemory
+                    Dim Freed As Integer = If(After <= Ram, 0, CInt((After - Ram) / 1024))
+                    Console.WriteLine($"内存优化完成，释放约 {Freed} KB。")
+                    Environment.Exit(Freed) '返回清理的内存量（K）
+                Else
+                    Dim ExitCode As Integer = ModCommandLine.Run(e.Args)
+                    If ExitCode >= 0 Then Environment.Exit(ExitCode)
                 End If
             End If
             '初始化文件结构

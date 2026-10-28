@@ -1,5 +1,6 @@
 Imports System.Diagnostics
 Imports PCL.Core.Memory
+Imports PCL.Core.Tools
 
 Public Class PageOtherTest
 
@@ -184,31 +185,39 @@ Public Class PageOtherTest
     End Sub
 
     ''' <summary>
+    ''' 解压内置的 MCA Selector（如果需要），并返回可执行文件路径。
+    ''' </summary>
+    Public Shared Function PrepareMcASelector(Optional ShowHint As Boolean = False) As String
+        Dim ZipPath As String = PathPure.Value & "Tools\McASelector.zip"
+        Dim VersionPath As String = ToolFolder & "version.txt"
+        If Not FileUtils.Exists(ToolExe) OrElse Not FileUtils.Exists(ToolFolder & "runtime\bin\java.exe") OrElse Not FileUtils.Exists(ToolFolder & "app\mcaselector-2.9-all.jar") OrElse Not FileUtils.Exists(VersionPath) OrElse FileUtils.ReadAsString(VersionPath).Trim() <> McASelectorVersion Then
+            If ShowHint Then Hint("正在解压内置的 MCA Selector，首次启动可能需要一会儿……", Log:=False)
+            DirectoryUtils.Create(PathPure.Value & "Tools\")
+            If DirectoryUtils.Exists(ToolFolder) Then DirectoryUtils.Delete(ToolFolder)
+            ExtractResources(ZipPath, "McASelector")
+            FileUtils.ExtractToDirectory(ZipPath, ToolFolder)
+            FileUtils.Write(VersionPath, McASelectorVersion)
+            Try
+                FileUtils.Delete(ZipPath)
+            Catch ex As Exception
+                Logger.Warn(ex, "删除临时 MCA Selector 压缩包失败")
+            End Try
+            Logger.Info("已解压内置 MCA Selector " & McASelectorVersion)
+        End If
+        If Not FileUtils.Exists(ToolExe) Then Throw New Exception("未找到 MCA Selector.exe")
+        Return ToolExe
+    End Function
+
+    ''' <summary>
     ''' 解压内置的 MCA Selector（首次启动）并打开它。
     ''' </summary>
     Public Shared Sub LaunchMcASelector()
         RunInThread(
         Sub()
             Try
-                Dim ZipPath As String = PathPure.Value & "Tools\McASelector.zip"
-                Dim VersionPath As String = ToolFolder & "version.txt"
-                If Not FileUtils.Exists(ToolExe) OrElse Not FileUtils.Exists(ToolFolder & "runtime\bin\java.exe") OrElse Not FileUtils.Exists(ToolFolder & "app\mcaselector-2.9-all.jar") OrElse Not FileUtils.Exists(VersionPath) OrElse FileUtils.ReadAsString(VersionPath).Trim() <> McASelectorVersion Then
-                    Hint("正在解压内置的 MCA Selector，首次启动可能需要一会儿……", Log:=False)
-                    DirectoryUtils.Create(PathPure.Value & "Tools\")
-                    If DirectoryUtils.Exists(ToolFolder) Then DirectoryUtils.Delete(ToolFolder)
-                    ExtractResources(ZipPath, "McASelector")
-                    FileUtils.ExtractToDirectory(ZipPath, ToolFolder)
-                    FileUtils.Write(VersionPath, McASelectorVersion)
-                    Try
-                        FileUtils.Delete(ZipPath)
-                    Catch ex As Exception
-                        Logger.Warn(ex, "删除临时 MCA Selector 压缩包失败")
-                    End Try
-                    Logger.Info("已解压内置 MCA Selector " & McASelectorVersion)
-                End If
-                If Not FileUtils.Exists(ToolExe) Then Throw New Exception("未找到 MCA Selector.exe")
+                Dim ExePath = PrepareMcASelector(True)
                 StartProcess(New ProcessStartInfo With {
-                    .FileName = ToolExe,
+                    .FileName = ExePath,
                     .WorkingDirectory = ToolFolder,
                     .UseShellExecute = True
                 })
@@ -226,23 +235,8 @@ Public Class PageOtherTest
     ''' 今日人品：以当地日期的 Unix 时间戳（天）作为种子，生成 0~100 的人品值。
     ''' </summary>
     Public Shared Sub Jrrp()
-        Dim UnixDay As Long = New DateTimeOffset(Date.Now.Date).ToUnixTimeSeconds() \ 86400
-        Dim Seed As Integer = CInt(UnixDay Mod Integer.MaxValue)
-        Dim Value As Integer = New Random(Seed).Next(0, 101)
-        Dim Comment As String
-        Select Case Value
-            Case 0 To 9
-                Comment = "今天运气不太行，出门小心……"
-            Case 10 To 29
-                Comment = "普普通通的一天。"
-            Case 30 To 59
-                Comment = "还不错，保持好心情！"
-            Case 60 To 89
-                Comment = "运气不错，适合做点大事！"
-            Case Else
-                Comment = "欧皇附体！今天想做什么都可以！"
-        End Select
-        MyMsgBox("今日人品：" & Value & vbCrLf & vbCrLf & Comment, "今日人品", IsWarn:=Value < 10, IsWarnText:=Value < 10)
+        Dim Result = DailyLuck.GetToday()
+        MyMsgBox("今日人品：" & Result.Value & vbCrLf & vbCrLf & Result.Comment, "今日人品", IsWarn:=Result.Value < 10, IsWarnText:=Result.Value < 10)
     End Sub
     Public Shared Sub RubbishClear()
         Hint("为便于维护，开源内容中不包含百宝箱功能……")

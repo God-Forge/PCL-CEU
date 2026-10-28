@@ -1,4 +1,5 @@
 Imports System.Diagnostics
+Imports PCL.Core.Memory
 
 Public Class PageOtherTest
 
@@ -17,6 +18,133 @@ Public Class PageOtherTest
 
     Private Sub BtnJrrp_Click(sender As Object, e As EventArgs) Handles BtnJrrp.Click
         Jrrp()
+    End Sub
+
+    Private Shared _MemoryBusy As Boolean
+
+    Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
+        RefreshMemoryStatus()
+    End Sub
+
+    Private Sub BtnMemoryKind_Click(sender As Object, e As EventArgs) Handles BtnMemoryQuick.Click, BtnMemoryDeep.Click, BtnMemoryCurrent.Click, BtnMemoryWorkingSet.Click, BtnMemorySystemWorkingSet.Click, BtnMemoryModified.Click, BtnMemoryStandby.Click, BtnMemoryPriority0.Click
+        Dim Tag As String = TryCast(DirectCast(sender, MyButton).Tag, String)
+        Select Case Tag
+            Case "Quick"
+                RunMemoryOperation(MemoryOptimizationKind.WorkingSets, "将清空所有进程的工作集，其他程序可能会短暂变慢。是否继续？")
+            Case "Deep"
+                RunMemoryAllOptimization(True, "深度清理会清空工作集、系统工作集、已修改页列表和待机列表，可能造成短暂卡顿。是否继续？")
+            Case "CurrentProcess"
+                RunMemoryOperation(MemoryOptimizationKind.CurrentProcess)
+            Case "WorkingSets"
+                RunMemoryOperation(MemoryOptimizationKind.WorkingSets, "将清空所有进程的工作集，其他程序可能会短暂变慢。是否继续？")
+            Case "SystemWorkingSet"
+                RunMemoryOperation(MemoryOptimizationKind.SystemWorkingSet, "将清空系统工作集/文件缓存，可能造成短暂卡顿。是否继续？")
+            Case "ModifiedPageList"
+                RunMemoryOperation(MemoryOptimizationKind.ModifiedPageList, "将把已修改页写入磁盘并清空列表，可能产生磁盘 I/O。是否继续？")
+            Case "StandbyList"
+                RunMemoryOperation(MemoryOptimizationKind.StandbyList, "将清空系统待机缓存，程序首次读取文件时可能变慢。是否继续？")
+            Case "Priority0StandbyList"
+                RunMemoryOperation(MemoryOptimizationKind.Priority0StandbyList, "将清空优先级 0 待机缓存，程序首次读取文件时可能变慢。是否继续？")
+        End Select
+    End Sub
+
+    Private Sub BtnMemoryRefresh_Click(sender As Object, e As EventArgs) Handles BtnMemoryRefresh.Click
+        RefreshMemoryStatus()
+    End Sub
+
+    Private Sub BtnMemoryAdmin_Click(sender As Object, e As EventArgs) Handles BtnMemoryAdmin.Click
+        If MyMsgBox("将以管理员权限启动一个新的 PCL 进程执行完整内存优化（包含待机列表）。是否继续？", "内存优化", "继续", "取消") <> 1 Then Return
+        RunInThread(
+        Sub()
+            Try
+                Dim Code As Integer = RunAsAdmin("--memory")
+                RunInUi(
+                Sub()
+                    RefreshMemoryStatus()
+                    Hint("管理员内存优化已完成（返回码 " & Code & "）。", HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "以管理员权限执行内存优化失败")
+                RunInUi(Sub() Hint("以管理员权限执行内存优化失败：" & ex.Message, HintType.Red))
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub RunMemoryOperation(Kind As MemoryOptimizationKind, Optional ConfirmText As String = Nothing)
+        If RunMemoryConfirm(ConfirmText) Then Return
+        _MemoryBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = MemoryOptimizer.Optimize(Kind)
+                RunInUi(
+                Sub()
+                    RefreshMemoryStatus(Result.After)
+                    Hint(Result.Message, If(Result.Success, HintType.Green, HintType.Red), Log:=False)
+                    _MemoryBusy = False
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "内存优化失败")
+                RunInUi(
+                Sub()
+                    Hint("内存优化失败：" & ex.Message, HintType.Red)
+                    _MemoryBusy = False
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub RunMemoryAllOptimization(IncludeStandbyLists As Boolean, Optional ConfirmText As String = Nothing)
+        If RunMemoryConfirm(ConfirmText) Then Return
+        _MemoryBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = MemoryOptimizer.OptimizeAll(IncludeStandbyLists)
+                RunInUi(
+                Sub()
+                    RefreshMemoryStatus(Result.After)
+                    Hint(Result.Message, If(Result.Success, HintType.Green, HintType.Red), Log:=False)
+                    _MemoryBusy = False
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "内存优化失败")
+                RunInUi(
+                Sub()
+                    Hint("内存优化失败：" & ex.Message, HintType.Red)
+                    _MemoryBusy = False
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Function RunMemoryConfirm(ConfirmText As String) As Boolean
+        If _MemoryBusy Then
+            Hint("内存优化正在进行中，请稍候……", Log:=False)
+            Return True
+        End If
+        If String.IsNullOrEmpty(ConfirmText) Then Return False
+        Return MyMsgBox(ConfirmText, "内存优化", "继续", "取消") <> 1
+    End Function
+
+    Private Sub RefreshMemoryStatus(Optional Status As MemoryStatus = Nothing)
+        Try
+            Dim Current As MemoryStatus = If(Status, MemoryOptimizer.GetStatus())
+            RunInUi(
+            Sub()
+                LabMemoryStatus.Text = $"当前可用物理内存：{Current.AvailableMB:F0} MB / 共 {Current.TotalMB:F0} MB"
+                If MemoryOptimizer.IsAdministrator Then
+                    LabMemoryAdmin.Text = "当前权限：管理员，可执行系统级清理。"
+                    BtnMemoryAdmin.Visibility = Visibility.Collapsed
+                Else
+                    LabMemoryAdmin.Text = "当前权限：普通用户，系统级清理需要管理员权限。"
+                    BtnMemoryAdmin.Visibility = Visibility.Visible
+                End If
+            End Sub)
+        Catch ex As Exception
+            Logger.Warn(ex, "读取内存状态失败")
+            RunInUi(Sub() LabMemoryStatus.Text = "当前可用物理内存：读取失败")
+        End Try
     End Sub
 
     Private Sub BtnLaunch_Click(sender As Object, e As EventArgs) Handles BtnLaunch.Click
@@ -120,10 +248,17 @@ Public Class PageOtherTest
         Hint("为便于维护，开源内容中不包含百宝箱功能……")
     End Sub
     Public Shared Sub MemoryOptimize(ShowHint As Boolean)
-        If ShowHint Then Hint("为便于维护，开源内容中不包含百宝箱功能……")
+        Try
+            Dim Result = MemoryOptimizer.Optimize(MemoryOptimizationKind.WorkingSets)
+            If ShowHint Then Hint(Result.Message, If(Result.Success, HintType.Green, HintType.Red), Log:=False)
+        Catch ex As Exception
+            Logger.Error(ex, "内存优化失败")
+            If ShowHint Then Hint("内存优化失败：" & ex.Message, HintType.Red)
+        End Try
     End Sub
     Public Shared Sub MemoryOptimizeInternal(ShowHint As Boolean)
-        If ShowHint Then Hint("为便于维护，开源内容中不包含百宝箱功能……")
+        Dim Result = MemoryOptimizer.OptimizeAll(True)
+        If ShowHint Then Hint(Result.Message, If(Result.Success, HintType.Green, HintType.Red), Log:=False)
     End Sub
     Public Shared Function GetRandomCave() As String
         Return "为便于维护，开源内容中不包含百宝箱功能……"

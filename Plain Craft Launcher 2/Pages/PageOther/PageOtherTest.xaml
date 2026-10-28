@@ -15,6 +15,26 @@
                     <local:MyButton x:Name="BtnJrrp" Text="测测今日人品" MinWidth="170" Height="35" ColorType="Highlight" HorizontalAlignment="Left" Margin="0,16,0,0" />
                 </StackPanel>
             </local:MyCard>
+            <local:MyCard Margin="0,15,0,0" Title="内存优化">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock x:Name="LabMemoryStatus" Text="当前可用物理内存：读取中……" TextWrapping="Wrap" LineHeight="18" />
+                    <TextBlock Text="对应 RAMMap 的 Empty 功能：清空工作集、系统工作集、已修改页列表、待机列表等。清空工作集/待机列表可能让其他程序短暂变慢；系统级操作需要管理员权限。"
+                               TextWrapping="Wrap" LineHeight="18" Margin="0,6,0,0" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnMemoryQuick" Text="一键优化" Tag="Quick" MinWidth="140" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryDeep" Text="深度清理（含待机列表）" Tag="Deep" MinWidth="200" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryCurrent" Text="清理 PCL 内存" Tag="CurrentProcess" MinWidth="140" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryWorkingSet" Text="清空工作集" Tag="WorkingSets" MinWidth="140" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemorySystemWorkingSet" Text="清空系统工作集" Tag="SystemWorkingSet" MinWidth="160" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryModified" Text="清空已修改页列表" Tag="ModifiedPageList" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryStandby" Text="清空待机列表" Tag="StandbyList" MinWidth="140" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryPriority0" Text="清空优先级 0 待机列表" Tag="Priority0StandbyList" MinWidth="200" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMemoryRefresh" Text="刷新状态" MinWidth="120" Height="35" Margin="0,0,10,10" />
+                    </WrapPanel>
+                    <TextBlock x:Name="LabMemoryAdmin" Text="当前权限：读取中……" TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.75" />
+                    <local:MyButton x:Name="BtnMemoryAdmin" Text="以管理员身份执行完整优化" MinWidth="240" Height="35" HorizontalAlignment="Left" Margin="0,10,0,0" Visibility="Collapsed" />
+                </StackPanel>
+            </local:MyCard>
             <local:MyCard Margin="0,15,0,15" Title="MCA Selector 区块编辑器">
                 <StackPanel Margin="21,40,21,16">
                     <TextBlock Text="MCA Selector 2.9 可以查看、删除、导入和导出 Minecraft 世界区块。它由 Querz 开发，以 MIT 许可证分发。"

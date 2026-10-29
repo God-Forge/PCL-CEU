@@ -1,3 +1,5 @@
+Imports PCL.Core.Java
+
 Public Module ModJava
 
     ''' <summary>
@@ -126,150 +128,39 @@ Public Module ModJava
     ''' 如果由于 Java 版本要求冲突而导致没有可用的 Java，则返回 null。
     ''' </summary>
     Public Function GetJavaRequirement(Instance As McInstance) As (Range As ValueRange(Of Version), RecommendedComponent As String)
+        Dim Context As New JavaRequirementContext With {
+            .VersionDisplayName = Instance.VersionDisplayName,
+            .VersionValid = Instance.Version.Valid,
+            .VanillaVersion = Instance.Version.Vanilla,
+            .HasOptiFine = Instance.Version.HasOptiFine,
+            .ModLoaderFlags = Instance.Version.ModLoaders,
+            .ModLoaderVersions = Instance.Version.ModLoaderVersions,
+            .ReleaseTime = Instance.ReleaseTime,
+            .IsNideLogin = Settings.Get(Of McLoginType)("LoginType") = McLoginType.Nide,
+            .HasJavaVersionOverride = Settings.Get(Of Integer)("VersionArgumentJavaV2", Instance) = 1,
+            .JavaVersionOverride = Settings.Get(Of String)("VersionArgumentJavaRange", Instance)
+        }
 
-        '版本设置已经强制指定了 Java 版本要求
-        If Settings.Get(Of Integer)("VersionArgumentJavaV2", Instance) = 1 Then
-            Try
-                Dim Range = ValueRange(Of Version).FromString(Settings.Get(Of String)("VersionArgumentJavaRange", Instance), Function(s) StringUtils.ParseVersionWithDefaults(s))
-                Return (Range, Nothing)
-            Catch ex As Exception
-                Logger.Warn($"版本设置中指定的 Java 版本范围有误（{Settings.Get(Of String)("VersionArgumentJavaRange", Instance)}），这可能是因为首次修改此设置，尚未初始化")
-            End Try
+        Dim MojangJavaVersion = Instance.JsonObject?("javaVersion")
+        If MojangJavaVersion IsNot Nothing Then
+            Context.MojangJavaMajor = MojangJavaVersion?("majorVersion")?.ToObject(Of Integer)()
+            Context.MojangJavaComponent = MojangJavaVersion?("component")?.ToString()
         End If
 
-        '----------------------------------- 从 Minecraft 版本信息获取需求 -----------------------------------
+        Context.JsonJavaMajor = Instance.JsonVersion?("java_version")?.ToObject(Of Integer)()
+        Context.JsonJavaComponent = Instance.JsonVersion?("java_component")?.ToString()
 
-        Dim JavaRange = ValueRange(Of Version).All()
-        Dim AddConstraint =
-        Sub(Constraint As ValueRange(Of Version))
-            JavaRange = JavaRange?.Intersect(Constraint)
-            If JavaRange.IsEmpty Then
-                Logger.Warn($"Java 版本要求冲突，若启动失败请在版本设置手动指定 Java：当前追加的要求为 {Constraint}，游戏版本为 {Instance.VersionDisplayName}", LogBehavior.Toast)
-                JavaRange = Constraint
-            End If
-        End Sub
-
-        '原版 26-：通过版本号判断
-        If (Not Instance.Version.Valid AndAlso Instance.ReleaseTime >= New Date(2024, 4, 2)) OrElse
-           (Instance.Version.Valid AndAlso Instance.Version.Vanilla >= New Version(20, 0, 5)) Then
-            '1.20.5+（24w14a+）：至少 Java 21
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(21, 0)))
-        ElseIf (Not Instance.Version.Valid AndAlso Instance.ReleaseTime >= New Date(2021, 11, 16)) OrElse
-               (Instance.Version.Valid AndAlso Instance.Version.Vanilla.Major >= 18) Then
-            '1.18 pre2+：至少 Java 17
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(17, 0)))
-        ElseIf (Not Instance.Version.Valid AndAlso Instance.ReleaseTime >= New Date(2021, 5, 11)) OrElse
-               (Instance.Version.Valid AndAlso Instance.Version.Vanilla.Major >= 17) Then
-            '1.17+ (21w19a+)：至少 Java 16
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(16, 0)))
-        ElseIf Instance.ReleaseTime.Year >= 2017 Then 'Minecraft 1.12 与 1.11 的分界线正好是 2017 年，太棒了
-            '1.12+：至少 Java 8
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(8, 0)))
-        ElseIf Instance.ReleaseTime <= New Date(2013, 5, 1) AndAlso Instance.ReleaseTime.Year >= 2001 Then '避免某些版本写个 1960 年
-            '1.5.2-：最高 Java 8
-            AddConstraint(ValueRange(Of Version).LessThan(New Version(9, 0)))
-        End If
-
-        '原版 26+：获取 Mojang 要求的 Java 版本
-        Dim RecommendedComponent As String = Nothing
-        Dim RecommendedCode As Integer =
-            If(Instance.JsonObject?("javaVersion")?("majorVersion")?.ToObject(Of Integer),
-            If(Instance.JsonVersion?("java_version")?.ToObject(Of Integer), 0))
-        If RecommendedCode >= 22 Then
-            Logger.Info("Mojang 要求至少使用 Java " & RecommendedCode)
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(RecommendedCode, 0)))
-            RecommendedComponent =
-                If(Instance.JsonObject?("javaVersion")?("component")?.ToString,
-                   Instance.JsonVersion?("java_component")?.ToString)
-            If RecommendedComponent = "" Then RecommendedComponent = Nothing
-        End If
-
-        'OptiFine 检测
-        If Instance.Version.HasOptiFine AndAlso Instance.Version.Valid Then '不管非标准版本
-            If Instance.Version.Vanilla.Major < 7 Then
-                '<1.7：至多 Java 8
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(9, 0)))
-            ElseIf Instance.Version.Vanilla.Major >= 8 AndAlso Instance.Version.Vanilla.Major < 12 Then
-                '1.8 - 1.11：必须恰好 Java 8
-                AddConstraint(ValueRange(Of Version).ClosedOpen(New Version(8, 0), New Version(9, 0)))
-            ElseIf Instance.Version.Vanilla.Major = 12 Then
-                '1.12：最高 Java 8
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(9, 0)))
-            End If
-        End If
-
-        'Forge 检测（部分测试结果见 #8432）
-        If Instance.Version.ModLoaders.HasFlagF(ModLoaders.Forge) Then
-            If Instance.Version.Vanilla >= New Version(6, 0, 1) AndAlso Instance.Version.Vanilla <= New Version(7, 0, 2) Then
-                '1.6.1 - 1.7.2：必须 Java 7
-                AddConstraint(ValueRange(Of Version).ClosedOpen(New Version(7, 0), New Version(8, 0)))
-            ElseIf Instance.Version.Vanilla.Major <= 12 OrElse Not Instance.Version.Valid Then '非标准版本
-                '<=1.12：Java 8
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(9, 0)))
-            ElseIf Instance.Version.Vanilla.Major <= 14 Then
-                '1.13 - 1.14：Java 8 - 10
-                AddConstraint(ValueRange(Of Version).ClosedOpen(New Version(8, 0), New Version(11, 0)))
-            ElseIf Instance.Version.Vanilla.Major = 15 Then
-                '1.15：Java 8 - 15
-                AddConstraint(ValueRange(Of Version).ClosedOpen(New Version(8, 0), New Version(16, 0)))
-            ElseIf McUtils.CompareVersionGE(Instance.Version.ModLoaderVersions(ModLoaders.Forge), "34.0.0") AndAlso McUtils.CompareVersionGE("36.2.25", Instance.Version.ModLoaderVersions(ModLoaders.Forge)) Then
-                '1.16.3~5，Forge 34.0.0 ~ 36.2.25：最高 Java 8u320
-                AddConstraint(ValueRange(Of Version).AtMost(New Version(8, 0, 320)))
-            ElseIf McUtils.CompareVersionGE(Instance.Version.ModLoaderVersions(ModLoaders.Forge), "36.2.26") AndAlso McUtils.CompareVersionGE("36.999999.999999", Instance.Version.ModLoaderVersions(ModLoaders.Forge)) Then
-                '1.16.5，Forge 36.2.26+，<37.0.0：最高 Java 23
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(24, 0)))
-            ElseIf McUtils.CompareVersionGE(Instance.Version.ModLoaderVersions(ModLoaders.Forge), "37.0.0") AndAlso McUtils.CompareVersionGE("37.0.79", Instance.Version.ModLoaderVersions(ModLoaders.Forge)) Then
-                '1.17.1，Forge 37.0.0 ~ 37.0.79：最高 Java 16
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(17, 0)))
-            ElseIf Instance.Version.Vanilla.Major = 18 AndAlso Instance.Version.HasOptiFine Then '#305
-                '1.18：若安装了 OptiFine，最高 Java 18
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(19, 0)))
-            ElseIf McUtils.CompareVersionGE(Instance.Version.ModLoaderVersions(ModLoaders.Forge), "45.0.21") AndAlso McUtils.CompareVersionGE("45.0.65", Instance.Version.ModLoaderVersions(ModLoaders.Forge)) Then
-                '1.19.4，Forge 45.0.21 ~ 45.0.65：最高 Java 19
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(20, 0)))
-            ElseIf McUtils.CompareVersionGE(Instance.Version.ModLoaderVersions(ModLoaders.Forge), "45.0.66") AndAlso McUtils.CompareVersionGE("47.4.8", Instance.Version.ModLoaderVersions(ModLoaders.Forge)) Then
-                '1.19.4~1.20.1，Forge 45.0.66 ~ 47.4.8：最高 Java 21
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(22, 0)))
-            End If
-        End If
-
-        'NeoForge 检测
-        If Instance.Version.ModLoaders.HasFlagF(ModLoaders.NeoForge) Then
-            If Instance.Version.Vanilla = New Version(20, 0, 1) OrElse
-               (McUtils.CompareVersionGE("20.2.62-beta", Instance.Version.ModLoaderVersions(ModLoaders.NeoForge)) AndAlso Not Instance.Version.ModLoaderVersions(ModLoaders.NeoForge).Contains("25w14craftmine")) Then
-                '1.20.1，以及 1.20.2 的 20.2.62-beta 之前：最高 Java 21
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(22, 0)))
-            End If
-        End If
-
-        'Fabric 检测
-        If Instance.Version.ModLoaders.HasFlagF(ModLoaders.Fabric) AndAlso Instance.Version.Valid Then '不管非标准版本
-            If Instance.Version.Vanilla.Major >= 15 AndAlso Instance.Version.Vanilla.Major <= 16 Then
-                '1.15 - 1.16：Java 8+
-                AddConstraint(ValueRange(Of Version).AtLeast(New Version(8, 0)))
-            ElseIf Instance.Version.Vanilla.Major >= 18 Then
-                '1.18+：Java 17+
-                AddConstraint(ValueRange(Of Version).AtLeast(New Version(17, 0)))
-            End If
-            If Instance.Version.ModLoaderVersions(ModLoaders.Fabric) <> "未知版本" AndAlso McUtils.CompareVersion(Instance.Version.ModLoaderVersions(ModLoaders.Fabric), "0.17.0") < 0 Then
-                'Fabric Loader 0.16.x 及更早版本的 Mixin/ASM 不兼容 Java 25
-                AddConstraint(ValueRange(Of Version).LessThan(New Version(25, 0)))
-            End If
-        End If
-
-        'LiteLoader 检测
-        If Instance.Version.ModLoaders.HasFlagF(ModLoaders.LiteLoader) AndAlso Instance.Version.Valid Then '不管非标准版本
-            '最高 Java 8
-            AddConstraint(ValueRange(Of Version).LessThan(New Version(9, 0)))
-        End If
-
-        '统一通行证检测
-        If Settings.Get(Of McLoginType)("LoginType") = McLoginType.Nide Then
-            '至少 Java 8u101
-            AddConstraint(ValueRange(Of Version).AtLeast(New Version(8, 0, 141)))
-        End If
-
-        Return (JavaRange, RecommendedComponent)
+        Dim Result = JavaRequirementResolver.Resolve(Context)
+        For Each Info In Result.InfoMessages
+            Logger.Info(Info)
+        Next
+        For Each Warning In Result.Warnings
+            Logger.Warn(Warning)
+        Next
+        For Each Warning In Result.ConflictWarnings
+            Logger.Warn(Warning, LogBehavior.Toast)
+        Next
+        Return (Result.Range, Result.RecommendedComponent)
     End Function
 
     ''' <summary>

@@ -105,7 +105,9 @@ Phase 2 已开始：
 - 整合包类型识别已迁移到 `PCL.Core/Modpack/ModpackInspector.cs`。
 - `ModModpack.ModpackInstall` 已改为调用 C# 识别器，支持 CurseForge、HMCL、MMC、MCBBS、Modrinth、启动器整合包与普通压缩包。
 - 新增测试覆盖根目录/一级目录识别、基础目录与未知压缩包。
-- 下一步：整合包文件树/覆写目录解析、Java 版本要求服务、ResourceVersion 数据层。
+- Java 版本要求规则已迁移到 `PCL.Core/Java/JavaRequirementResolver.cs`，`ModJava.GetJavaRequirement` 只负责构建上下文与记录日志。
+- 新增测试覆盖原版版本、OptiFine、Forge、NeoForge、Fabric、LiteLoader、统一通行证、手动覆盖与 Mojang 推荐 Java。
+- 下一步：ResourceVersion 数据层、ModNet/ModLoader 的接口与任务迁移。
 
 运行测试：
 

@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`3.5.0-CEU`
-- 输出文件：`PCL2-3.5.0ceu.exe`
-- 程序集版本：`3.5.0.0`
+- 版本号：`3.6.0-CEU`
+- 输出文件：`PCL2-3.6.0ceu.exe`
+- 程序集版本：`3.6.0.0`
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -28,19 +28,22 @@
 - 新增命令行模式，支持 `--help`、`--version`、`--luck`、`--mca`、`--memory` 等命令。
 - 主界面以普通权限启动；系统级内存优化、显卡设置等操作通过内部 helper 按需请求管理员权限。
 - 新增 `.payload` 版本包格式与 C++ `encode.exe` / `decode.exe`，用于打包或解包单个 Minecraft 版本。
+- 命令行新增 `--launch <实例>` 与 `--download <MC版本> [-forge|-neoforge|-fabric]`。
 
 ## 命令行模式
 
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL2-3.5.0ceu.exe --help
-.\PCL2-3.5.0ceu.exe --version
-.\PCL2-3.5.0ceu.exe --luck
-.\PCL2-3.5.0ceu.exe --mca
-.\PCL2-3.5.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL2-3.5.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL2-3.5.0ceu.exe --memory
+.\PCL2-3.6.0ceu.exe --help
+.\PCL2-3.6.0ceu.exe --version
+.\PCL2-3.6.0ceu.exe --luck
+.\PCL2-3.6.0ceu.exe --mca
+.\PCL2-3.6.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL2-3.6.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL2-3.6.0ceu.exe --launch 1.20.1
+.\PCL2-3.6.0ceu.exe --download 1.20.1 -forge
+.\PCL2-3.6.0ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -51,6 +54,8 @@
 | `--mca`、`--mca-selector` | 启动内置 MCA Selector 区块编辑器 |
 | `--payload-encode <文件夹> <输出.payload> [版本名]` | 将版本文件夹打包为 Payload |
 | `--payload-decode <输入.payload> <输出文件夹>` | 解包 Payload |
+| `--launch <实例>` | 启动 `versions` 下指定文件夹名的实例 |
+| `--download <MC版本> [-forge\|-neoforge\|-fabric]` | 下载原版并安装指定加载器 |
 | `--memory` | 执行内存优化；退出码为释放的 KB（0 表示无明显变化） |
 | `--update ...` | PCL 内部自动更新命令，供更新器调用（高级） |
 | `--gpu <java.exe>` | PCL 内部显卡设置命令（高级） |
@@ -61,6 +66,9 @@
 - `--mca` 首次运行会从内置资源解压 MCA Selector 与 Java 运行时，之后直接启动。
 - `--luck` 的结果按当地日期固定，同一天多次运行结果一致。
 - `--help`、`--version`、`--luck` 在独立控制台中运行时会等待按键后退出；从 `cmd`/PowerShell 等已有控制台运行时直接输出。
+- `--launch <实例>`：实例名以 `versions` 下的文件夹名为准；使用当前 PCL 的账号、Java、内存与启动设置。主窗口会隐藏，PCL 进程会保留以维持启动/日志监听。
+- `--download <MC版本> [-forge|-neoforge|-fabric]`：自动选择适用于该 MC 版本的加载器版本；原版实例名通常为 `1.20.1`，加载器实例名形如 `1.20.1-Forge_47.4.8`、`1.20.1-NeoForge_...`、`1.20.1-Fabric 0.16.9`。完成后进程退出。
+- `--launch` / `--download` 使用现有 PCL 下载与启动流程，因此会读取当前下载源、Java、账号等设置；失败时会显示 PCL 窗口以便查看错误。
 - 主界面、`--help`、`--version`、`--luck`、`--mca` 默认以普通权限运行，不会触发 UAC；只有 `--memory` 等需要系统权限的操作会按需提权。
 
 ## 第三方组件

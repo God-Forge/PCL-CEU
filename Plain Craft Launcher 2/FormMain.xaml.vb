@@ -347,6 +347,9 @@ Public Class FormMain
         Logger.Info($"第二阶段加载用时：{GetTimeMs() - ApplicationStartTick} ms")
     End Sub
     Private Sub FormMain_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        If ModCommandLine.HasPendingAction() Then
+            Dispatcher.BeginInvoke(New Action(AddressOf ModCommandLine.ExecutePendingAction))
+        End If
         ApplicationStartTick = GetTimeMs()
         Handle = New WindowInteropHelper(Me).Handle
         '读取设置
@@ -448,7 +451,7 @@ Public Class FormMain
             '上报
             Telemetry("启动")
             '开源版本提示
-            If VersionBranchMain = "OpenSource" Then
+            If VersionBranchMain = "OpenSource" AndAlso Not ModCommandLine.HasPendingAction() Then
                 MyMsgBox($"该版本中无法使用以下特性：{vbCrLf}- CurseForge API 调用：需要自行申请 API Key，然后添加到 ModSecret.vb 的开头{vbCrLf}- 正版登录：需要自行向微软申请 Client ID，然后添加到 ModSecret.vb 的开头{vbCrLf}- 更新与联网通知：避免滥用隐患{vbCrLf}- 主题切换：本改版固定为蓝色主题{vbCrLf}- 其他百宝箱工具：为便于维护，开源版本中未包含", "开源版本说明")
             End If
         End Sub, "初始化", ThreadPriority.Lowest)
@@ -545,10 +548,10 @@ Public Class FormMain
             Settings.Reset("LaunchAdvanceJvm")
             Logger.Info("已重置 JVM 参数设置")
         End If
-        '输出更新日志
+        '输出更新日志（命令行启动/下载时不在隐藏窗口中阻塞）
         If LastVersionCode <= 0 Then Return
         If HighestVersionCode >= VersionCode Then Return
-        ShowUpdateLog(HighestVersionCode)
+        If Not ModCommandLine.HasPendingAction() Then ShowUpdateLog(HighestVersionCode)
     End Sub
     Private Sub DowngradeSub(LastVersionCode As Integer)
         Logger.Info($"版本号从 {LastVersionCode} 降低到 {VersionCode}")

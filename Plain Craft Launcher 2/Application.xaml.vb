@@ -78,6 +78,51 @@ Public Class Application
                     Dim Freed As Integer = If(After <= Ram, 0, CInt((After - Ram) / 1024))
                     Console.WriteLine($"内存优化完成，释放约 {Freed} KB。")
                     Environment.Exit(Freed) '返回清理的内存量（K）
+                ElseIf e.Args(0) = "--launch" Then
+                    If e.Args.Length < 2 Then
+                        ModCommandLine.InitConsole(False)
+                        Console.WriteLine("用法：--launch <versions 下的实例名>")
+                        Environment.Exit(1)
+                    End If
+                    ModCommandLine.InitConsole(False)
+                    ModCommandLine.PendingLaunchInstance = e.Args(1)
+                    '继续正常启动主窗口，在 FormMain 加载完成后执行启动
+                ElseIf e.Args(0) = "--download" Then
+                    If e.Args.Length < 2 Then
+                        ModCommandLine.InitConsole(False)
+                        Console.WriteLine("用法：--download <MC 版本> [-forge|-neoforge|-fabric]")
+                        Environment.Exit(1)
+                    End If
+                    Dim Loader As String = ""
+                    ModCommandLine.InitConsole(False)
+                    For i As Integer = 2 To e.Args.Length - 1
+                        Select Case e.Args(i).ToLowerInvariant()
+                            Case "-forge", "--forge"
+                                If Loader <> "" Then
+                                    Console.WriteLine("只能指定一种加载器。")
+                                    Environment.Exit(1)
+                                End If
+                                Loader = "forge"
+                            Case "-neoforge", "--neoforge"
+                                If Loader <> "" Then
+                                    Console.WriteLine("只能指定一种加载器。")
+                                    Environment.Exit(1)
+                                End If
+                                Loader = "neoforge"
+                            Case "-fabric", "--fabric"
+                                If Loader <> "" Then
+                                    Console.WriteLine("只能指定一种加载器。")
+                                    Environment.Exit(1)
+                                End If
+                                Loader = "fabric"
+                            Case Else
+                                Console.WriteLine("未知参数：" & e.Args(i))
+                                Environment.Exit(1)
+                        End Select
+                    Next
+                    ModCommandLine.PendingDownloadVersion = e.Args(1)
+                    ModCommandLine.PendingDownloadLoader = Loader
+                    '继续正常启动主窗口，在 FormMain 加载完成后执行下载
                 Else
                     Dim ExitCode As Integer = ModCommandLine.Run(e.Args)
                     If ExitCode >= 0 Then Environment.Exit(ExitCode)

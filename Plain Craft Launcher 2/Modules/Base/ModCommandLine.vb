@@ -2,6 +2,7 @@ Imports System.Diagnostics
 Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Text
+Imports System.Windows
 Imports PCL.Core.Tools
 
 ''' <summary>
@@ -14,6 +15,84 @@ Public Module ModCommandLine
 
     Private _ConsoleInitialized As Boolean
     Private _OwnConsole As Boolean
+
+    Public PendingLaunchInstance As String = Nothing
+    Public PendingDownloadVersion As String = Nothing
+    Public PendingDownloadLoader As String = Nothing
+
+    Public Function HasPendingAction() As Boolean
+        Return PendingLaunchInstance IsNot Nothing OrElse PendingDownloadVersion IsNot Nothing
+    End Function
+
+    ''' <summary>
+    ''' 在主窗口加载完成后执行 --launch / --download。
+    ''' </summary>
+    Public Sub ExecutePendingAction()
+        If PendingLaunchInstance IsNot Nothing Then
+            ExecuteLaunch()
+        ElseIf PendingDownloadVersion IsNot Nothing Then
+            ExecuteDownload()
+        End If
+    End Sub
+
+    Private Sub ExecuteLaunch()
+        Dim InstanceName As String = PendingLaunchInstance
+        PendingLaunchInstance = Nothing
+        Try
+            FrmMain.Visibility = Visibility.Hidden
+            FrmMain.ShowInTaskbar = False
+
+            Dim Folder As String = ModCommandLineDownload.EnsureMcFolder() & "versions\" & InstanceName.TrimEnd("\"c)
+            If Not DirectoryUtils.Exists(Folder) Then Throw New Exception("versions 下不存在实例：" & InstanceName)
+
+            Dim Instance As McInstance = New McInstance(Folder).Load()
+            If Instance Is Nothing OrElse Instance.State = McInstance.McInstanceState.Error Then
+                Throw New Exception("无法加载实例：" & InstanceName)
+            End If
+
+            McInstanceSelected = Instance
+            If Not McLaunchStart(New McLaunchOptions With {.Instance = Instance}) Then
+                Throw New Exception("启动未开始，请查看 PCL 窗口。")
+            End If
+            WriteLine("已开始启动：" & InstanceName)
+        Catch ex As Exception
+            Logger.Error(ex, "命令行启动失败")
+            FrmMain.Visibility = Visibility.Visible
+            FrmMain.ShowInTaskbar = True
+            WriteLine("启动失败：" & ex.Message)
+            Environment.Exit(1)
+        End Try
+    End Sub
+
+    Private Sub ExecuteDownload()
+        Dim Version As String = PendingDownloadVersion
+        Dim Loader As String = PendingDownloadLoader
+        PendingDownloadVersion = Nothing
+        PendingDownloadLoader = Nothing
+
+        FrmMain.Visibility = Visibility.Hidden
+        FrmMain.ShowInTaskbar = False
+        WriteLine($"开始下载 Minecraft {Version}（{If(String.IsNullOrEmpty(Loader), "原版", Loader)}）……")
+
+        RunInThread(
+        Sub()
+            Try
+                Dim Message As String = ModCommandLineDownload.Download(Version, Loader)
+                RunInUi(
+                Sub()
+                    WriteLine(Message)
+                    Environment.Exit(0)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "命令行下载失败")
+                RunInUi(
+                Sub()
+                    WriteLine("下载失败：" & ex.Message)
+                    Environment.Exit(1)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
 
     ''' <summary>
     ''' 执行命令行命令。返回 -1 表示不是命令行调用，应继续正常启动。
@@ -162,17 +241,21 @@ Public Module ModCommandLine
         Console.WriteLine("  --mca, --mca-selector  启动内置 MCA Selector 区块编辑器")
         Console.WriteLine("  --payload-encode <文件夹> <输出.payload> [版本名]  打包版本为 Payload")
         Console.WriteLine("  --payload-decode <输入.payload> <输出文件夹>      解包 Payload")
+        Console.WriteLine("  --launch <实例>        启动 versions 下指定文件夹名的实例")
+        Console.WriteLine("  --download <MC版本> [-forge|-neoforge|-fabric]  下载原版并安装加载器")
         Console.WriteLine("  --memory               执行内存优化；退出码为释放的 KB（0 表示无明显变化）")
         Console.WriteLine("  --update ...           PCL 内部更新命令（高级）")
         Console.WriteLine("  --gpu <java.exe>       PCL 内部显卡设置命令（高级）")
         Console.WriteLine()
         Console.WriteLine("示例：")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --help")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --luck")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --mca")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
-        Console.WriteLine("  PCL2-3.5.0ceu.exe --memory")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --help")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --luck")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --mca")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --launch 1.20.1")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --download 1.20.1 -forge")
+        Console.WriteLine("  PCL2-3.6.0ceu.exe --memory")
     End Sub
 
 End Module

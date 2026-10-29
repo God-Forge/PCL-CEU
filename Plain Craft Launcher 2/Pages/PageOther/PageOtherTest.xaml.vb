@@ -23,6 +23,7 @@ Public Class PageOtherTest
 
     Private Shared _MemoryBusy As Boolean
     Private Shared _PayloadBusy As Boolean
+    Private Shared _MaintenanceBusy As Boolean
 
     Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
         RefreshMemoryStatus()
@@ -276,8 +277,247 @@ Public Class PageOtherTest
         End Sub)
     End Sub
 
+    Private Sub BtnPayloadImport_Click(sender As Object, e As EventArgs) Handles BtnPayloadImport.Click
+        If _PayloadBusy Then
+            Hint("Payload 操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+
+        Dim Input As String = Dialogs.SelectFile("选择要导入的 Payload 文件", False, filter:={({"payload"}, "Payload 文件")}).FirstOrDefault()
+        If String.IsNullOrEmpty(Input) Then Return
+
+        _PayloadBusy = True
+        Hint("正在导入 Payload，请稍候……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Message As String = ModPayload.Import(Input, McFolderSelected)
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint(Message, HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "导入 Payload 失败")
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint("导入 Payload 失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnWorldBackup_Click(sender As Object, e As EventArgs) Handles BtnWorldBackup.Click
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+
+        _MaintenanceBusy = True
+        Dim Instance As McInstance = McInstanceSelected
+        Hint("正在备份当前实例存档……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Info = ModWorldBackup.BackupSaves(Instance)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint($"存档备份完成：{Info.Path}（{ModWorldBackup.FormatSize(Info.Size)}）", HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "备份存档失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("备份存档失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnWorldRestore_Click(sender As Object, e As EventArgs) Handles BtnWorldRestore.Click
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+        If MyMsgBox("恢复最近备份会覆盖当前 saves 文件夹，恢复前会先自动备份当前存档。是否继续？", "恢复存档", "继续", "取消") <> 1 Then Return
+
+        _MaintenanceBusy = True
+        Dim Instance As McInstance = McInstanceSelected
+        Hint("正在恢复存档备份……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Info = ModWorldBackup.RestoreLatestSaves(Instance)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("存档恢复完成：" & Info.Path, HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "恢复存档失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("恢复存档失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnWorldBackupOpen_Click(sender As Object, e As EventArgs) Handles BtnWorldBackupOpen.Click
+        Try
+            OpenExplorer(ModWorldBackup.BackupRoot)
+        Catch ex As Exception
+            Hint("打开备份目录失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub BtnInstanceCheck_Click(sender As Object, e As EventArgs) Handles BtnInstanceCheck.Click
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+
+        _MaintenanceBusy = True
+        Dim Instance As McInstance = McInstanceSelected
+        Hint("正在检查实例……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = ModInstanceRepair.Check(Instance)
+                Dim Message As String = ModInstanceRepair.FormatCheck(Result)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    MyMsgBox(Message, "实例体检", IsWarn:=Result.HasErrors)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "检查实例失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("检查实例失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnInstanceRepair_Click(sender As Object, e As EventArgs) Handles BtnInstanceRepair.Click
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+        If MyMsgBox("修复基础文件会重新下载缺失的原版 JSON、客户端 JAR、libraries 与 assets。是否继续？", "修复实例", "继续", "取消") <> 1 Then Return
+
+        _MaintenanceBusy = True
+        Dim Instance As McInstance = McInstanceSelected
+        Hint("正在修复实例基础文件……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Message As String = ModInstanceRepair.RepairBase(Instance)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint(Message, HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "修复实例失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("修复实例失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnModsCheck_Click(sender As Object, e As EventArgs) Handles BtnModsCheck.Click
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+
+        _MaintenanceBusy = True
+        Dim Instance As McInstance = McInstanceSelected
+        Hint("正在检查 Mod……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = ModInstanceRepair.CheckMods(Instance)
+                Dim Message As String = ModInstanceRepair.FormatModScan(Result)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    MyMsgBox(Message, "Mod 体检", IsWarn:=Result.HasErrors)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "检查 Mod 失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    Hint("检查 Mod 失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
     Private Sub BtnLaunch_Click(sender As Object, e As EventArgs) Handles BtnLaunch.Click
-        LaunchMcASelector()
+        Dim Instance As McInstance = McInstanceSelected
+        If Instance Is Nothing OrElse Not DirectoryUtils.Exists(PathUtils.AddSlashSuffix(Instance.PathIndie) & "saves\") Then
+            LaunchMcASelector()
+            Return
+        End If
+        If _MaintenanceBusy Then
+            Hint("正在执行实例维护操作，请稍候……", Log:=False)
+            Return
+        End If
+
+        _MaintenanceBusy = True
+        Hint("启动 MCA Selector 前正在备份当前存档……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                ModWorldBackup.BackupSaves(Instance)
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    LaunchMcASelector()
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "MCA Selector 前置备份失败")
+                RunInUi(
+                Sub()
+                    _MaintenanceBusy = False
+                    If MyMsgBox("存档备份失败：" & ex.Message & vbCrLf & "仍要启动 MCA Selector 吗？", "MCA Selector", "仍要启动", "取消") = 1 Then
+                        LaunchMcASelector()
+                    End If
+                End Sub)
+            End Try
+        End Sub)
     End Sub
 
     Private Sub BtnSaves_Click(sender As Object, e As EventArgs) Handles BtnSaves.Click

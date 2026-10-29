@@ -1,4 +1,4 @@
-Imports System.Diagnostics
+﻿Imports System.Diagnostics
 Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Text
@@ -19,19 +19,22 @@ Public Module ModCommandLine
     Public PendingLaunchInstance As String = Nothing
     Public PendingDownloadVersion As String = Nothing
     Public PendingDownloadLoader As String = Nothing
+    Public PendingRepairInstance As String = Nothing
 
     Public Function HasPendingAction() As Boolean
-        Return PendingLaunchInstance IsNot Nothing OrElse PendingDownloadVersion IsNot Nothing
+        Return PendingLaunchInstance IsNot Nothing OrElse PendingDownloadVersion IsNot Nothing OrElse PendingRepairInstance IsNot Nothing
     End Function
 
     ''' <summary>
-    ''' 在主窗口加载完成后执行 --launch / --download。
+    ''' 在主窗口加载完成后执行 --launch / --download / --repair。
     ''' </summary>
     Public Sub ExecutePendingAction()
         If PendingLaunchInstance IsNot Nothing Then
             ExecuteLaunch()
         ElseIf PendingDownloadVersion IsNot Nothing Then
             ExecuteDownload()
+        ElseIf PendingRepairInstance IsNot Nothing Then
+            ExecuteRepair()
         End If
     End Sub
 
@@ -175,6 +178,59 @@ Public Module ModCommandLine
                     Return 1
                 End Try
 
+            Case "--payload-import"
+                InitConsole(True)
+                If Args.Length < 2 Then
+                    Console.WriteLine("用法：--payload-import <输入.payload> [实例名]")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Console.WriteLine(ModPayload.Import(Args(1), ModCommandLineDownload.EnsureMcFolder(), If(Args.Length >= 3, Args(2), Nothing)))
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("导入 Payload 失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
+            Case "--backup"
+                InitConsole(True)
+                If Args.Length < 2 Then
+                    Console.WriteLine("用法：--backup <实例>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Dim Info = ModWorldBackup.BackupSaves(LoadCommandLineInstance(Args(1)))
+                    Console.WriteLine($"已备份存档：{Info.Path}（{ModWorldBackup.FormatSize(Info.Size)}）")
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("备份存档失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
+            Case "--mods"
+                InitConsole(True)
+                If Args.Length < 2 Then
+                    Console.WriteLine("用法：--mods <实例>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Dim Result = ModInstanceRepair.CheckMods(LoadCommandLineInstance(Args(1)))
+                    Console.WriteLine(ModInstanceRepair.FormatModScan(Result))
+                    WaitForExit()
+                    Return If(Result.HasErrors, 1, 0)
+                Catch ex As Exception
+                    Console.WriteLine("检查 Mod 失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
             Case Else
                 If Command.StartsWith("--") Then
                     InitConsole(True)
@@ -186,6 +242,49 @@ Public Module ModCommandLine
                 End If
                 Return -1
         End Select
+    End Function
+
+    Private Sub ExecuteRepair()
+        Dim InstanceName As String = PendingRepairInstance
+        PendingRepairInstance = Nothing
+
+        FrmMain.Visibility = Visibility.Hidden
+        FrmMain.ShowInTaskbar = False
+        WriteLine($"开始修复实例 {InstanceName} ……")
+
+        RunInThread(
+        Sub()
+            Try
+                Dim Folder As String = ModCommandLineDownload.EnsureMcFolder() & "versions\" & InstanceName.TrimEnd("\"c)
+                Dim Instance As McInstance = New McInstance(Folder).Load()
+                If Instance Is Nothing OrElse Instance.State = McInstance.McInstanceState.Error Then
+                    Throw New Exception("无法加载实例：" & InstanceName)
+                End If
+                Dim Message As String = ModInstanceRepair.RepairBase(Instance)
+                RunInUi(
+                Sub()
+                    WriteLine(Message)
+                    Environment.Exit(0)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "命令行修复实例失败")
+                RunInUi(
+                Sub()
+                    WriteLine("修复失败：" & ex.Message)
+                    Environment.Exit(1)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Function LoadCommandLineInstance(InstanceName As String) As McInstance
+        Dim Folder As String = ModCommandLineDownload.EnsureMcFolder() & "versions\" & InstanceName.TrimEnd("\"c)
+        If Not DirectoryUtils.Exists(Folder) Then Throw New Exception("versions 下不存在实例：" & InstanceName)
+        Dim Instance As McInstance = New McInstance(Folder).Load()
+        If Instance Is Nothing OrElse Instance.State = McInstance.McInstanceState.Error Then
+            Throw New Exception("无法加载实例：" & InstanceName)
+        End If
+        Return Instance
     End Function
 
     ''' <summary>
@@ -241,6 +340,10 @@ Public Module ModCommandLine
         Console.WriteLine("  --mca, --mca-selector  启动内置 MCA Selector 区块编辑器")
         Console.WriteLine("  --payload-encode <文件夹> <输出.payload> [版本名]  打包版本为 Payload")
         Console.WriteLine("  --payload-decode <输入.payload> <输出文件夹>      解包 Payload")
+        Console.WriteLine("  --payload-import <输入.payload> [实例名]          导入 Payload 为实例")
+        Console.WriteLine("  --backup <实例>        备份当前实例存档")
+        Console.WriteLine("  --mods <实例>          检查当前实例的 Mod")
+        Console.WriteLine("  --repair <实例>        检查并修复实例基础文件")
         Console.WriteLine("  --launch <实例>        启动 versions 下指定文件夹名的实例")
         Console.WriteLine("  --download <MC版本> [-forge|-neoforge|-fabric]  下载原版并安装加载器")
         Console.WriteLine("  --memory               执行内存优化；退出码为释放的 KB（0 表示无明显变化）")
@@ -248,14 +351,18 @@ Public Module ModCommandLine
         Console.WriteLine("  --gpu <java.exe>       PCL 内部显卡设置命令（高级）")
         Console.WriteLine()
         Console.WriteLine("示例：")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --help")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --luck")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --mca")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --launch 1.20.1")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --download 1.20.1 -forge")
-        Console.WriteLine("  PCL2-3.6.0ceu.exe --memory")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --help")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --luck")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --mca")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-import .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --backup 1.20.1")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --mods 1.20.1")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --repair 1.20.1")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --launch 1.20.1")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --download 1.20.1 -forge")
+        Console.WriteLine("  PCL2-3.7.0ceu.exe --memory")
     End Sub
 
 End Module

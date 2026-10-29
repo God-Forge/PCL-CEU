@@ -123,6 +123,15 @@ Public Class Application
                     ModCommandLine.PendingDownloadVersion = e.Args(1)
                     ModCommandLine.PendingDownloadLoader = Loader
                     '继续正常启动主窗口，在 FormMain 加载完成后执行下载
+                ElseIf e.Args(0) = "--repair" Then
+                    If e.Args.Length < 2 Then
+                        ModCommandLine.InitConsole(False)
+                        Console.WriteLine("用法：--repair <实例>")
+                        Environment.Exit(1)
+                    End If
+                    ModCommandLine.InitConsole(False)
+                    ModCommandLine.PendingRepairInstance = e.Args(1)
+                    '继续正常启动主窗口，在 FormMain 加载完成后执行修复
                 Else
                     Dim ExitCode As Integer = ModCommandLine.Run(e.Args)
                     If ExitCode >= 0 Then Environment.Exit(ExitCode)

@@ -63,7 +63,30 @@
                                TextWrapping="Wrap" LineHeight="18" Margin="0,6,0,0" />
                     <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                         <local:MyButton x:Name="BtnPayloadEncode" Text="打包当前版本" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
-                        <local:MyButton x:Name="BtnPayloadDecode" Text="解包 Payload" MinWidth="170" Height="35" />
+                        <local:MyButton x:Name="BtnPayloadDecode" Text="解包 Payload" MinWidth="170" Height="35" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnPayloadImport" Text="导入 Payload" MinWidth="170" Height="35" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,15,0,15" Title="世界备份">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="备份当前实例的 saves 文件夹；启动 MCA Selector 前也会自动创建一次备份，并保留最近 10 份。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnWorldBackup" Text="备份当前存档" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnWorldRestore" Text="恢复最近备份" MinWidth="170" Height="35" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnWorldBackupOpen" Text="打开备份目录" MinWidth="170" Height="35" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="实例体检">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="检查版本 JSON、客户端 JAR、libraries、assets 与 Mod 依赖；修复基础文件会重新下载缺失的原版文件。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnInstanceCheck" Text="检查当前实例" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnInstanceRepair" Text="修复基础文件" MinWidth="170" Height="35" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnModsCheck" Text="检查 Mod" MinWidth="170" Height="35" />
                     </StackPanel>
                 </StackPanel>
             </local:MyCard>

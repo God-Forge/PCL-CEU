@@ -1,5 +1,7 @@
 Imports System.Diagnostics
+Imports System.IO
 Imports System.Text
+Imports Newtonsoft.Json.Linq
 
 Public Module ModPayload
 
@@ -48,6 +50,72 @@ Public Module ModPayload
         Dim Tools = EnsureRuntimeTools()
         DirectoryUtils.Create(OutputFolder)
         Return RunTool(Tools.Decode, Quote(InputFile) & " " & Quote(OutputFolder.TrimEnd("\"c)), "解包")
+    End Function
+
+    ''' <summary>
+    ''' 将 .payload 解包并导入为 versions 下的实例。
+    ''' </summary>
+    Public Function Import(PayloadFile As String, McFolder As String, Optional Name As String = Nothing) As String
+        If Not FileUtils.Exists(PayloadFile) Then Throw New Exception("Payload 文件不存在：" & PayloadFile)
+        Dim Tools = EnsureRuntimeTools()
+        Dim Temp As String = PathTemp & "PayloadImport\" & Guid.NewGuid().ToString("N") & "\"
+        Dim Target As String = Nothing
+        Try
+            DirectoryUtils.Create(Temp)
+            RunTool(Tools.Decode, Quote(PayloadFile) & " " & Quote(Temp.TrimEnd("\"c)), "解包")
+
+            Dim JsonFile As String = Nothing
+            Dim Json As JObject = Nothing
+            For Each Candidate In DirectoryUtils.EnumerateFiles(Temp, includeSubDirectories:=False, searchPattern:="*.json")
+                Try
+                    Dim Current = TryCast(FileUtils.ReadAsJson(Candidate), JObject)
+                    If Current IsNot Nothing AndAlso Current("id") IsNot Nothing Then
+                        JsonFile = Candidate
+                        Json = Current
+                        Exit For
+                    End If
+                Catch
+                End Try
+            Next
+            If JsonFile Is Nothing Then Throw New Exception("Payload 中没有找到有效的版本 JSON。")
+
+            Dim Id As String = If(Json?("id")?.ToString(), "")
+            Dim InstanceName As String = If(String.IsNullOrWhiteSpace(Name), If(Not String.IsNullOrWhiteSpace(Id), Id, PathUtils.GetFileNameWithoutExtension(PayloadFile)), Name).Trim()
+            If String.IsNullOrWhiteSpace(InstanceName) OrElse InstanceName = "." OrElse InstanceName = ".." OrElse InstanceName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 Then
+                Throw New Exception("实例名无效：" & InstanceName)
+            End If
+
+            Target = PathUtils.AddSlashSuffix(McFolder) & "versions\" & InstanceName & "\"
+            If DirectoryUtils.Exists(Target) Then Throw New Exception("实例已存在：" & InstanceName)
+            DirectoryUtils.Copy(Temp, Target)
+
+            Dim OldJsonName As String = Path.GetFileName(JsonFile)
+            Dim OldBase As String = PathUtils.GetFileNameWithoutExtension(JsonFile)
+            If Not String.Equals(OldJsonName, InstanceName & ".json", StringComparison.OrdinalIgnoreCase) Then
+                Dim OldJson As String = Target & OldJsonName
+                If FileUtils.Exists(OldJson) Then FileUtils.Move(OldJson, Target & InstanceName & ".json")
+            End If
+            If Not String.Equals(OldBase, InstanceName, StringComparison.OrdinalIgnoreCase) Then
+                Dim OldJar As String = Target & OldBase & ".jar"
+                If FileUtils.Exists(OldJar) Then FileUtils.Move(OldJar, Target & InstanceName & ".jar")
+            End If
+
+            McInstanceListForceRefresh = True
+            Return $"已导入实例：{InstanceName}"
+        Catch
+            If Target IsNot Nothing Then
+                Try
+                    If DirectoryUtils.Exists(Target) Then DirectoryUtils.Delete(Target)
+                Catch
+                End Try
+            End If
+            Throw
+        Finally
+            Try
+                If DirectoryUtils.Exists(Temp) Then DirectoryUtils.Delete(Temp)
+            Catch
+            End Try
+        End Try
     End Function
 
     Private Function RunTool(ExePath As String, Arguments As String, Action As String) As String

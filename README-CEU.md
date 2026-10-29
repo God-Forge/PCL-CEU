@@ -1,4 +1,4 @@
-# Plain Craft Launcher (PCL) CEU 修改版
+﻿# Plain Craft Launcher (PCL) CEU 修改版
 
 本仓库是第三方基于 **Plain Craft Launcher (PCL)** 独立修改的版本，**并非 PCL 官方作品，与官方无关**。
 
@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`3.6.0-CEU`
-- 输出文件：`PCL2-3.6.0ceu.exe`
-- 程序集版本：`3.6.0.0`
+- 版本号：`3.7.0-CEU`
+- 输出文件：`PCL2-3.7.0ceu.exe`
+- 程序集版本：`3.7.0.0`
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -29,21 +29,28 @@
 - 主界面以普通权限启动；系统级内存优化、显卡设置等操作通过内部 helper 按需请求管理员权限。
 - 新增 `.payload` 版本包格式与 C++ `encode.exe` / `decode.exe`，用于打包或解包单个 Minecraft 版本。
 - 命令行新增 `--launch <实例>` 与 `--download <MC版本> [-forge|-neoforge|-fabric]`。
+- 新增世界/存档备份与恢复；启动 MCA Selector 前自动备份当前实例存档。
+- 新增实例体检、基础文件修复与 Mod 元数据/重复/缺失依赖检查。
+- Payload 支持直接导入为 `versions` 下的实例。
 
 ## 命令行模式
 
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL2-3.6.0ceu.exe --help
-.\PCL2-3.6.0ceu.exe --version
-.\PCL2-3.6.0ceu.exe --luck
-.\PCL2-3.6.0ceu.exe --mca
-.\PCL2-3.6.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL2-3.6.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL2-3.6.0ceu.exe --launch 1.20.1
-.\PCL2-3.6.0ceu.exe --download 1.20.1 -forge
-.\PCL2-3.6.0ceu.exe --memory
+.\PCL2-3.7.0ceu.exe --help
+.\PCL2-3.7.0ceu.exe --version
+.\PCL2-3.7.0ceu.exe --luck
+.\PCL2-3.7.0ceu.exe --mca
+.\PCL2-3.7.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL2-3.7.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL2-3.7.0ceu.exe --payload-import .\1.20.1.payload
+.\PCL2-3.7.0ceu.exe --backup 1.20.1
+.\PCL2-3.7.0ceu.exe --mods 1.20.1
+.\PCL2-3.7.0ceu.exe --repair 1.20.1
+.\PCL2-3.7.0ceu.exe --launch 1.20.1
+.\PCL2-3.7.0ceu.exe --download 1.20.1 -forge
+.\PCL2-3.7.0ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -54,6 +61,10 @@
 | `--mca`、`--mca-selector` | 启动内置 MCA Selector 区块编辑器 |
 | `--payload-encode <文件夹> <输出.payload> [版本名]` | 将版本文件夹打包为 Payload |
 | `--payload-decode <输入.payload> <输出文件夹>` | 解包 Payload |
+| `--payload-import <输入.payload> [实例名]` | 导入 Payload 为实例 |
+| `--backup <实例>` | 备份当前实例存档 |
+| `--mods <实例>` | 检查当前实例的 Mod |
+| `--repair <实例>` | 修复实例基础文件 |
 | `--launch <实例>` | 启动 `versions` 下指定文件夹名的实例 |
 | `--download <MC版本> [-forge\|-neoforge\|-fabric]` | 下载原版并安装指定加载器 |
 | `--memory` | 执行内存优化；退出码为释放的 KB（0 表示无明显变化） |
@@ -69,6 +80,9 @@
 - `--launch <实例>`：实例名以 `versions` 下的文件夹名为准；使用当前 PCL 的账号、Java、内存与启动设置。主窗口会隐藏，PCL 进程会保留以维持启动/日志监听。
 - `--download <MC版本> [-forge|-neoforge|-fabric]`：自动选择适用于该 MC 版本的加载器版本；原版实例名通常为 `1.20.1`，加载器实例名形如 `1.20.1-Forge_47.4.8`、`1.20.1-NeoForge_...`、`1.20.1-Fabric 0.16.9`。完成后进程退出。
 - `--launch` / `--download` 使用现有 PCL 下载与启动流程，因此会读取当前下载源、Java、账号等设置；失败时会显示 PCL 窗口以便查看错误。
+- `--backup <实例>` 备份到 `PCL\Backups\Worlds\<实例>\`，保留最近 10 份；`--mods <实例>` 只读取 Mod 元数据，不执行 JAR；`--repair <实例>` 会重新下载缺失的原版基础文件。
+- `--payload-import` 会解包到临时目录，校验版本 JSON 后移动到 `versions`，不会覆盖已有实例。
+- 百宝箱还提供“世界备份”“实例体检”卡片：可手动备份/恢复存档、检查实例、修复基础文件、检查 Mod；启动 MCA Selector 前会自动备份当前实例存档。
 - 主界面、`--help`、`--version`、`--luck`、`--mca` 默认以普通权限运行，不会触发 UAC；只有 `--memory` 等需要系统权限的操作会按需提权。
 
 ## 第三方组件
@@ -104,6 +118,16 @@ C++ 工具：
 ```
 
 也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。
+
+## 世界备份与实例体检
+
+- 百宝箱 → 世界备份：备份当前实例的 `saves`、恢复最近备份、打开备份目录。
+- 备份位置：`PCL\Backups\Worlds\<实例>\`，默认保留最近 10 份。
+- 启动 MCA Selector 前会自动备份当前实例存档；备份失败时会询问是否仍要启动。
+- 百宝箱 → 实例体检：检查版本 JSON、客户端 JAR、libraries、assets 与 Mod。
+- “修复基础文件”会通过现有下载流程重新获取缺失的原版基础文件。
+- “检查 Mod”只读取 JAR 元数据，不执行 JAR；可发现重复 Mod ID、重复文件、缺失前置依赖等问题。
+- Payload 可直接导入为 `versions` 下的实例，不会覆盖已有实例。
 
 ## 构建
 

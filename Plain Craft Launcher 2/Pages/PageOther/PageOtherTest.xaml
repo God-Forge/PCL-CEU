@@ -55,6 +55,18 @@
                                TextWrapping="Wrap" Margin="0,16,0,0" Opacity="0.7" FontSize="12" />
                 </StackPanel>
             </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="Payload 版本包">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="将当前选中的 Minecraft 版本打包为 .payload（带有 128 字节特殊头部的 zip），或把 .payload 解包到指定文件夹。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <TextBlock Text="C++ 编解码工具会在首次使用时释放到 ./runtime/encode.exe 与 ./runtime/decode.exe。"
+                               TextWrapping="Wrap" LineHeight="18" Margin="0,6,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnPayloadEncode" Text="打包当前版本" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnPayloadDecode" Text="解包 Payload" MinWidth="170" Height="35" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
         </StackPanel>
     </local:MyScrollViewer>
 </local:MyPageRight>

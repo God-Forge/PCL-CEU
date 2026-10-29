@@ -142,6 +142,12 @@
   <data name="McASelector" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\McASelector.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="PayloadEncode" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Payload\encode.exe;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PayloadDecode" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Payload\decode.exe;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="Imazen.WebP" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Imazen.WebP.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

@@ -62,6 +62,40 @@ Public Module ModCommandLine
                     Return 1
                 End Try
 
+            Case "--payload-encode"
+                InitConsole(True)
+                If Args.Length < 3 Then
+                    Console.WriteLine("用法：--payload-encode <版本文件夹> <输出.payload> [版本名]")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Console.WriteLine(ModPayload.Encode(Args(1), Args(2), If(Args.Length >= 4, Args(3), Nothing)))
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("打包 Payload 失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
+            Case "--payload-decode"
+                InitConsole(True)
+                If Args.Length < 3 Then
+                    Console.WriteLine("用法：--payload-decode <输入.payload> <输出文件夹>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Console.WriteLine(ModPayload.Decode(Args(1), Args(2)))
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("解包 Payload 失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
             Case Else
                 If Command.StartsWith("--") Then
                     InitConsole(True)
@@ -126,15 +160,19 @@ Public Module ModCommandLine
         Console.WriteLine("  --version, -v          显示版本信息")
         Console.WriteLine("  --luck, --jrrp         输出今日人品")
         Console.WriteLine("  --mca, --mca-selector  启动内置 MCA Selector 区块编辑器")
+        Console.WriteLine("  --payload-encode <文件夹> <输出.payload> [版本名]  打包版本为 Payload")
+        Console.WriteLine("  --payload-decode <输入.payload> <输出文件夹>      解包 Payload")
         Console.WriteLine("  --memory               执行内存优化；退出码为释放的 KB（0 表示无明显变化）")
         Console.WriteLine("  --update ...           PCL 内部更新命令（高级）")
         Console.WriteLine("  --gpu <java.exe>       PCL 内部显卡设置命令（高级）")
         Console.WriteLine()
         Console.WriteLine("示例：")
-        Console.WriteLine("  PCL2-3.4.1ceu.exe --help")
-        Console.WriteLine("  PCL2-3.4.1ceu.exe --luck")
-        Console.WriteLine("  PCL2-3.4.1ceu.exe --mca")
-        Console.WriteLine("  PCL2-3.4.1ceu.exe --memory")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --help")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --luck")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --mca")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
+        Console.WriteLine("  PCL2-3.5.0ceu.exe --memory")
     End Sub
 
 End Module

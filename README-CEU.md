@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`3.4.1-CEU`
-- 输出文件：`PCL2-3.4.1ceu.exe`
-- 程序集版本：`3.4.1.0`
+- 版本号：`3.5.0-CEU`
+- 输出文件：`PCL2-3.5.0ceu.exe`
+- 程序集版本：`3.5.0.0`
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -27,17 +27,20 @@
 - 在“百宝箱”中加入“内存优化”：对应 RAMMap 的 Empty 功能，支持清空工作集、系统工作集、已修改页列表、待机列表、优先级 0 待机列表等。
 - 新增命令行模式，支持 `--help`、`--version`、`--luck`、`--mca`、`--memory` 等命令。
 - 主界面以普通权限启动；系统级内存优化、显卡设置等操作通过内部 helper 按需请求管理员权限。
+- 新增 `.payload` 版本包格式与 C++ `encode.exe` / `decode.exe`，用于打包或解包单个 Minecraft 版本。
 
 ## 命令行模式
 
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL2-3.4.1ceu.exe --help
-.\PCL2-3.4.1ceu.exe --version
-.\PCL2-3.4.1ceu.exe --luck
-.\PCL2-3.4.1ceu.exe --mca
-.\PCL2-3.4.1ceu.exe --memory
+.\PCL2-3.5.0ceu.exe --help
+.\PCL2-3.5.0ceu.exe --version
+.\PCL2-3.5.0ceu.exe --luck
+.\PCL2-3.5.0ceu.exe --mca
+.\PCL2-3.5.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL2-3.5.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL2-3.5.0ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -46,6 +49,8 @@
 | `--version`、`-v` | 显示版本、版本代码与程序集版本 |
 | `--luck`、`--jrrp` | 输出今日人品值与评语 |
 | `--mca`、`--mca-selector` | 启动内置 MCA Selector 区块编辑器 |
+| `--payload-encode <文件夹> <输出.payload> [版本名]` | 将版本文件夹打包为 Payload |
+| `--payload-decode <输入.payload> <输出文件夹>` | 解包 Payload |
 | `--memory` | 执行内存优化；退出码为释放的 KB（0 表示无明显变化） |
 | `--update ...` | PCL 内部自动更新命令，供更新器调用（高级） |
 | `--gpu <java.exe>` | PCL 内部显卡设置命令（高级） |
@@ -63,6 +68,34 @@
 - **MCA Selector 2.9**：© 2018-2026 Querz，以 MIT License 分发。
   - 项目地址：<https://github.com/Querz/mcaselector>
   - 许可证文本随内置压缩包分发（解压后的 `LICENSE.txt`）。
+
+## Payload 版本包
+
+`.payload` 是一种“带特殊头部的 zip”，用于打包单个 Minecraft 版本目录（版本 JSON、客户端 JAR、mods、config 等）。
+
+格式：
+
+- 固定 128 字节头部
+- 随后是 UTF-8 元数据 JSON
+- 随后是 ZIP 数据
+- ZIP 使用存储模式（method 0），不压缩，便于 C++ 独立实现和跨工具读取
+- 头部包含 ZIP 偏移、ZIP 大小、元数据大小、CRC32、版本名、创建时间等字段
+
+C++ 工具：
+
+- `tools/payload/encode.exe`：把版本文件夹打包为 `.payload`
+- `tools/payload/decode.exe`：读取头部并解包
+- 首次使用时由 PCL 释放到 `./runtime/encode.exe` 与 `./runtime/decode.exe`
+- 支持中文路径；解包时会拒绝绝对路径、盘符和 `..` 路径穿越
+
+命令行：
+
+```powershell
+.\PCL2-3.5.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
+.\PCL2-3.5.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+```
+
+也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。
 
 ## 构建
 

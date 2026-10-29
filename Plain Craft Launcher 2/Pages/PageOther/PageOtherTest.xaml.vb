@@ -22,6 +22,7 @@ Public Class PageOtherTest
     End Sub
 
     Private Shared _MemoryBusy As Boolean
+    Private Shared _PayloadBusy As Boolean
 
     Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
         RefreshMemoryStatus()
@@ -200,6 +201,79 @@ Public Class PageOtherTest
             Logger.Warn(ex, "读取内存状态失败")
             RunInUi(Sub() LabMemoryStatus.Text = "当前可用物理内存：读取失败")
         End Try
+    End Sub
+
+    Private Sub BtnPayloadEncode_Click(sender As Object, e As EventArgs) Handles BtnPayloadEncode.Click
+        If _PayloadBusy Then
+            Hint("Payload 操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return
+        End If
+
+        Dim Output As String = Dialogs.SaveFile("保存 Payload 文件", McInstanceSelected.Name & ".payload", McFolderSelected & "versions", filter:={("payload", "Payload 文件")})
+        If String.IsNullOrEmpty(Output) Then Return
+
+        Dim Input As String = McInstanceSelected.PathVersion
+        Dim VersionName As String = McInstanceSelected.Name
+        _PayloadBusy = True
+        Hint("正在打包 Payload，请稍候……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                ModPayload.Encode(Input, Output, VersionName)
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint("Payload 打包完成：" & Output, HintType.Green, Log:=False)
+                    OpenExplorer(IO.Path.GetDirectoryName(Output))
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "打包 Payload 失败")
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint("打包 Payload 失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnPayloadDecode_Click(sender As Object, e As EventArgs) Handles BtnPayloadDecode.Click
+        If _PayloadBusy Then
+            Hint("Payload 操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+
+        Dim Input As String = Dialogs.SelectFile("选择 Payload 文件", False, filter:={({"payload"}, "Payload 文件")}).FirstOrDefault()
+        If String.IsNullOrEmpty(Input) Then Return
+
+        Dim Output As String = Dialogs.SelectFolder("选择解包目标文件夹", False, McFolderSelected & "versions").FirstOrDefault()
+        If String.IsNullOrEmpty(Output) Then Return
+
+        _PayloadBusy = True
+        Hint("正在解包 Payload，请稍候……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                ModPayload.Decode(Input, Output)
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint("Payload 解包完成：" & Output, HintType.Green, Log:=False)
+                    OpenExplorer(Output)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "解包 Payload 失败")
+                RunInUi(
+                Sub()
+                    _PayloadBusy = False
+                    Hint("解包 Payload 失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
     End Sub
 
     Private Sub BtnLaunch_Click(sender As Object, e As EventArgs) Handles BtnLaunch.Click

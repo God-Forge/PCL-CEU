@@ -54,24 +54,15 @@ Public Class PageOtherTest
     End Sub
 
     Private Sub BtnMemoryAdmin_Click(sender As Object, e As EventArgs) Handles BtnMemoryAdmin.Click
-        If MyMsgBox("将以管理员权限启动一个新的 PCL 进程执行完整内存优化（包含待机列表）。是否继续？", "内存优化", "继续", "取消") <> 1 Then Return
-        RunInThread(
-        Sub()
-            Try
-                Dim Code As Integer = RunAsAdmin("--memory")
-                RunInUi(
-                Sub()
-                    RefreshMemoryStatus()
-                    Hint("管理员内存优化已完成（返回码 " & Code & "）。", HintType.Green, Log:=False)
-                End Sub)
-            Catch ex As Exception
-                Logger.Error(ex, "以管理员权限执行内存优化失败")
-                RunInUi(Sub() Hint("以管理员权限执行内存优化失败：" & ex.Message, HintType.Red))
-            End Try
-        End Sub)
+        RunMemoryElevated("memory", "将以管理员权限执行完整内存优化（包含待机列表）。是否继续？")
     End Sub
 
     Private Sub RunMemoryOperation(Kind As MemoryOptimizationKind, Optional ConfirmText As String = Nothing)
+        If Not MemoryOptimizer.IsAdministrator AndAlso MemoryKindRequiresAdmin(Kind) Then
+            RunMemoryElevated(MemoryTaskName(Kind), ConfirmText)
+            Return
+        End If
+
         If RunMemoryConfirm(ConfirmText) Then Return
         _MemoryBusy = True
         RunInThread(
@@ -96,6 +87,11 @@ Public Class PageOtherTest
     End Sub
 
     Private Sub RunMemoryAllOptimization(IncludeStandbyLists As Boolean, Optional ConfirmText As String = Nothing)
+        If Not MemoryOptimizer.IsAdministrator Then
+            RunMemoryElevated("memory", ConfirmText)
+            Return
+        End If
+
         If RunMemoryConfirm(ConfirmText) Then Return
         _MemoryBusy = True
         RunInThread(
@@ -119,6 +115,64 @@ Public Class PageOtherTest
         End Sub)
     End Sub
 
+    Private Sub RunMemoryElevated(TaskName As String, Optional ConfirmText As String = Nothing)
+        If RunMemoryConfirm(ConfirmText) Then Return
+        _MemoryBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Code As Integer = RunAsAdmin("--elevated " & TaskName)
+                RunInUi(
+                Sub()
+                    RefreshMemoryStatus()
+                    If Code >= 0 Then
+                        Hint($"管理员内存优化已完成，释放约 {Code} KB。", HintType.Green, Log:=False)
+                    Else
+                        Hint($"管理员内存优化失败（返回码 {Code}）。", HintType.Red, Log:=False)
+                    End If
+                    _MemoryBusy = False
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "以管理员权限执行内存优化失败")
+                RunInUi(
+                Sub()
+                    Hint("以管理员权限执行内存优化失败：" & ex.Message, HintType.Red)
+                    _MemoryBusy = False
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Function MemoryKindRequiresAdmin(Kind As MemoryOptimizationKind) As Boolean
+        Select Case Kind
+            Case MemoryOptimizationKind.SystemWorkingSet,
+                 MemoryOptimizationKind.SystemFileCache,
+                 MemoryOptimizationKind.ModifiedPageList,
+                 MemoryOptimizationKind.StandbyList,
+                 MemoryOptimizationKind.Priority0StandbyList
+                Return True
+            Case Else
+                Return False
+        End Select
+    End Function
+
+    Private Function MemoryTaskName(Kind As MemoryOptimizationKind) As String
+        Select Case Kind
+            Case MemoryOptimizationKind.WorkingSets
+                Return "memory:working-sets"
+            Case MemoryOptimizationKind.SystemWorkingSet, MemoryOptimizationKind.SystemFileCache
+                Return "memory:system-working-set"
+            Case MemoryOptimizationKind.ModifiedPageList
+                Return "memory:modified-page-list"
+            Case MemoryOptimizationKind.StandbyList
+                Return "memory:standby-list"
+            Case MemoryOptimizationKind.Priority0StandbyList
+                Return "memory:priority0-standby-list"
+            Case Else
+                Return "memory"
+        End Select
+    End Function
+
     Private Function RunMemoryConfirm(ConfirmText As String) As Boolean
         If _MemoryBusy Then
             Hint("内存优化正在进行中，请稍候……", Log:=False)
@@ -138,7 +192,7 @@ Public Class PageOtherTest
                     LabMemoryAdmin.Text = "当前权限：管理员，可执行系统级清理。"
                     BtnMemoryAdmin.Visibility = Visibility.Collapsed
                 Else
-                    LabMemoryAdmin.Text = "当前权限：普通用户，系统级清理需要管理员权限。"
+                    LabMemoryAdmin.Text = "当前权限：普通用户；系统级清理会按需请求管理员权限。"
                     BtnMemoryAdmin.Visibility = Visibility.Visible
                 End If
             End Sub)

@@ -131,10 +131,10 @@ Public Module ModCommandLine
         Console.WriteLine("  --gpu <java.exe>       PCL 内部显卡设置命令（高级）")
         Console.WriteLine()
         Console.WriteLine("示例：")
-        Console.WriteLine("  PCL2-3.4.0ceu.exe --help")
-        Console.WriteLine("  PCL2-3.4.0ceu.exe --luck")
-        Console.WriteLine("  PCL2-3.4.0ceu.exe --mca")
-        Console.WriteLine("  PCL2-3.4.0ceu.exe --memory")
+        Console.WriteLine("  PCL2-3.4.1ceu.exe --help")
+        Console.WriteLine("  PCL2-3.4.1ceu.exe --luck")
+        Console.WriteLine("  PCL2-3.4.1ceu.exe --mca")
+        Console.WriteLine("  PCL2-3.4.1ceu.exe --memory")
     End Sub
 
 End Module

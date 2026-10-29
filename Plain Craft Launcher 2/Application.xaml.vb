@@ -8,6 +8,8 @@ Public Class Application
         Try
             '核心初始化
             MeloongCore.Main.Init("PCL")
+            Dim ElevatedExitCode As Integer = ModElevatedHelper.TryRun(e.Args)
+            If ElevatedExitCode <> -1 Then Environment.Exit(ElevatedExitCode)
             MeloongCore.Wpf.Main.Init()
             Dim IsCommandLine As Boolean = e.Args.Length > 0 AndAlso e.Args(0).StartsWith("--")
             If Not IsCommandLine Then '若是通过命令行调用，则不检查单例、不轮换日志（#9137）
@@ -54,6 +56,15 @@ Public Class Application
                 ElseIf e.Args(0) = "--memory" Then
                     '内存优化
                     ModCommandLine.InitConsole(False)
+                    If Not PCL.Core.Memory.MemoryOptimizer.IsAdministrator Then
+                        Console.WriteLine("内存优化需要管理员权限，正在请求提权……")
+                        Try
+                            Environment.Exit(RunAsAdmin("--elevated memory"))
+                        Catch ex As Exception
+                            Console.WriteLine("提权失败：" & ex.Message)
+                            Environment.Exit(-1)
+                        End Try
+                    End If
                     Dim Ram = My.Computer.Info.AvailablePhysicalMemory
                     Try
                         Console.WriteLine("正在执行内存优化……")

@@ -1,4 +1,5 @@
 Imports System.Net.Sockets
+Imports PCL.Core.Net
 
 Public Module ModNet
 
@@ -171,17 +172,20 @@ RequestFinished:
     ''' </summary>
     Public Sub NetDownloadByClient(Url As String, LocalPath As String, Optional SimulateBrowserHeaders As Boolean = False)
         Logger.Info($"通过网络请求直接下载小文件：{Url} → {LocalPath}")
-        Dim RetryCount As Integer = 0
-Retry:
         Try
-            FileUtils.Write(LocalPath, SendRequest(Url, HttpMethod.Get, SimulateBrowserHeaders:=SimulateBrowserHeaders))
+            Using Service As New HttpDownloadService()
+                Service.DownloadAsync(New DownloadRequest With {
+                    .Url = Url,
+                    .TargetPath = LocalPath,
+                    .Overwrite = True,
+                    .AllowResume = True,
+                    .SimulateBrowserHeaders = SimulateBrowserHeaders,
+                    .MaxRetries = 2,
+                    .TimeoutSeconds = 30
+                }).Run()
+            End Using
         Catch ex As Exception
-            FileUtils.Delete(LocalPath)
             ex.ThrowIfCanceled()
-            If RetryCount < 2 Then
-                RetryCount += 1
-                GoTo Retry
-            End If
             Throw New HttpRequestException($"通过网络请求直接下载小文件失败（{LocalPath}）", ex)
         End Try
     End Sub

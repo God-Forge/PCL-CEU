@@ -199,7 +199,11 @@ Phase 3 已开始：
 - 新增 `PCL.Core/Download/LoaderVersionService`，从 Forge/NeoForge/Fabric 元数据中选择兼容版本。
 - 命令行 `--download` 的加载器版本选择已从 VB LoaderTask 迁移到 C# 服务，减少对 UI/Loader 框架的依赖。
 - 新增测试覆盖 Forge 推荐/最高版本、NeoForge 稳定版与 Legacy、Fabric stable Loader。
-- 下一步：ModNet 下载引擎接口、ModLoader 任务框架、ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 `PCL.Core/Net/IDownloadService`、`DownloadRequest`、`DownloadProgress`、`DownloadResult` 与 `HttpDownloadService`。
+- `HttpDownloadService` 支持多源回退、断点续传、重试、超时、限速、SHA-256 校验和进度回调。
+- `ModNet.NetDownloadByClient` 的单文件下载已迁移到 C# 下载服务；ModNet 的多线程下载引擎仍保留。
+- 新增本地 HTTP 测试服务器，覆盖普通下载、多源回退、断点续传、哈希失败。
+- 下一步：ModLoader 任务/进度/取消接口，以及 ModNet 多线程引擎、ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

@@ -20,6 +20,8 @@ public sealed class DownloadRequest {
     public int MaxRetries { get; init; } = 2;
     public int TimeoutSeconds { get; init; } = 30;
     public long SpeedLimitBytesPerSecond { get; init; }
+    public int ParallelCount { get; init; } = 1;
+    public long MinPartSize { get; init; } = 1024 * 1024;
 
 }
 

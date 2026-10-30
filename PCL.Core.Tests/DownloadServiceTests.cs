@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -55,25 +55,30 @@ public class DownloadServiceTests {
                     var parts = firstLine.Split(' ');
                     var path = parts.Length >= 2 ? parts[1] : "/";
                     var rangeStart = 0;
+                    var rangeEnd = -1;
+                    var hasRange = false;
                     foreach (var line in headerLines) {
                         if (!line.StartsWith("Range:", StringComparison.OrdinalIgnoreCase)) continue;
                         var value = line.Substring("Range:".Length).Trim();
                         if (!value.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase)) continue;
-                        var range = value.Substring("bytes=".Length).Split('-')[0];
-                        int.TryParse(range, out rangeStart);
+                        var range = value.Substring("bytes=".Length).Split('-');
+                        int.TryParse(range[0], out rangeStart);
+                        if (range.Length > 1) int.TryParse(range[1], out rangeEnd);
+                        hasRange = true;
                     }
 
                     if (!_routes.TryGetValue(path, out var body)) {
-                        await WriteResponseAsync(stream, "404 Not Found", Array.Empty<byte>(), 0, 0, false).ConfigureAwait(false);
+                        await WriteResponseAsync(stream, "404 Not Found", Array.Empty<byte>(), 0, -1, 0, false).ConfigureAwait(false);
                         return;
                     }
 
-                    if (rangeStart > 0 && rangeStart < body.Length) {
-                        await WriteResponseAsync(stream, "206 Partial Content", body, rangeStart, body.Length, true).ConfigureAwait(false);
-                    } else if (rangeStart >= body.Length) {
-                        await WriteResponseAsync(stream, "416 Range Not Satisfiable", Array.Empty<byte>(), 0, body.Length, false).ConfigureAwait(false);
+                    if (hasRange && rangeStart < body.Length) {
+                        var end = rangeEnd >= 0 ? Math.Min(rangeEnd, body.Length - 1) : body.Length - 1;
+                        await WriteResponseAsync(stream, "206 Partial Content", body, rangeStart, end, body.Length, true).ConfigureAwait(false);
+                    } else if (hasRange && rangeStart >= body.Length) {
+                        await WriteResponseAsync(stream, "416 Range Not Satisfiable", Array.Empty<byte>(), 0, -1, body.Length, false).ConfigureAwait(false);
                     } else {
-                        await WriteResponseAsync(stream, "200 OK", body, 0, body.Length, true).ConfigureAwait(false);
+                        await WriteResponseAsync(stream, "200 OK", body, 0, body.Length - 1, body.Length, true).ConfigureAwait(false);
                     }
                 } catch {
                     // 测试服务器忽略单个连接错误。
@@ -81,8 +86,8 @@ public class DownloadServiceTests {
             }
         }
 
-        private static async Task WriteResponseAsync(Stream stream, string status, byte[] body, int start, int total, bool ranges) {
-            var length = Math.Max(0, body.Length - start);
+        private static async Task WriteResponseAsync(Stream stream, string status, byte[] body, int start, int end, int total, bool ranges) {
+            var length = Math.Max(0, end - start + 1);
             var builder = new StringBuilder();
             builder.Append("HTTP/1.1 ").Append(status).Append("\r\n");
             builder.Append("Content-Length: ").Append(length).Append("\r\n");
@@ -90,7 +95,7 @@ public class DownloadServiceTests {
             if (ranges) {
                 builder.Append("Accept-Ranges: bytes\r\n");
                 if (status.StartsWith("206", StringComparison.Ordinal)) {
-                    builder.Append("Content-Range: bytes ").Append(start).Append('-').Append(total - 1).Append('/').Append(total).Append("\r\n");
+                    builder.Append("Content-Range: bytes ").Append(start).Append('-').Append(end).Append('/').Append(total).Append("\r\n");
                 }
             }
             builder.Append("\r\n");
@@ -176,6 +181,27 @@ public class DownloadServiceTests {
             await Assert.That(result.Success).IsTrue();
             await Assert.That(task.State).IsEqualTo(TaskState.Finished);
             await Assert.That(task.Progress).IsEqualTo(1d);
+        } finally {
+            Directory.Delete(root, true);
+        }
+    }
+
+    [Test]
+    public async Task 多分片下载() {
+        var root = CreateRoot();
+        var content = Enumerable.Range(0, 65536).Select(value => (byte)(value % 251)).ToArray();
+        using var server = new SimpleHttpServer(new Dictionary<string, byte[]> { ["/file"] = content });
+        try {
+            var target = Path.Combine(root, "file.bin");
+            using var service = new ParallelDownloadService();
+            var result = await service.DownloadAsync(new DownloadRequest {
+                Url = server.BaseUrl + "file",
+                TargetPath = target,
+                ParallelCount = 4,
+                MinPartSize = 8192
+            });
+            await Assert.That(result.Success).IsTrue();
+            await Assert.That(File.ReadAllBytes(target).SequenceEqual(content)).IsTrue();
         } finally {
             Directory.Delete(root, true);
         }

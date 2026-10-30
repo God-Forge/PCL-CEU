@@ -212,7 +212,9 @@ Phase 3 已开始：
 - 新增测试覆盖 LoaderTask 输入输出、重载超时、强制重启、取消、失败与 LoaderCombo 顺序执行。
 - 新增 `ITaskControl`，并让 `LoaderProgressAdapter` 同时实现控制接口；C# `LoaderCombo` 可直接组合 VB LoaderBase 适配器。
 - `ModCommandLineDownload` 与 `ModInstanceRepair` 已切换到 C# `LoaderCombo`，其余 ModLoader 调用方仍保留 VB 实现。
-- 下一步：继续迁移剩余 ModLoader 调用方，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 C# `ParallelDownloadService`，支持多分片、Range 探测、失败退化为单线程、进度汇总与哈希校验。
+- `ModNet.NetDownloadByLoader` 已从 VB `LoaderDownload`/`NetFile` 切换为 C# 多分片下载；NetFile 的完整任务引擎仍未迁移。
+- 下一步：迁移剩余 ModNet NetFile 引擎，再迁移 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

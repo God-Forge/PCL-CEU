@@ -202,13 +202,39 @@ RequestFinished:
     ''' <param name="Urls">文件的 Url 列表。</param>
     ''' <param name="LocalPath">下载的本地地址。</param>
     Public Sub NetDownloadByLoader(Urls As IEnumerable(Of String), LocalPath As String, Optional LoaderToSyncProgress As LoaderBase = Nothing, Optional Check As FileChecker = Nothing, Optional SimulateBrowserHeaders As Boolean = False)
-        Dim NewTask As New LoaderDownload($"文件下载 {GetUuid()}#", New List(Of NetFile) From {New NetFile(Urls, LocalPath, Check, SimulateBrowserHeaders)})
+        Dim UrlList As List(Of String) = Urls.ToList()
         Try
-            NewTask.WaitForExit(LoaderToSyncProgress:=LoaderToSyncProgress)
+            Using Service As New ParallelDownloadService()
+                Dim ProgressReporter As IProgress(Of DownloadProgress) = Nothing
+                If LoaderToSyncProgress IsNot Nothing Then
+                    ProgressReporter = New Progress(Of DownloadProgress)(
+                        Sub(Value)
+                            LoaderToSyncProgress.Progress = Value.Percent / 100
+                        End Sub)
+                End If
+                Service.DownloadAsync(New DownloadRequest With {
+                    .Url = UrlList.First(),
+                    .BackupUrls = UrlList.Skip(1).ToList(),
+                    .TargetPath = LocalPath,
+                    .Overwrite = True,
+                    .AllowResume = True,
+                    .SimulateBrowserHeaders = SimulateBrowserHeaders,
+                    .ParallelCount = 4,
+                    .MinPartSize = 1024 * 1024,
+                    .MaxRetries = 2,
+                    .TimeoutSeconds = 30
+                }, ProgressReporter, If(LoaderToSyncProgress?.CreateCancellationToken(), CancellationToken.None)).Run()
+            End Using
+            If Check IsNot Nothing Then
+                Dim CheckMessage As String = Check.Check(LocalPath)
+                If CheckMessage IsNot Nothing Then
+                    FileUtils.Delete(LocalPath)
+                    Throw New Exception(CheckMessage)
+                End If
+            End If
         Catch ex As Exception
-            Throw New WebException($"多线程直接下载文件失败（第一下载源：" & Urls.First() & "）", ex)
-        Finally
-            NewTask.Cancel()
+            ex.ThrowIfCanceled()
+            Throw New WebException($"多线程直接下载文件失败（第一下载源：{UrlList.First()}）", ex)
         End Try
     End Sub
 

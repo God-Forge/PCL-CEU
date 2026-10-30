@@ -60,7 +60,7 @@ public abstract class TaskBase : ITaskProgress, IDisposable {
     public event EventHandler<TaskStateChangedEventArgs>? StateChanged;
     public event EventHandler<TaskProgressChangedEventArgs>? ProgressChanged;
 
-    public void Start() {
+    public virtual void Start() {
         if (_state == TaskState.Loading) return;
         if (_disposed) throw new ObjectDisposedException(GetType().Name);
         Error = null;
@@ -164,7 +164,7 @@ public sealed class ProgressTask : TaskBase {
 /// <summary>
 /// 顺序执行一组任务，按 ProgressWeight 汇总进度。
 /// </summary>
-public sealed class TaskCombo : TaskBase {
+public class TaskCombo : TaskBase {
 
     private readonly IReadOnlyList<(TaskBase Task, double Weight)> _tasks;
 

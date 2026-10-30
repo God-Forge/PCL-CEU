@@ -208,7 +208,9 @@ Phase 3 已开始：
 - 新增任务测试覆盖完成、失败、取消、组合任务与下载进度联动。
 - 新增 `LoaderProgressAdapter`，把 VB `LoaderBase` 的 `LoadState`、进度、错误与取消令牌适配为 C# `ITaskProgress`。
 - `ModCommandLineDownload` 的安装流程已通过适配器接入统一任务接口。
-- 下一步：用适配器逐步替换 ModLoader 的 `LoaderTask`/`LoaderCombo`，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 C# `LoaderTask<TIn,TOut>` 与 `LoaderCombo`：支持输入/输出、重载超时、强制重启、取消、进度与顺序组合。
+- 新增测试覆盖 LoaderTask 输入输出、重载超时、强制重启、取消、失败与 LoaderCombo 顺序执行。
+- 下一步：将 ModLoader 的调用方逐步切换到 C# LoaderTask/LoaderCombo，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

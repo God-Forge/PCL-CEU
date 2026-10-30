@@ -231,6 +231,64 @@ Public Module ModCommandLine
                     Return 1
                 End Try
 
+            Case "--javapkg-encode"
+                InitConsole(True)
+                If Args.Length < 3 Then
+                    Console.WriteLine("用法：--javapkg-encode <java.exe> <输出.javapkg>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Dim Info = ModJavaPackage.Pack(Args(1), Args(2))
+                    Console.WriteLine($"已创建 Java 包：{Info.Path}（{Info.JavaVersion} {Info.TypeText}，{ModJavaPackage.FormatSize(Info.Size)}）")
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("打包 Java 失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
+            Case "--javapkg-info"
+                InitConsole(True)
+                If Args.Length < 2 Then
+                    Console.WriteLine("用法：--javapkg-info <输入.javapkg>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Dim Info = ModJavaPackage.Info(Args(1))
+                    Console.WriteLine($"Java 版本：{Info.JavaVersion}")
+                    Console.WriteLine($"类型：{Info.TypeText}")
+                    Console.WriteLine($"厂商：{Info.Vendor}")
+                    Console.WriteLine($"系统/架构：{Info.Os}/{Info.Arch}")
+                    Console.WriteLine($"包大小：{ModJavaPackage.FormatSize(Info.Size)}")
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("读取 Java 包失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
+            Case "--javapkg-decode"
+                InitConsole(True)
+                If Args.Length < 3 Then
+                    Console.WriteLine("用法：--javapkg-decode <输入.javapkg> <输出文件夹>")
+                    WaitForExit()
+                    Return 1
+                End If
+                Try
+                    Dim Info = ModJavaPackage.Extract(Args(1), Args(2))
+                    Console.WriteLine($"已解压 Java {Info.JavaVersion} {Info.TypeText} 到 {Info.JavaHome}")
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("解压 Java 包失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
             Case Else
                 If Command.StartsWith("--") Then
                     InitConsole(True)
@@ -341,6 +399,9 @@ Public Module ModCommandLine
         Console.WriteLine("  --payload-encode <文件夹> <输出.payload> [版本名]  打包版本为 Payload")
         Console.WriteLine("  --payload-decode <输入.payload> <输出文件夹>      解包 Payload")
         Console.WriteLine("  --payload-import <输入.payload> [实例名]          导入 Payload 为实例")
+        Console.WriteLine("  --javapkg-encode <java.exe> <输出.javapkg>       打包 Java 为 .javapkg")
+        Console.WriteLine("  --javapkg-info <输入.javapkg>                    查看 Java 包信息")
+        Console.WriteLine("  --javapkg-decode <输入.javapkg> <输出文件夹>     解压 Java 包")
         Console.WriteLine("  --backup <实例>        备份当前实例存档")
         Console.WriteLine("  --mods <实例>          检查当前实例的 Mod")
         Console.WriteLine("  --repair <实例>        检查并修复实例基础文件")
@@ -351,18 +412,21 @@ Public Module ModCommandLine
         Console.WriteLine("  --gpu <java.exe>       PCL 内部显卡设置命令（高级）")
         Console.WriteLine()
         Console.WriteLine("示例：")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --help")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --luck")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --mca")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --payload-import .\\1.20.1.payload")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --backup 1.20.1")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --mods 1.20.1")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --repair 1.20.1")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --launch 1.20.1")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --download 1.20.1 -forge")
-        Console.WriteLine("  PCL2-3.7.0ceu.exe --memory")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --help")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --luck")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --mca")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --payload-encode .\\versions\\1.20.1 .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --payload-decode .\\1.20.1.payload .\\decoded")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --payload-import .\\1.20.1.payload")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --javapkg-encode .\\jdk\\bin\\java.exe .\\21.0.1.jdk.javapkg")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --javapkg-info .\\21.0.1.jdk.javapkg")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --javapkg-decode .\\21.0.1.jdk.javapkg .\\java21")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --backup 1.20.1")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --mods 1.20.1")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --repair 1.20.1")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --launch 1.20.1")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --download 1.20.1 -forge")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --memory")
     End Sub
 
 End Module

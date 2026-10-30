@@ -92,6 +92,22 @@ Public Module ModJava
     End Sub
 
     ''' <summary>
+    ''' 将指定的 Java 主目录加入 Java 列表。
+    ''' </summary>
+    Public Function AddJavaFolder(Folder As String) As Boolean
+        Dim NewJava As New Java(Folder)
+        If Not NewJava.CheckAsync().Run() Then Return False
+        Configs.JavaRemovedList.Edit(Sub(ByRef List) List.RemoveIf(Function(f) PathUtils.IsSame(f, NewJava.Folder)))
+        Configs.JavaList.Edit(
+        Sub(ByRef List)
+            List.Remove(NewJava)
+            List.Insert(0, NewJava)
+        End Sub)
+        UpdateJavaLists()
+        Return True
+    End Function
+
+    ''' <summary>
     ''' 手动从 Java 列表中移除指定的 Java，并记录到已移除列表中。
     ''' </summary>
     Public Sub ManuallyRemoveJava(JavaEntry As Java)
@@ -151,8 +167,8 @@ Public Module ModJava
         Context.JsonJavaComponent = Instance.JsonVersion?("java_component")?.ToString()
 
         Dim Result = JavaRequirementResolver.Resolve(Context)
-        For Each Info In Result.InfoMessages
-            Logger.Info(Info)
+        For Each InfoMessage In Result.InfoMessages
+            Logger.Info(InfoMessage)
         Next
         For Each Warning In Result.Warnings
             Logger.Warn(Warning)

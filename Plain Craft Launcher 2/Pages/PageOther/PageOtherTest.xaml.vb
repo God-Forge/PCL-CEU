@@ -24,6 +24,7 @@ Public Class PageOtherTest
     Private Shared _MemoryBusy As Boolean
     Private Shared _PayloadBusy As Boolean
     Private Shared _MaintenanceBusy As Boolean
+    Private Shared _JavaBusy As Boolean
 
     Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
         RefreshMemoryStatus()
@@ -483,6 +484,88 @@ Public Class PageOtherTest
                 End Sub)
             End Try
         End Sub)
+    End Sub
+
+    Private Sub BtnJavaPack_Click(sender As Object, e As EventArgs) Handles BtnJavaPack.Click
+        If _JavaBusy Then
+            Hint("Java 包操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+
+        Dim JavaExe As String = Dialogs.SelectFile("选择 java.exe（通常在 bin 文件夹中）", False, filter:="java.exe|java.exe").FirstOrDefault()
+        If String.IsNullOrEmpty(JavaExe) Then Return
+
+        Try
+            Dim Info = ModJavaPackage.Detect(JavaExe)
+            Dim DefaultName As String = ModJavaPackage.GetDefaultFileName(Info)
+            Dim Output As String = Dialogs.SaveFile("保存 Java 包", DefaultName, ModJavaPackage.PackageRoot, filter:={("javapkg", "Java 包")})
+            If String.IsNullOrEmpty(Output) Then Return
+
+            _JavaBusy = True
+            Hint("正在打包 Java，文件较大时可能需要一会儿……", Log:=False)
+            RunInThread(
+            Sub()
+                Try
+                    Dim Result = ModJavaPackage.Pack(JavaExe, Output)
+                    RunInUi(
+                    Sub()
+                        _JavaBusy = False
+                        Hint($"Java 包已创建：{Result.Path}（{ModJavaPackage.FormatSize(Result.Size)}）", HintType.Green, Log:=False)
+                        OpenExplorer(ModJavaPackage.PackageRoot)
+                    End Sub)
+                Catch ex As Exception
+                    Logger.Error(ex, "打包 Java 失败")
+                    RunInUi(
+                    Sub()
+                        _JavaBusy = False
+                        Hint("打包 Java 失败：" & ex.Message, HintType.Red)
+                    End Sub)
+                End Try
+            End Sub)
+        Catch ex As Exception
+            Logger.Error(ex, "识别 Java 失败")
+            Hint("识别 Java 失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub BtnJavaPackImport_Click(sender As Object, e As EventArgs) Handles BtnJavaPackImport.Click
+        If _JavaBusy Then
+            Hint("Java 包操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+
+        Dim Input As String = Dialogs.SelectFile("选择 Java 包", False, filter:={({"javapkg"}, "Java 包")}).FirstOrDefault()
+        If String.IsNullOrEmpty(Input) Then Return
+
+        _JavaBusy = True
+        Hint("正在导入 Java 包……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = ModJavaPackage.Import(Input)
+                RunInUi(
+                Sub()
+                    _JavaBusy = False
+                    Hint($"Java 已导入并加入列表：{Result.JavaHome}", HintType.Green, Log:=False)
+                    OpenExplorer(Result.JavaHome)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "导入 Java 包失败")
+                RunInUi(
+                Sub()
+                    _JavaBusy = False
+                    Hint("导入 Java 包失败：" & ex.Message, HintType.Red)
+                End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnJavaPackOpen_Click(sender As Object, e As EventArgs) Handles BtnJavaPackOpen.Click
+        Try
+            OpenExplorer(ModJavaPackage.PackageRoot)
+        Catch ex As Exception
+            Hint("打开 Java 包目录失败：" & ex.Message, HintType.Red)
+        End Try
     End Sub
 
     Private Sub BtnLaunch_Click(sender As Object, e As EventArgs) Handles BtnLaunch.Click

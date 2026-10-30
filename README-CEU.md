@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`3.7.0-CEU`
-- 输出文件：`PCL2-3.7.0ceu.exe`
-- 程序集版本：`3.7.0.0`
+- 版本号：`3.8.0-CEU`
+- 输出文件：`PCL2-3.8.0ceu.exe`
+- 程序集版本：`3.8.0.0`
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -32,25 +32,29 @@
 - 新增世界/存档备份与恢复；启动 MCA Selector 前自动备份当前实例存档。
 - 新增实例体检、基础文件修复与 Mod 元数据/重复/缺失依赖检查。
 - Payload 支持直接导入为 `versions` 下的实例。
+- 新增 `.javapkg` Java 打包格式：可把本机 JDK/JRE 打包为 `<版本>.jdk.javapkg` / `<版本>.jre.javapkg`，并在其他电脑解压导入。
 
 ## 命令行模式
 
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL2-3.7.0ceu.exe --help
-.\PCL2-3.7.0ceu.exe --version
-.\PCL2-3.7.0ceu.exe --luck
-.\PCL2-3.7.0ceu.exe --mca
-.\PCL2-3.7.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL2-3.7.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL2-3.7.0ceu.exe --payload-import .\1.20.1.payload
-.\PCL2-3.7.0ceu.exe --backup 1.20.1
-.\PCL2-3.7.0ceu.exe --mods 1.20.1
-.\PCL2-3.7.0ceu.exe --repair 1.20.1
-.\PCL2-3.7.0ceu.exe --launch 1.20.1
-.\PCL2-3.7.0ceu.exe --download 1.20.1 -forge
-.\PCL2-3.7.0ceu.exe --memory
+.\PCL2-3.8.0ceu.exe --help
+.\PCL2-3.8.0ceu.exe --version
+.\PCL2-3.8.0ceu.exe --luck
+.\PCL2-3.8.0ceu.exe --mca
+.\PCL2-3.8.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL2-3.8.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL2-3.8.0ceu.exe --payload-import .\1.20.1.payload
+.\PCL2-3.8.0ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
+.\PCL2-3.8.0ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
+.\PCL2-3.8.0ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
+.\PCL2-3.8.0ceu.exe --backup 1.20.1
+.\PCL2-3.8.0ceu.exe --mods 1.20.1
+.\PCL2-3.8.0ceu.exe --repair 1.20.1
+.\PCL2-3.8.0ceu.exe --launch 1.20.1
+.\PCL2-3.8.0ceu.exe --download 1.20.1 -forge
+.\PCL2-3.8.0ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -62,6 +66,9 @@
 | `--payload-encode <文件夹> <输出.payload> [版本名]` | 将版本文件夹打包为 Payload |
 | `--payload-decode <输入.payload> <输出文件夹>` | 解包 Payload |
 | `--payload-import <输入.payload> [实例名]` | 导入 Payload 为实例 |
+| `--javapkg-encode <java.exe> <输出.javapkg>` | 打包本机 JDK/JRE |
+| `--javapkg-info <输入.javapkg>` | 查看 Java 包信息 |
+| `--javapkg-decode <输入.javapkg> <输出文件夹>` | 解压 Java 包 |
 | `--backup <实例>` | 备份当前实例存档 |
 | `--mods <实例>` | 检查当前实例的 Mod |
 | `--repair <实例>` | 修复实例基础文件 |
@@ -81,6 +88,7 @@
 - `--download <MC版本> [-forge|-neoforge|-fabric]`：自动选择适用于该 MC 版本的加载器版本；原版实例名通常为 `1.20.1`，加载器实例名形如 `1.20.1-Forge_47.4.8`、`1.20.1-NeoForge_...`、`1.20.1-Fabric 0.16.9`。完成后进程退出。
 - `--launch` / `--download` 使用现有 PCL 下载与启动流程，因此会读取当前下载源、Java、账号等设置；失败时会显示 PCL 窗口以便查看错误。
 - `--backup <实例>` 备份到 `PCL\Backups\Worlds\<实例>\`，保留最近 10 份；`--mods <实例>` 只读取 Mod 元数据，不执行 JAR；`--repair <实例>` 会重新下载缺失的原版基础文件。
+- `--javapkg-encode` 自动识别 JDK/JRE 与 Java 版本，默认文件名形如 `21.0.1.jdk.javapkg`；`--javapkg-decode` 只解压，不自动加入 Java 列表，界面“导入 Java 包”会解压并加入列表。
 - `--payload-import` 会解包到临时目录，校验版本 JSON 后移动到 `versions`，不会覆盖已有实例。
 - 百宝箱还提供“世界备份”“实例体检”卡片：可手动备份/恢复存档、检查实例、修复基础文件、检查 Mod；启动 MCA Selector 前会自动备份当前实例存档。
 - 主界面、`--help`、`--version`、`--luck`、`--mca` 默认以普通权限运行，不会触发 UAC；只有 `--memory` 等需要系统权限的操作会按需提权。
@@ -118,6 +126,17 @@ C++ 工具：
 ```
 
 也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。
+
+## Java 打包（.javapkg）
+
+`.javapkg` 是包含 `javapkg.json` 清单的 Java 主目录 ZIP。
+
+- 选择 `java.exe` 后自动读取 `release` 信息，识别 Java 版本、JDK/JRE、架构与厂商。
+- JDK 默认命名为 `<Java版本>.jdk.javapkg`，JRE 为 `<Java版本>.jre.javapkg`。
+- 包内包含完整 Java 主目录（`bin`、`lib`、`conf`、`jmods` 等）。
+- 解压时会校验 `bin/java.exe` 和路径安全。
+- 百宝箱“导入 Java 包”会解压到 `PCL\Java\<版本>-<类型>` 并加入 Java 列表。
+- 命令行 `--javapkg-decode` 只解压到指定文件夹，不自动修改 Java 列表。
 
 ## 世界备份与实例体检
 

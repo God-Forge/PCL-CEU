@@ -90,6 +90,17 @@
                     </StackPanel>
                 </StackPanel>
             </local:MyCard>
+            <local:MyCard Margin="0,15,0,15" Title="Java 打包">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="选择电脑上的 java.exe，自动识别 JDK/JRE 与版本，打包为 &lt;版本&gt;.jdk.javapkg 或 &lt;版本&gt;.jre.javapkg。导入时会解压并加入 Java 列表。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnJavaPack" Text="打包 Java" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnJavaPackImport" Text="导入 Java 包" MinWidth="170" Height="35" Margin="0,0,12,0" />
+                        <local:MyButton x:Name="BtnJavaPackOpen" Text="打开 Java 包目录" MinWidth="170" Height="35" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
         </StackPanel>
     </local:MyScrollViewer>
 </local:MyPageRight>

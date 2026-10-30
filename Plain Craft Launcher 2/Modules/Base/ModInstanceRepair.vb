@@ -1,5 +1,6 @@
 Imports PCL.Core.Minecraft
 Imports PCL.Core.Mods
+Imports PCL.Core.Tasks
 
 ''' <summary>
 ''' 实例体检与基础文件修复。
@@ -17,9 +18,20 @@ Public Module ModInstanceRepair
     Public Function RepairBase(Instance As McInstance) As String
         Dim Loaders As List(Of LoaderBase) = DlClientFix(Instance, CheckAssetsHash:=True, DownloadAssetIndexInBackground:=False)
         If Loaders.Count = 0 Then Return "没有需要修复的基础文件。"
-        Dim Combo As New LoaderCombo(Of String)("修复实例 " & Instance.Name, Loaders)
-        Combo.WaitForExit()
-        If Combo.State <> LoadState.Finished Then Throw New Exception("修复未完成（状态：" & Combo.State.ToString & "）")
+        Dim Adapters As New List(Of ITaskControl)
+        For Each Loader In Loaders
+            Adapters.Add(New LoaderProgressAdapter(Loader))
+        Next
+        Dim Combo As New PCL.Core.Tasks.LoaderCombo("修复实例 " & Instance.Name, Adapters)
+        Try
+            Combo.Start()
+            Combo.WaitForExitAsync().Run()
+            If Combo.State <> TaskState.Finished Then Throw New Exception("修复未完成（状态：" & Combo.State.ToString & "）")
+        Finally
+            For Each Adapter In Adapters
+                TryCast(Adapter, IDisposable)?.Dispose()
+            Next
+        End Try
         McInstanceListForceRefresh = True
         Return "基础文件修复完成。"
     End Function

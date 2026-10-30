@@ -46,7 +46,15 @@ public interface ITaskProgress {
 
 }
 
-public abstract class TaskBase : ITaskProgress, IDisposable {
+public interface ITaskControl : ITaskProgress {
+
+    void Start();
+    void Cancel();
+    Task WaitForExitAsync(CancellationToken cancellationToken = default);
+
+}
+
+public abstract class TaskBase : ITaskControl, IDisposable {
 
     private TaskState _state = TaskState.Waiting;
     private double _progress = -1;
@@ -166,14 +174,22 @@ public sealed class ProgressTask : TaskBase {
 /// </summary>
 public class TaskCombo : TaskBase {
 
-    private readonly IReadOnlyList<(TaskBase Task, double Weight)> _tasks;
+    private readonly IReadOnlyList<(ITaskControl Task, double Weight)> _tasks;
 
     public TaskCombo(IEnumerable<TaskBase> tasks) {
+        _tasks = tasks.Cast<ITaskControl>().Select(task => (task, 1d)).ToList();
+    }
+
+    public TaskCombo(IEnumerable<ITaskControl> tasks) {
         _tasks = tasks.Select(task => (task, 1d)).ToList();
     }
 
-    public TaskCombo(IEnumerable<(TaskBase Task, double Weight)> tasks) {
+    public TaskCombo(IEnumerable<(ITaskControl Task, double Weight)> tasks) {
         _tasks = tasks.ToList();
+    }
+
+    public TaskCombo(IEnumerable<(TaskBase Task, double Weight)> tasks) {
+        _tasks = tasks.Select(item => ((ITaskControl)item.Task, item.Weight)).ToList();
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken) {

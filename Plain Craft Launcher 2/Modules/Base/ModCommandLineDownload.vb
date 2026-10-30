@@ -2,6 +2,7 @@
 Imports PCLCS
 Imports PCL.Core.Download
 Imports PCL.Core.Net
+Imports PCL.Core.Tasks
 
 ''' <summary>
 ''' 命令行下载：下载原版 Minecraft，并按需安装 Forge / NeoForge / Fabric。
@@ -53,13 +54,22 @@ Public Module ModCommandLineDownload
         End If
 
         Dim Loaders As List(Of LoaderBase) = McInstallLoadersGet(Request)
-        Dim Combo As New LoaderCombo(Of String)(InstanceName & " 安装", Loaders)
-        Using TaskAdapter As New LoaderProgressAdapter(Combo)
-            Combo.WaitForExit(Request.InstanceFolder)
-        End Using
-        If Combo.State <> LoadState.Finished Then
-            Throw New Exception("安装未完成（状态：" & Combo.State.ToString & "）")
-        End If
+        Dim Adapters As New List(Of ITaskControl)
+        For Each LoaderItem In Loaders
+            Adapters.Add(New LoaderProgressAdapter(LoaderItem))
+        Next
+        Dim Combo As New PCL.Core.Tasks.LoaderCombo(InstanceName & " 安装", Adapters)
+        Try
+            Combo.Start()
+            Combo.WaitForExitAsync().Run()
+            If Combo.State <> TaskState.Finished Then
+                Throw New Exception("安装未完成（状态：" & Combo.State.ToString & "）")
+            End If
+        Finally
+            For Each Adapter In Adapters
+                TryCast(Adapter, IDisposable)?.Dispose()
+            Next
+        End Try
 
         McInstanceListForceRefresh = True
         Return $"已安装 {InstanceName}"

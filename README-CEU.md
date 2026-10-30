@@ -210,7 +210,9 @@ Phase 3 已开始：
 - `ModCommandLineDownload` 的安装流程已通过适配器接入统一任务接口。
 - 新增 C# `LoaderTask<TIn,TOut>` 与 `LoaderCombo`：支持输入/输出、重载超时、强制重启、取消、进度与顺序组合。
 - 新增测试覆盖 LoaderTask 输入输出、重载超时、强制重启、取消、失败与 LoaderCombo 顺序执行。
-- 下一步：将 ModLoader 的调用方逐步切换到 C# LoaderTask/LoaderCombo，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 `ITaskControl`，并让 `LoaderProgressAdapter` 同时实现控制接口；C# `LoaderCombo` 可直接组合 VB LoaderBase 适配器。
+- `ModCommandLineDownload` 与 `ModInstanceRepair` 已切换到 C# `LoaderCombo`，其余 ModLoader 调用方仍保留 VB 实现。
+- 下一步：继续迁移剩余 ModLoader 调用方，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

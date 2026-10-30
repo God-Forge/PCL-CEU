@@ -4,7 +4,7 @@ Imports PCL.Core.Tasks
 ''' 将现有 VB LoaderBase 适配为统一的 C# ITaskProgress，便于逐步迁移 ModLoader。
 ''' </summary>
 Public Class LoaderProgressAdapter
-    Implements ITaskProgress, IDisposable
+    Implements ITaskControl, IDisposable
 
     Private ReadOnly _loader As LoaderBase
     Private _disposed As Boolean
@@ -42,6 +42,22 @@ Public Class LoaderProgressAdapter
 
     Public Event StateChanged As EventHandler(Of TaskStateChangedEventArgs) Implements ITaskProgress.StateChanged
     Public Event ProgressChanged As EventHandler(Of TaskProgressChangedEventArgs) Implements ITaskProgress.ProgressChanged
+
+    Public Sub Start() Implements ITaskControl.Start
+        _loader.Start()
+    End Sub
+
+    Public Sub Cancel() Implements ITaskControl.Cancel
+        _loader.Cancel()
+    End Sub
+
+    Public Async Function WaitForExitAsync(Optional Ct As CancellationToken = Nothing) As Task Implements ITaskControl.WaitForExitAsync
+        While State = TaskState.Loading
+            Ct.ThrowIfCancellationRequested()
+            Await Task.Delay(20, Ct)
+        End While
+        If State = TaskState.Failed AndAlso [Error] IsNot Nothing Then Throw [Error]
+    End Function
 
     Private Sub OnLoaderStateChanged(Loader As LoaderBase, NewState As LoadState, OldState As LoadState)
         RaiseEvent StateChanged(Me, New TaskStateChangedEventArgs(MapState(OldState), MapState(NewState)))

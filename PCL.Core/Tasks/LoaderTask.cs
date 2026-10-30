@@ -79,7 +79,15 @@ public sealed class LoaderCombo : TaskCombo {
         Name = name;
     }
 
+    public LoaderCombo(string name, IEnumerable<ITaskControl> tasks) : base(tasks) {
+        Name = name;
+    }
+
     public LoaderCombo(string name, IEnumerable<(TaskBase Task, double Weight)> tasks) : base(tasks) {
+        Name = name;
+    }
+
+    public LoaderCombo(string name, IEnumerable<(ITaskControl Task, double Weight)> tasks) : base(tasks) {
         Name = name;
     }
 

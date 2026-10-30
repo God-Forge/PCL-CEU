@@ -19,6 +19,7 @@ Public Module ModCommandLineDownload
         Dim ForgeVersion As String = Nothing
         Dim NeoForgeVersion As String = Nothing
         Dim FabricVersion As String = Nothing
+        Dim MinecraftJson As String = Nothing
 
         Using Fetcher As New HttpStringFetcher()
             Dim Service As New LoaderVersionService(Fetcher)
@@ -36,6 +37,7 @@ Public Module ModCommandLineDownload
                 Case Else
                     Throw New Exception("未知的加载器参数：" & Loader)
             End Select
+            MinecraftJson = New VersionManifestService(Fetcher).GetVersionJsonAsync(Version).Run()
         End Using
 
         Dim InstanceName As String = GetInstanceName(Version, LoaderName, ForgeVersion, NeoForgeVersion, FabricVersion)
@@ -44,7 +46,7 @@ Public Module ModCommandLineDownload
             .NewInstanceName = InstanceName,
             .InstanceFolder = McFolder & "versions\" & InstanceName & "\",
             .Components = Components,
-            .MinecraftJson = Nothing,
+            .MinecraftJson = MinecraftJson,
             .ForgeEntry = ForgeEntry,
             .NeoForgeEntry = NeoForgeEntry
         }

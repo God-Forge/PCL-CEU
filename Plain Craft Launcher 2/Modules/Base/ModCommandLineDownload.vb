@@ -54,7 +54,9 @@ Public Module ModCommandLineDownload
 
         Dim Loaders As List(Of LoaderBase) = McInstallLoadersGet(Request)
         Dim Combo As New LoaderCombo(Of String)(InstanceName & " 安装", Loaders)
-        Combo.WaitForExit(Request.InstanceFolder)
+        Using TaskAdapter As New LoaderProgressAdapter(Combo)
+            Combo.WaitForExit(Request.InstanceFolder)
+        End Using
         If Combo.State <> LoadState.Finished Then
             Throw New Exception("安装未完成（状态：" & Combo.State.ToString & "）")
         End If

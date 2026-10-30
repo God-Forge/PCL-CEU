@@ -206,7 +206,9 @@ Phase 3 已开始：
 - 新增 `PCL.Core/Tasks`：`TaskState`、`ITaskProgress`、`TaskBase`、`ProgressTask`、`TaskCombo`，统一任务状态、进度、失败与取消。
 - `HttpDownloadService` 增加使用 `ProgressTask` 的重载，下载进度可直接映射到统一任务状态。
 - 新增任务测试覆盖完成、失败、取消、组合任务与下载进度联动。
-- 下一步：用 `ITaskProgress` 适配/替换 ModLoader 任务框架，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 `LoaderProgressAdapter`，把 VB `LoaderBase` 的 `LoadState`、进度、错误与取消令牌适配为 C# `ITaskProgress`。
+- `ModCommandLineDownload` 的安装流程已通过适配器接入统一任务接口。
+- 下一步：用适配器逐步替换 ModLoader 的 `LoaderTask`/`LoaderCombo`，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

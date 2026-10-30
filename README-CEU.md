@@ -193,6 +193,14 @@ Phase 2 已开始：
 - 新增测试覆盖原版版本、OptiFine、Forge、NeoForge、Fabric、LiteLoader、统一通行证、手动覆盖与 Mojang 推荐 Java。
 - 下一步：ResourceVersion 数据层、ModNet/ModLoader 的接口与任务迁移。
 
+Phase 3 已开始：
+
+- 新增 `PCL.Core/Net/IStringFetcher` 与 `HttpStringFetcher`，作为可替换的字符串下载接口。
+- 新增 `PCL.Core/Download/LoaderVersionService`，从 Forge/NeoForge/Fabric 元数据中选择兼容版本。
+- 命令行 `--download` 的加载器版本选择已从 VB LoaderTask 迁移到 C# 服务，减少对 UI/Loader 框架的依赖。
+- 新增测试覆盖 Forge 推荐/最高版本、NeoForge 稳定版与 Legacy、Fabric stable Loader。
+- 下一步：ModNet 下载引擎接口、ModLoader 任务框架、ModDownload/ModMinecraft/ModLaunch 核心。
+
 运行测试：
 
 ```powershell

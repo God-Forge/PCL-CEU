@@ -203,7 +203,10 @@ Phase 3 已开始：
 - `HttpDownloadService` 支持多源回退、断点续传、重试、超时、限速、SHA-256 校验和进度回调。
 - `ModNet.NetDownloadByClient` 的单文件下载已迁移到 C# 下载服务；ModNet 的多线程下载引擎仍保留。
 - 新增本地 HTTP 测试服务器，覆盖普通下载、多源回退、断点续传、哈希失败。
-- 下一步：ModLoader 任务/进度/取消接口，以及 ModNet 多线程引擎、ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 `PCL.Core/Tasks`：`TaskState`、`ITaskProgress`、`TaskBase`、`ProgressTask`、`TaskCombo`，统一任务状态、进度、失败与取消。
+- `HttpDownloadService` 增加使用 `ProgressTask` 的重载，下载进度可直接映射到统一任务状态。
+- 新增任务测试覆盖完成、失败、取消、组合任务与下载进度联动。
+- 下一步：用 `ITaskProgress` 适配/替换 ModLoader 任务框架，再迁移 ModNet 多线程引擎与 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
 

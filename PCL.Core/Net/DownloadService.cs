@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using PCL.Core.Tasks;
 
 namespace PCL.Core.Net;
 
@@ -68,8 +69,7 @@ public sealed class HttpDownloadService : IDownloadService, IDisposable {
     public async Task<DownloadResult> DownloadAsync(
         DownloadRequest request,
         IProgress<DownloadProgress>? progress = null,
-        CancellationToken cancellationToken = default) {
-        if (string.IsNullOrWhiteSpace(request.Url)) throw new ArgumentException("下载 URL 不能为空。", nameof(request));
+        CancellationToken cancellationToken = default) {        if (string.IsNullOrWhiteSpace(request.Url)) throw new ArgumentException("下载 URL 不能为空。", nameof(request));
         if (string.IsNullOrWhiteSpace(request.TargetPath)) throw new ArgumentException("下载目标路径不能为空。", nameof(request));
 
         var target = System.IO.Path.GetFullPath(request.TargetPath);
@@ -115,13 +115,34 @@ public sealed class HttpDownloadService : IDownloadService, IDisposable {
         throw new HttpRequestException("文件下载失败：" + request.Url, lastError);
     }
 
+    /// <summary>
+    /// 使用统一的 C# 任务状态对象执行下载。
+    /// </summary>
+    public async Task<DownloadResult> DownloadAsync(DownloadRequest request, ProgressTask task) {
+        task.Begin();
+        try {
+            var result = await DownloadAsync(
+                request,
+                new Progress<DownloadProgress>(value => task.Report(value.Percent / 100d)),
+                task.CancellationToken).ConfigureAwait(false);
+            task.Report(1);
+            task.Complete();
+            return result;
+        } catch (OperationCanceledException) {
+            task.MarkCanceled();
+            throw;
+        } catch (Exception ex) {
+            task.FailTask(ex);
+            throw;
+        }
+    }
+
     private async Task DownloadFromSourceAsync(
         string url,
         string partial,
         DownloadRequest request,
         IProgress<DownloadProgress>? progress,
-        CancellationToken cancellationToken) {
-        var offset = request.AllowResume && File.Exists(partial) ? new FileInfo(partial).Length : 0;
+        CancellationToken cancellationToken) {        var offset = request.AllowResume && File.Exists(partial) ? new FileInfo(partial).Length : 0;
         using var message = new HttpRequestMessage(HttpMethod.Get, url);
         if (offset > 0) message.Headers.Range = new RangeHeaderValue(offset, null);
         if (request.SimulateBrowserHeaders) {

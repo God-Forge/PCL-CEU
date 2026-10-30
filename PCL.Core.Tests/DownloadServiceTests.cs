@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using PCL.Core.Net;
+using PCL.Core.Tasks;
 
 namespace PCL.Core.Tests;
 
@@ -154,6 +155,27 @@ public class DownloadServiceTests {
             });
             await Assert.That(result.SourceUrl).IsEqualTo(server.BaseUrl + "file");
             await Assert.That(File.ReadAllBytes(target).SequenceEqual(content)).IsTrue();
+        } finally {
+            Directory.Delete(root, true);
+        }
+    }
+
+    [Test]
+    public async Task 使用任务状态对象下载() {
+        var root = CreateRoot();
+        var content = Encoding.UTF8.GetBytes("task download");
+        using var server = new SimpleHttpServer(new Dictionary<string, byte[]> { ["/file"] = content });
+        try {
+            var target = Path.Combine(root, "file.bin");
+            using var service = new HttpDownloadService();
+            var task = new ProgressTask();
+            var result = await service.DownloadAsync(new DownloadRequest {
+                Url = server.BaseUrl + "file",
+                TargetPath = target
+            }, task);
+            await Assert.That(result.Success).IsTrue();
+            await Assert.That(task.State).IsEqualTo(TaskState.Finished);
+            await Assert.That(task.Progress).IsEqualTo(1d);
         } finally {
             Directory.Delete(root, true);
         }

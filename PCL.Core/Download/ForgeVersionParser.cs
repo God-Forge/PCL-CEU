@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace PCL.Core.Download;
@@ -19,6 +20,56 @@ public sealed class ForgeVersionInfo {
 /// 解析 BMCLAPI 的 Forge 版本列表。
 /// </summary>
 public static class ForgeVersionParser {
+
+    public static IReadOnlyList<ForgeVersionInfo> ParseOfficial(string html, string inherit) {
+        var end = html.LastIndexOf("</table>", StringComparison.Ordinal);
+        if (end < 0) throw new InvalidDataException("Forge 官方源页面缺少版本表格。");
+        var chunks = html.Substring(0, end).Split(["<td class=\"download-version"], StringSplitOptions.None);
+        var result = new List<ForgeVersionInfo>();
+        for (var i = 1; i < chunks.Length; i++) {
+            var chunk = chunks[i];
+            var name = Regex.Match(chunk, "(?<=[^(0-9)]+)[0-9\\.]+").Value;
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            var branchMatch = Regex.Match(chunk, $"(?<=-{Regex.Escape(name)}-)[^-\"]+(?=-[a-z]+\\.[a-z]{{3}})");
+            var branch = branchMatch.Success ? branchMatch.Value : null;
+            var releaseText = Regex.Match(chunk, "(?<=\"download-time\" title=\")[^\"]+").Value;
+            if (!DateTime.TryParseExact(releaseText, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var releaseTime)) {
+                throw new InvalidDataException("Forge 官方源发布时间无效：" + releaseText);
+            }
+
+            var recommended = chunk.Contains("fa promo-recommended");
+            string? hash;
+            string category;
+            if (chunk.Contains("classifier-installer\"")) {
+                chunk = chunk.Substring(chunk.IndexOf("installer.jar", StringComparison.Ordinal));
+                hash = Regex.Match(chunk, "(?<=MD5:</strong> )[^<]+").Value;
+                category = "installer";
+            } else if (chunk.Contains("classifier-universal\"")) {
+                chunk = chunk.Substring(chunk.IndexOf("universal.zip", StringComparison.Ordinal));
+                hash = Regex.Match(chunk, "(?<=MD5:</strong> )[^<]+").Value;
+                category = "universal";
+            } else if (chunk.Contains("client.zip")) {
+                chunk = chunk.Substring(chunk.IndexOf("client.zip", StringComparison.Ordinal));
+                hash = Regex.Match(chunk, "(?<=MD5:</strong> )[^<]+").Value;
+                category = "client";
+            } else {
+                continue;
+            }
+
+            result.Add(new ForgeVersionInfo {
+                VersionName = name,
+                Branch = branch,
+                Inherit = inherit,
+                Hash = hash?.Trim(),
+                Category = category,
+                IsRecommended = recommended,
+                ReleaseTime = releaseTime.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture)
+            });
+        }
+        return result;
+    }
 
     public static IReadOnlyList<ForgeVersionInfo> ParseBmclapi(JArray json, string inherit, string? recommended) {
         var result = new List<ForgeVersionInfo>();

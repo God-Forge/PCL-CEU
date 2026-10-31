@@ -6,6 +6,27 @@ namespace PCL.Core.Tests;
 public class ForgeVersionParserTests {
 
     [Test]
+    public async Task 解析官方HTML版本信息() {
+        const string html = """
+        <table>
+        <td class="download-version fa promo-recommended">
+        <a>47.2.0</a>
+        <span class="download-time" title="2024-01-01 00:00:00"></span>
+        <div class="classifier-installer">installer.jar</div>
+        <strong>MD5:</strong> abcdef
+        </td>
+        </table>
+        """;
+        var versions = ForgeVersionParser.ParseOfficial(html, "1.20.1");
+        await Assert.That(versions.Count).IsEqualTo(1);
+        await Assert.That(versions[0].VersionName).IsEqualTo("47.2.0");
+        await Assert.That(versions[0].Category).IsEqualTo("installer");
+        await Assert.That(versions[0].Hash).IsEqualTo("abcdef");
+        await Assert.That(versions[0].IsRecommended).IsTrue();
+        await Assert.That(versions[0].Inherit).IsEqualTo("1.20.1");
+    }
+
+    [Test]
     public async Task 解析BMCLAPI版本与安装类型优先级() {
         var json = JArray.Parse("""
         [

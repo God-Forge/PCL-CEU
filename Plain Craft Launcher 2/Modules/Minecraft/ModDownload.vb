@@ -649,52 +649,13 @@ Public Module ModDownload
         If Result.Length < 1000 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
         Dim Versions As New List(Of DlForgeVersionEntry)
         Try
-            '分割版本信息
-            Dim VersionCodes = Result.Substring(0, Result.LastIndexOfF("</table>")).Split("<td class=""download-version")
-            '获取所有版本信息
-            For i = 1 To VersionCodes.Count - 1
-                Dim VersionCode = VersionCodes(i)
-                Try
-                    '基础信息获取
-                    Dim Name As String = VersionCode.RegexSeek("(?<=[^(0-9)]+)[0-9\.]+")
-                    Dim IsRecommended As Boolean = VersionCode.Contains("fa promo-recommended")
-                    Dim Inherit As String = Loader.Input
-                    '分支获取
-                    Dim Branch As String = VersionCode.RegexSeek($"(?<=-{Name}-)[^-""]+(?=-[a-z]+.[a-z]{{3}})")
-                    If String.IsNullOrWhiteSpace(Branch) Then Branch = Nothing
-                    '发布时间获取
-                    Dim ReleaseTimeOriginal = VersionCode.RegexSeek("(?<=""download-time"" title="")[^""]+")
-                    Dim ReleaseTimeSplit = ReleaseTimeOriginal.Split(" -:".ToCharArray) '原格式："2021-02-15 03:24:02"
-                    Dim ReleaseDate As New Date(ReleaseTimeSplit(0), ReleaseTimeSplit(1), ReleaseTimeSplit(2), '年月日
-                                                ReleaseTimeSplit(3), ReleaseTimeSplit(4), ReleaseTimeSplit(5), '时分秒
-                                                0, DateTimeKind.Utc) '以 UTC 时间作为标准
-                    Dim ReleaseTime As String = ReleaseDate.ToLocalTime.ToString("yyyy'/'MM'/'dd HH':'mm") '时区与格式转换
-                    '分类与 MD5 获取
-                    Dim MD5 As String, Category As String
-                    If VersionCode.Contains("classifier-installer""") Then
-                        '类型为 installer.jar，支持范围 ~753 (~ 1.6.1 部分), 738~684 (1.5.2 全部)
-                        VersionCode = VersionCode.Substring(VersionCode.IndexOfF("installer.jar"))
-                        MD5 = VersionCode.RegexSeek("(?<=MD5:</strong> )[^<]+")
-                        Category = "installer"
-                    ElseIf VersionCode.Contains("classifier-universal""") Then
-                        '类型为 universal.zip，支持范围 751~449 (1.6.1 部分), 682~183 (1.5.1 ~ 1.3.2 部分)
-                        VersionCode = VersionCode.Substring(VersionCode.IndexOfF("universal.zip"))
-                        MD5 = VersionCode.RegexSeek("(?<=MD5:</strong> )[^<]+")
-                        Category = "universal"
-                    ElseIf VersionCode.Contains("client.zip") Then
-                        '类型为 client.zip，支持范围 182~ (1.3.2 部分 ~)
-                        VersionCode = VersionCode.Substring(VersionCode.IndexOfF("client.zip"))
-                        MD5 = VersionCode.RegexSeek("(?<=MD5:</strong> )[^<]+")
-                        Category = "client"
-                    Else
-                        '没有任何下载（1.6.4 有一部分这种情况）
-                        Continue For
-                    End If
-                    '添加进列表
-                    Versions.Add(New DlForgeVersionEntry(Name, Branch, Inherit) With {.Category = Category, .IsRecommended = IsRecommended, .Hash = MD5.ReplaceLineEndings(""), .ReleaseTime = ReleaseTime})
-                Catch ex As Exception
-                    Throw New Exception("Forge 官方源版本信息提取失败（" & VersionCode & "）", ex)
-                End Try
+            For Each Item In ForgeVersionParser.ParseOfficial(Result, Loader.Input)
+                Versions.Add(New DlForgeVersionEntry(Item.VersionName, Item.Branch, Loader.Input) With {
+                    .Category = Item.Category,
+                    .IsRecommended = Item.IsRecommended,
+                    .Hash = Item.Hash,
+                    .ReleaseTime = Item.ReleaseTime
+                })
             Next
         Catch ex As Exception
             Throw New Exception("Forge 官方源版本列表解析失败（" & Result & "）", ex)

@@ -373,23 +373,23 @@ Public Module ModDownload
     ''' </summary>
     Public DlOptiFineListLoader As New LoaderTask(Of Integer, DlOptiFineListResult)("DlOptiFineList Main", AddressOf DlOptiFineListMain)
     Private Sub DlOptiFineListMain(Loader As LoaderTask(Of Integer, DlOptiFineListResult))
-        Select Case Settings.Get(Of Integer)("ToolDownloadVersion")
-            Case 0
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListBmclapiLoader, 30),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListOfficialLoader, 30 + 60)
-                }, Loader.IsForceRestarting)
-            Case 1
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListOfficialLoader, 5),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListBmclapiLoader, 5 + 30)
-                }, Loader.IsForceRestarting)
-            Case Else
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListOfficialLoader, 60),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlOptiFineListResult), Integer)(DlOptiFineListBmclapiLoader, 60 + 60)
-                }, Loader.IsForceRestarting)
-        End Select
+        Using Fetcher As New HttpStringFetcher()
+            Dim Service As New OptiFineListService(Fetcher)
+            Dim Result = Service.GetAsync(Settings.Get(Of Integer)("ToolDownloadVersion"), Loader.CreateCancellationToken).Run()
+            Loader.Output = New DlOptiFineListResult With {
+                .IsOfficial = Result.IsOfficial,
+                .SourceName = Result.SourceName,
+                .Value = Result.Versions.Select(Function(Item) New DlOptiFineListEntry With {
+                    .DisplayName = Item.DisplayName,
+                    .ReleaseTime = Item.ReleaseTime,
+                    .IsPreview = Item.IsPreview,
+                    .Inherit = Item.Inherit,
+                    .FileName = Item.FileName,
+                    .RequiredForgeVersion = Item.RequiredForgeVersion,
+                    .InstanceName = Item.InstanceName
+                }).ToList()
+            }
+        End Using
     End Sub
 
     ''' <summary>

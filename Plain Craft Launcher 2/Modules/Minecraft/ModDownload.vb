@@ -729,43 +729,13 @@ Public Module ModDownload
         Dim Versions As New List(Of DlForgeVersionEntry)
         Try
             Dim Recommended As String = McDownloadForgeRecommendedGet(Loader.Input)
-            For Each Token As JObject In Json
-                '分类与 Hash 获取
-                Dim Hash As String = Nothing, Category As String = "unknown", Proi As Integer = -1
-                For Each File As JObject In Token("files")
-                    Select Case File("category").ToString
-                        Case "installer"
-                            If File("format").ToString = "jar" Then
-                                '类型为 installer.jar，支持范围 ~753 (~ 1.6.1 部分), 738~684 (1.5.2 全部)
-                                Hash = File("hash")
-                                Category = "installer"
-                                Proi = 2
-                            End If
-                        Case "universal"
-                            If Proi <= 1 AndAlso File("format").ToString = "zip" Then
-                                '类型为 universal.zip，支持范围 751~449 (1.6.1 部分), 682~183 (1.5.1 ~ 1.3.2 部分)
-                                Hash = File("hash")
-                                Category = "universal"
-                                Proi = 1
-                            End If
-                        Case "client"
-                            If Proi <= 0 AndAlso File("format").ToString = "zip" Then
-                                '类型为 client.zip，支持范围 182~ (1.3.2 部分 ~)
-                                Hash = File("hash")
-                                Category = "client"
-                                Proi = 0
-                            End If
-                    End Select
-                Next
-                '获取 Entry
-                Dim Branch As String = Token("branch")
-                Dim Name As String = Token("version")
-                '基础信息获取
-                Dim Entry = New DlForgeVersionEntry(Name, Branch, Loader.Input) With {.Hash = Hash, .Category = Category, .IsRecommended = Recommended = Name}
-                Dim TimeSplit = Token("modified").ToString.Split("-"c, "T"c, ":"c, "."c, " "c, "/"c)
-                Entry.ReleaseTime = Token("modified").ToObject(Of Date).ToLocalTime.ToString("yyyy'/'MM'/'dd HH':'mm")
-                '添加项
-                Versions.Add(Entry)
+            For Each Item In ForgeVersionParser.ParseBmclapi(Json, Loader.Input, Recommended)
+                Versions.Add(New DlForgeVersionEntry(Item.VersionName, Item.Branch, Loader.Input) With {
+                    .Hash = Item.Hash,
+                    .Category = Item.Category,
+                    .IsRecommended = Item.IsRecommended,
+                    .ReleaseTime = Item.ReleaseTime
+                })
             Next
         Catch ex As Exception
             Throw New Exception("Forge BMCLAPI 版本列表解析失败（" & Json.ToString & "）", ex)

@@ -258,6 +258,7 @@ Phase 3 已开始：
 - 新增 C# `ForgeListService`，接管 Forge Minecraft 版本列表的源顺序、超时与回退。
 - 新增 C# `FabricListService`，接管 Fabric 版本列表的源顺序、超时与回退。
 - 新增 C# `ClientListService`，接管 Minecraft 客户端版本列表的源顺序、超时、BMCLAPI 缓存合并与必需版本校验。
+- 新增 C# `JavaProcessLauncher`，接管游戏 Java 进程的环境变量、工作目录、编码与重定向设置。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

@@ -1567,18 +1567,13 @@ NextInstance:
         Yield ("${resolution_height}", Math.Round(TargetSize.Height))
 
         '支持库
-        Dim Cps As New List(Of String)
-        Dim OptiFineCp As String = Nothing
-        For Each Library As McLibEntry In McLibListGet(McInstanceSelected, True)
-            If Library.IsNatives Then Continue For
-            If Library.Name IsNot Nothing AndAlso Library.Name = "optifine:OptiFine" Then
-                OptiFineCp = Library.LocalPath
-            Else
-                Cps.Add(Library.LocalPath)
-            End If
-        Next
-        If OptiFineCp IsNot Nothing Then Cps.Insert(Cps.Count - 2, OptiFineCp) 'OptiFine 的总是需要放到倒数第二位
-        Yield ("${classpath}", Cps.Select(Function(c) PathUtils.ToShortPath(c)).Join(";"c))
+        Dim ClasspathEntries = McLibListGet(McInstanceSelected, True).
+            Select(Function(library) New ClasspathEntry With {
+                .Name = library.Name,
+                .LocalPath = PathUtils.ToShortPath(library.LocalPath),
+                .IsNative = library.IsNatives
+            }).ToList()
+        Yield ("${classpath}", ClasspathBuilder.Build(ClasspathEntries, ";"))
     End Function
 
     ''' <summary>

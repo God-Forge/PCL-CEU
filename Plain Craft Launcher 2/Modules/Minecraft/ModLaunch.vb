@@ -1202,16 +1202,7 @@ Retry:
         McLaunchLog("=================== 启动参数开始 ===================")
         Dim Replacements = McLaunchArgumentsReplace(Arguments).ToList
         Dim Argument As String = ""
-        For Each Arg In Arguments
-            '应用替换标记
-            For Each Replacement In Replacements
-                Arg = Arg.Replace(Replacement.Key, Replacement.Value)
-            Next
-            '为带特殊字符的参数添加双引号
-            If Arg.IndexOfAny({"&"c, "|"c, "<"c, ">"c, "^"c, " "c}) >= 0 AndAlso Not Arg.StartsWithF("""") AndAlso Not Arg.EndsWithF("""") Then
-                Arg = $"""{Arg.Replace("""", "\""")}""" '转义在原本参数中间的双引号
-            End If
-            '输出
+        For Each Arg In LaunchArgumentFormatter.Format(Arguments, Replacements)
             McLaunchLog(Arg)
             Argument &= Arg & " "
         Next

@@ -78,7 +78,7 @@ public class ForgelikeInstallPlannerTests {
                 """
             });
             var plan = await ForgelikeInstallPlanner.CreatePlanAsync(
-                installer, "Forge", "1.20.1", "47.2.0", fetcher, vanillaUrl);
+                installer, "Forge", "1.20.1", "47.2.0", fetcher, [vanillaUrl]);
             var libraries = plan.Json["libraries"]!.ToObject<List<JObject>>()!;
             var names = libraries.Select(library => library["name"]?.ToString()).ToList();
 

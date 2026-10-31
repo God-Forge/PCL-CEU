@@ -1147,7 +1147,7 @@ Retry:
                     Using Fetcher As New HttpStringFetcher()
                         Dim Plan = ForgelikeInstallPlanner.CreatePlanAsync(
                             InstallerAddress, LoaderName, Inherit, LoaderVersion,
-                            Fetcher, DlSourceLauncherOrMetaGet(DlClientListGet(Inherit)).First()).Run()
+                            Fetcher, DlSourceLauncherOrMetaGet(DlClientListGet(Inherit))).Run()
                         Task.Progress = 0.6
                         Libs = McLibListGetWithJson(Plan.Json, True, CurrentMcFolder)
                     End Using

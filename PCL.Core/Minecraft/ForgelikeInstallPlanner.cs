@@ -23,7 +23,7 @@ public static class ForgelikeInstallPlanner {
         string mcVersion,
         string loaderVersion,
         IStringFetcher? fetcher = null,
-        string? vanillaJsonUrl = null,
+        IEnumerable<string>? vanillaJsonUrls = null,
         CancellationToken cancellationToken = default) {
         JObject profile;
         JObject version;
@@ -52,11 +52,24 @@ public static class ForgelikeInstallPlanner {
 
         var mappings = profile["data"]?["MOJMAPS"]?["client"]?.ToString();
         if (!string.IsNullOrWhiteSpace(mappings)) {
-            if (string.IsNullOrWhiteSpace(vanillaJsonUrl)) {
+            var urls = vanillaJsonUrls?.Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
+            if (urls is null || urls.Count == 0) {
                 throw new InvalidDataException("安装器需要 Mappings，但未提供原版 JSON 地址。");
             }
-            var vanillaText = await (fetcher ?? new HttpStringFetcher())
-                .GetStringAsync(vanillaJsonUrl!, cancellationToken).ConfigureAwait(false);
+            string? vanillaText = null;
+            Exception? lastError = null;
+            foreach (var url in urls) {
+                try {
+                    vanillaText = await (fetcher ?? new HttpStringFetcher())
+                        .GetStringAsync(url, cancellationToken).ConfigureAwait(false);
+                    break;
+                } catch (Exception ex) when (ex is not OperationCanceledException) {
+                    lastError = ex;
+                }
+            }
+            if (vanillaText is null) {
+                throw new InvalidDataException("获取原版 JSON 失败。", lastError);
+            }
             var vanilla = JObject.Parse(vanillaText);
             var clientMappings = vanilla["downloads"]?["client_mappings"] as JObject
                                  ?? throw new InvalidDataException("原版 JSON 缺少 client_mappings。");

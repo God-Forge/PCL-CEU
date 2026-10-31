@@ -224,7 +224,9 @@ Phase 3 已开始：
 - 新增 C# `LibraryResolver`，解析 artifact、classifiers、natives、Maven 根地址与规则过滤。
 - `InstanceCheckService` 的 libraries 检查已改为使用 `LibraryResolver`。
 - `ModMinecraft.McLibListGetWithJson` 的 artifact/natives/classifiers/rules 解析已改为调用 C# `LibraryResolver`，仅保留 VB 侧去重逻辑。
-- 下一步：迁移剩余 ModNet NetFile 引擎，再迁移 ModDownload/ModMinecraft/ModLaunch 核心。
+- 新增 C# `NetFileTask` / `NetLoader` 多文件任务引擎：并发、逐文件多源、断点续传、并行分片、进度聚合、取消与失败隔离。
+- `NetDownloadByLoader` 已改用 C# `NetLoader` 引擎。
+- 下一步：将 ModDownload 的 `NetFile`/`LoaderDownload` 调用方继续切换到 C# `NetLoader`，再迁移安装编排。
 
 运行测试：
 

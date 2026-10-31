@@ -204,27 +204,30 @@ RequestFinished:
     Public Sub NetDownloadByLoader(Urls As IEnumerable(Of String), LocalPath As String, Optional LoaderToSyncProgress As LoaderBase = Nothing, Optional Check As FileChecker = Nothing, Optional SimulateBrowserHeaders As Boolean = False)
         Dim UrlList As List(Of String) = Urls.ToList()
         Try
-            Using Service As New ParallelDownloadService()
-                Dim ProgressReporter As IProgress(Of DownloadProgress) = Nothing
-                If LoaderToSyncProgress IsNot Nothing Then
-                    ProgressReporter = New Progress(Of DownloadProgress)(
-                        Sub(Value)
-                            LoaderToSyncProgress.Progress = Value.Percent / 100
-                        End Sub)
-                End If
-                Service.DownloadAsync(New DownloadRequest With {
-                    .Url = UrlList.First(),
-                    .BackupUrls = UrlList.Skip(1).ToList(),
-                    .TargetPath = LocalPath,
-                    .Overwrite = True,
-                    .AllowResume = True,
-                    .SimulateBrowserHeaders = SimulateBrowserHeaders,
-                    .ParallelCount = 4,
-                    .MinPartSize = 1024 * 1024,
-                    .MaxRetries = 2,
-                    .TimeoutSeconds = 30
-                }, ProgressReporter, If(LoaderToSyncProgress?.CreateCancellationToken(), CancellationToken.None)).Run()
-            End Using
+            Dim FileTask As New NetFileTask With {
+                .Name = GetUuid(),
+                .TargetPath = LocalPath,
+                .Sources = UrlList,
+                .UseParallel = True,
+                .ParallelCount = 4,
+                .SimulateBrowserHeaders = SimulateBrowserHeaders
+            }
+            Dim ProgressReporter As IProgress(Of NetLoaderProgress) = Nothing
+            If LoaderToSyncProgress IsNot Nothing Then
+                ProgressReporter = New Progress(Of NetLoaderProgress)(
+                    Sub(Value)
+                        If Value.TotalBytes IsNot Nothing AndAlso Value.TotalBytes > 0 Then
+                            LoaderToSyncProgress.Progress = Value.BytesReceived / Value.TotalBytes.Value
+                        Else
+                            LoaderToSyncProgress.Progress = If(Value.FilesTotal > 0, Value.FilesCompleted / Value.FilesTotal, 0)
+                        End If
+                    End Sub)
+            End If
+            Dim Result = New NetLoader().DownloadAsync({FileTask}, ProgressReporter, maxConcurrency:=4, cancellationToken:=If(LoaderToSyncProgress?.CreateCancellationToken(), CancellationToken.None)).Run()
+            If Not Result.Success Then
+                Dim FirstError As Exception = Result.Files.FirstOrDefault()?.Error
+                Throw If(FirstError, New Exception("下载失败"))
+            End If
             If Check IsNot Nothing Then
                 Dim CheckMessage As String = Check.Check(LocalPath)
                 If CheckMessage IsNot Nothing Then

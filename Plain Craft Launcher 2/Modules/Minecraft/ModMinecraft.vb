@@ -1,3 +1,5 @@
+Imports PCL.Core.Minecraft
+
 Public Module ModMinecraft
 
 #Region "文件夹"
@@ -1655,78 +1657,17 @@ OnLoaded:
 
         '转换为 LibToken
         Dim BasicArray As New List(Of McLibEntry)
-        For Each Library As JObject In CType(JsonObject("libraries"), JArray).Children
-
-            '清理 null 项（BakaXL 会把没有的项序列化为 null，但会被 Newtonsoft 转换为 JValue，导致 Is Nothing = false；这导致了 #409）
-            For i = Library.Properties.Count - 1 To 0 Step -1
-                If Library.Properties(i).Value.Type = JTokenType.Null Then Library.Remove(Library.Properties(i).Name)
-            Next
-
-            '检查是否需要（Rules）
-            If Not McJsonRuleCheck(Library("rules")) Then Continue For
-
-            '获取根节点下的 url
-            Dim RootUrl As String = Library("url")
-            If RootUrl IsNot Nothing Then
-                RootUrl += McLibGet(Library("name"), False, True, CustomMcFolder).Replace("\", "/")
-            End If
-
-            '根据是否本地化处理（Natives）
-            If Library("natives") Is Nothing Then '没有 Natives
-                Dim LocalPath As String
-                LocalPath = McLibGet(Library("name"), CustomMcFolder:=CustomMcFolder)
-                Try
-                    If Library("downloads") IsNot Nothing AndAlso Library("downloads")("artifact") IsNot Nothing Then
-                        BasicArray.Add(New McLibEntry With {
-                            .OriginalName = Library("name"),
-                            .Url = If(Library("downloads")("artifact")("url"), RootUrl),
-                            .LocalPath = If(Library("downloads")("artifact")("path") Is Nothing, McLibGet(Library("name"),
-                                CustomMcFolder:=CustomMcFolder), CustomMcFolder & "libraries\" & Library("downloads")("artifact")("path").ToString.Replace("/", "\")),
-                            .Size = Val(Library("downloads")("artifact")("size").ToString),
-                            .IsNatives = False,
-                            .SHA1 = Library("downloads")("artifact")("sha1")?.ToString})
-                    Else
-                        BasicArray.Add(New McLibEntry With {.OriginalName = Library("name"), .Url = RootUrl, .LocalPath = LocalPath, .Size = 0, .IsNatives = False, .SHA1 = Nothing})
-                    End If
-                Catch ex As Exception
-                    Logger.Warn(ex, $"处理实际支持库列表失败（无 Natives，{If(Library("name"), "Nothing")}）")
-                    BasicArray.Add(New McLibEntry With {.OriginalName = Library("name"), .Url = RootUrl, .LocalPath = LocalPath, .Size = 0, .IsNatives = False, .SHA1 = Nothing})
-                End Try
-            ElseIf Library("natives")("windows") IsNot Nothing Then '有 Windows Natives
-                Dim NativeName As String = Library("natives")("windows")
-                Try
-                    If Library("downloads") IsNot Nothing AndAlso Library("downloads")("classifiers") IsNot Nothing AndAlso Library("downloads")("classifiers")(NativeName) IsNot Nothing Then
-                        Dim NativeData = Library("downloads")("classifiers")(NativeName)
-                        BasicArray.Add(New McLibEntry With {
-                             .OriginalName = Library("name"),
-                             .Url = If(NativeData("url"), RootUrl),
-                             .LocalPath = If(NativeData("path") Is Nothing,
-                                 McLibGet(Library("name"), CustomMcFolder:=CustomMcFolder).
-                                    Replace(".jar", "-" & NativeName & ".jar").
-                                    Replace("${arch}", If(Environment.Is64BitOperatingSystem, "64", "32")),
-                                    $"{CustomMcFolder}libraries\{NativeData("path").ToString.Replace("/", "\")}"),
-                             .Size = Val(NativeData("size").ToString),
-                             .IsNatives = True,
-                             .SHA1 = NativeData("sha1").ToString})
-                    Else
-                        BasicArray.Add(
-                        New McLibEntry With {.OriginalName = Library("name"), .Url = RootUrl, .Size = 0, .IsNatives = True, .SHA1 = Nothing,
-                            .LocalPath = McLibGet(Library("name"), CustomMcFolder:=CustomMcFolder).
-                                 Replace(".jar", $"-{NativeName}.jar").
-                                 Replace("${arch}", If(Environment.Is64BitOperatingSystem, "64", "32"))
-                        })
-                    End If
-                Catch ex As Exception
-                    Logger.Warn(ex, $"处理实际支持库列表失败（有 Natives，{If(Library("name"), "Nothing")}）")
-                    BasicArray.Add(
-                        New McLibEntry With {.OriginalName = Library("name"), .Url = RootUrl, .Size = 0, .IsNatives = True, .SHA1 = Nothing,
-                             .LocalPath = McLibGet(Library("name"), CustomMcFolder:=CustomMcFolder).
-                                 Replace(".jar", $"-{NativeName}.jar").
-                                 Replace("${arch}", If(Environment.Is64BitOperatingSystem, "64", "32"))
-                        })
-                End Try
-            End If
-
+        For Each Library In LibraryResolver.Resolve(JsonObject, CustomMcFolder)
+            Dim OriginalName As String = Library.Name
+            If Library.IsNative AndAlso OriginalName.Contains(":") Then OriginalName = OriginalName.BeforeLast(":")
+            BasicArray.Add(New McLibEntry With {
+                .OriginalName = OriginalName,
+                .Url = Library.Url,
+                .LocalPath = PathUtils.AddSlashSuffix(CustomMcFolder) & Library.LocalPath,
+                .Size = If(Library.Size < 0, 0, Library.Size),
+                .IsNatives = Library.IsNative,
+                .SHA1 = Library.Sha1
+            })
         Next
 
         '去重

@@ -223,6 +223,7 @@ Phase 3 已开始：
 - 新增 C# `RuleEvaluator`，支持 Minecraft 版本 JSON 的 os / features 规则。
 - 新增 C# `LibraryResolver`，解析 artifact、classifiers、natives、Maven 根地址与规则过滤。
 - `InstanceCheckService` 的 libraries 检查已改为使用 `LibraryResolver`。
+- `ModMinecraft.McLibListGetWithJson` 的 artifact/natives/classifiers/rules 解析已改为调用 C# `LibraryResolver`，仅保留 VB 侧去重逻辑。
 - 下一步：迁移剩余 ModNet NetFile 引擎，再迁移 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：

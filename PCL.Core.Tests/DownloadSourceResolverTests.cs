@@ -13,6 +13,14 @@ public class DownloadSourceResolverTests {
     }
 
     [Test]
+    public async Task 生成Assets镜像地址并升级HTTPS() {
+        var (original, mirror) = DownloadSourceResolver.GetAssets(
+            "http://resources.download.minecraft.net/ab/abcdef");
+        await Assert.That(original).IsEqualTo("https://resources.download.minecraft.net/ab/abcdef");
+        await Assert.That(mirror).IsEqualTo("https://bmclapi2.bangbang93.com/assets/ab/abcdef");
+    }
+
+    [Test]
     public async Task 生成Mod镜像地址() {
         await Assert.That(DownloadSourceResolver.GetMod("https://cdn.modrinth.com/a.jar"))
             .IsEqualTo("https://mod.mcimirror.top/a.jar");

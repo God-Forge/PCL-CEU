@@ -1131,14 +1131,8 @@ Public Module ModDownload
     ''' 下载 Assets 文件。
     ''' </summary>
     Public Function DlSourceAssetsGet(Original As String) As IEnumerable(Of String)
-        Original = Original.Replace("http://resources.download.minecraft.net", "https://resources.download.minecraft.net")
-        Return DlSourceOrder(
-            {Original},
-            {Original.
-                Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/assets").
-                Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/assets").
-                Replace("https://resources.download.minecraft.net", "https://bmclapi2.bangbang93.com/assets")
-            })
+        Dim Sources = DownloadSourceResolver.GetAssets(Original)
+        Return DlSourceOrder({Sources.Original}, {Sources.Mirror})
     End Function
     ''' <summary>
     ''' 下载 Libraries 文件。

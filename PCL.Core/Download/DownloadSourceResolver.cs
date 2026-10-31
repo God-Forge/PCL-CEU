@@ -1,4 +1,4 @@
-namespace PCL.Core.Download;
+﻿namespace PCL.Core.Download;
 
 /// <summary>
 /// 生成 Mojang 与 Mod 下载源的镜像地址。
@@ -12,6 +12,15 @@ public static class DownloadSourceResolver {
             .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com")
             .Replace("https://launcher.mojang.com", "https://bmclapi2.bangbang93.com")
             .Replace("https://launchermeta.mojang.com", "https://bmclapi2.bangbang93.com");
+        return (original, mirror);
+    }
+
+    public static (string Original, string Mirror) GetAssets(string original) {
+        original = original.Replace("http://resources.download.minecraft.net", "https://resources.download.minecraft.net");
+        var mirror = original
+            .Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/assets")
+            .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/assets")
+            .Replace("https://resources.download.minecraft.net", "https://bmclapi2.bangbang93.com/assets");
         return (original, mirror);
     }
 

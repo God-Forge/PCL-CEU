@@ -1458,43 +1458,11 @@ NextInstance:
         Return DeduplicateJavaArguments(Args, False)
     End Function
     '获取替换标记
-    Private Iterator Function McLaunchArgumentsReplace(Arguments As List(Of String)) As IEnumerable(Of (Key As String, Value As String))
-        '基础参数
-        Yield ("${classpath_separator}", ";")
-        Yield ("${natives_directory}", PathUtils.RemoveSlashSuffix(GetNativesFolder()))
-        Yield ("${library_directory}", PathUtils.ToShortPath(McFolderSelected & "libraries"))
-        Yield ("${libraries_directory}", PathUtils.ToShortPath(McFolderSelected & "libraries"))
-        Yield ("${pure_directory}", PathUtils.RemoveSlashSuffix(PathPure.Value)) '由 PCL 添加，这会允许在分割参数并去重后再替换路径，防止路径中的特殊字符影响参数分割和去重
-        Yield ("${launcher_name}", "PCL")
-        Yield ("${launcher_version}", VersionCode)
-        Yield ("${version_name}", McInstanceSelected.Name)
-        Yield ("${game_directory}", PathUtils.ToShortPath(Left(McInstanceSelected.PathIndie, McInstanceSelected.PathIndie.Count - 1)))
-        Yield ("${assets_root}", PathUtils.ToShortPath(McFolderSelected & "assets"))
-        Yield ("${user_properties}", "{}")
-        Yield ("${auth_player_name}", McLoginLoader.Output.Name)
-        Yield ("${auth_uuid}", McLoginLoader.Output.Uuid)
-        Yield ("${auth_access_token}", McLoginLoader.Output.AccessToken)
-        Yield ("${access_token}", McLoginLoader.Output.AccessToken)
-        Yield ("${auth_session}", McLoginLoader.Output.AccessToken)
-        Yield ("${user_type}", "msa") '#1221
-        Yield ("${primary_jar}", PathUtils.ToShortPath(McInstanceSelected.PathVersion & McInstanceSelected.Name & ".jar")) '#6942
-        Yield ("${game_assets}", PathUtils.ToShortPath(McFolderSelected & "assets\virtual\legacy")) '1.5.2 的 pre-1.6 资源索引应与 legacy 合并
-        Yield ("${assets_index_name}", McAssetsGetIndexName(McInstanceSelected))
-
+    Private Function McLaunchArgumentsReplace(Arguments As List(Of String)) As IEnumerable(Of (Key As String, Value As String))
         '自定义信息
-        Dim ArgumentInfo As String
-        ArgumentInfo = Settings.Get(Of String)("VersionArgumentInfo", Instance:=McInstanceSelected)
+        Dim ArgumentInfo As String = Settings.Get(Of String)("VersionArgumentInfo", Instance:=McInstanceSelected)
         If ArgumentInfo = "" Then ArgumentInfo = Settings.Get(Of String)("LaunchArgumentInfo")
-        If ArgumentInfo = "" Then '若自定义信息为空，则必须从参数中去掉该部分，不然 MC 会显示 ${version_type} 或者一个空字符串
-            If Arguments.Contains("--versionType") Then
-                Dim Index As Integer = Arguments.IndexOf("--versionType")
-                Arguments.RemoveAt(Index)
-                If Index < Arguments.Count Then Arguments.RemoveAt(Index)
-            End If
-            Yield ("${version_type}", """""")
-        Else
-            Yield ("${version_type}", ArgumentReplace(ArgumentInfo))
-        End If
+        Dim VersionType As String = If(ArgumentInfo = "", "", ArgumentReplace(ArgumentInfo))
 
         '窗口尺寸
         Dim TargetSize As Size
@@ -1510,13 +1478,11 @@ NextInstance:
                 TargetSize = New Size(854, 480)
         End Select
         If McInstanceSelected.Version.Vanilla.Major <= 12 AndAlso McLaunchJavaSelected.Version >= New Version(8, 0, 200) AndAlso McLaunchJavaSelected.Version <= New Version(8, 0, 321) AndAlso
-                Not McInstanceSelected.Version.HasOptiFine AndAlso Not McInstanceSelected.Version.ModLoaders.HasFlagF(ModLoaders.Forge) Then '修复 1.12.2- 下 JRE 8u200~321 下窗口大小为设置大小的 DPI% 倍（#3463）
+                Not McInstanceSelected.Version.HasOptiFine AndAlso Not McInstanceSelected.Version.ModLoaders.HasFlagF(ModLoaders.Forge) Then
             McLaunchLog($"已应用窗口大小过大修复（Java 版本：{McLaunchJavaSelected.Version}）")
             TargetSize.Width /= DPI / 96
             TargetSize.Height /= DPI / 96
         End If
-        Yield ("${resolution_width}", Math.Round(TargetSize.Width))
-        Yield ("${resolution_height}", Math.Round(TargetSize.Height))
 
         '支持库
         Dim ClasspathEntries = McLibListGet(McInstanceSelected, True).
@@ -1525,8 +1491,29 @@ NextInstance:
                 .LocalPath = PathUtils.ToShortPath(library.LocalPath),
                 .IsNative = library.IsNatives
             }).ToList()
-        Yield ("${classpath}", ClasspathBuilder.Build(ClasspathEntries, ";"))
+
+        Dim Context As New LaunchTokenContext With {
+            .NativesDirectory = PathUtils.RemoveSlashSuffix(GetNativesFolder()),
+            .LibrariesDirectory = PathUtils.ToShortPath(McFolderSelected & "libraries"),
+            .PureDirectory = PathUtils.RemoveSlashSuffix(PathPure.Value),
+            .LauncherVersion = VersionCode,
+            .VersionName = McInstanceSelected.Name,
+            .GameDirectory = PathUtils.ToShortPath(Left(McInstanceSelected.PathIndie, McInstanceSelected.PathIndie.Count - 1)),
+            .AssetsRoot = PathUtils.ToShortPath(McFolderSelected & "assets"),
+            .AuthPlayerName = McLoginLoader.Output.Name,
+            .AuthUuid = McLoginLoader.Output.Uuid,
+            .AccessToken = McLoginLoader.Output.AccessToken,
+            .PrimaryJar = PathUtils.ToShortPath(McInstanceSelected.PathVersion & McInstanceSelected.Name & ".jar"),
+            .GameAssets = PathUtils.ToShortPath(McFolderSelected & "assets\virtual\legacy"),
+            .AssetsIndexName = McAssetsGetIndexName(McInstanceSelected),
+            .VersionType = VersionType,
+            .Width = CInt(Math.Round(TargetSize.Width)),
+            .Height = CInt(Math.Round(TargetSize.Height)),
+            .Classpath = ClasspathBuilder.Build(ClasspathEntries, ";")
+        }
+        Return LaunchTokenBuilder.Build(Context, Arguments)
     End Function
+
 
     ''' <summary>
     ''' 分割 Java 参数字符串。
@@ -2071,3 +2058,4 @@ IgnoreCustomSkin:
 #End Region
 
 End Module
+

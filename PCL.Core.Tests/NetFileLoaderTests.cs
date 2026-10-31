@@ -49,7 +49,7 @@ public class NetFileLoaderTests {
                 new NetFileTask { Name = "a", TargetPath = Path.Combine(root, "a.bin"), Sources = ["https://example.com/a"] },
                 new NetFileTask { Name = "b", TargetPath = Path.Combine(root, "b.bin"), Sources = ["https://example.com/b"] }
             };
-            var progress = new List<NetLoaderProgress>();
+            var progress = new System.Collections.Concurrent.ConcurrentBag<NetLoaderProgress>();
             var loader = new NetLoader(new FakeDownloadService(), new FakeDownloadService());
             var result = await loader.DownloadAsync(files, new SynchronousProgress(progress.Add), maxConcurrency: 2);
             await Assert.That(result.Success).IsTrue();

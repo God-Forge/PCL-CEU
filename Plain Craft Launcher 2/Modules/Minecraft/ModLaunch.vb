@@ -1,3 +1,5 @@
+Imports PCL.Core.Minecraft
+
 Public Module ModLaunch
 
 #Region "开始"
@@ -1661,63 +1663,28 @@ NextInstance:
 
     Private Sub McLaunchNatives(Loader As LoaderTask(Of Integer, Integer))
 
-        '创建文件夹
         Dim Target As String = GetNativesFolder()
-        DirectoryUtils.Create(Target)
-
-        '解压文件
         McLaunchLog("正在解压 Natives 文件")
-        Dim ExistFiles As New List(Of String)
-        For Each Native As McLibEntry In McLibListGet(McInstanceSelected, True)
-            If Not Native.IsNatives Then Continue For
-            Dim Zip As ZipArchive
-            Try
-                Zip = FileUtils.OpenZip(Native.LocalPath)
-            Catch ex As InvalidDataException
-                Logger.Warn(ex, $"打开 Natives 文件失败（{Native.LocalPath}）")
-                FileUtils.Delete(Native.LocalPath)
-                Throw New Exception("无法打开 Natives 文件（" & Native.LocalPath & "），该文件可能已损坏，请重新尝试启动游戏")
-            End Try
-            For Each Entry In Zip.Entries
-                Dim FileName As String = Entry.FullName
-                If PathUtils.GetExtension(FileName) = "dll" Then
-                    '实际解压文件的步骤
-                    Dim FilePath As String = Target & FileName
-                    ExistFiles.Add(FilePath)
-                    Dim OriginalFile = FileUtils.GetInfo(FilePath)
-                    If OriginalFile.Exists Then
-                        If OriginalFile.Length = Entry.Length Then
-                            If ModeDebug Then McLaunchLog("无需解压：" & FilePath)
-                            Continue For
-                        End If
-                        '删除原文件
-                        Try
-                            FileUtils.Delete(FilePath)
-                        Catch ex As UnauthorizedAccessException
-                            McLaunchLog("删除原 dll 访问被拒绝，这通常代表有一个 MC 正在运行，跳过解压：" & FilePath)
-                            McLaunchLog("实际的错误信息：" & ex.GetDisplay(True))
-                            Exit For
-                        End Try
-                    End If
-                    '解压新文件
-                    FileUtils.Write(FilePath, Entry.Open)
-                    McLaunchLog("已解压：" & FilePath)
-                End If
-            Next
-            If Zip IsNot Nothing Then Zip.Dispose()
-        Next
+        Dim NativePaths = McLibListGet(McInstanceSelected, True).
+            Where(Function(native) native.IsNatives).
+            Select(Function(native) native.LocalPath).ToList()
 
-        '删除多余文件
-        For Each FileName As String In DirectoryUtils.EnumerateFiles(Target)
-            If ExistFiles.Contains(FileName) Then Continue For
-            Try
-                McLaunchLog("删除：" & FileName)
-                FileUtils.Delete(FileName)
-            Catch ex As UnauthorizedAccessException
-                McLaunchLog("删除多余文件访问被拒绝，跳过删除步骤")
-                McLaunchLog("实际的错误信息：" & ex.GetDisplay(True))
-                Return
-            End Try
+        Dim Result As NativesExtractResult
+        Try
+            Result = NativesExtractor.Extract(NativePaths, Target)
+        Catch ex As InvalidDataException
+            Logger.Warn(ex, "解压 Natives 文件失败")
+            Throw New Exception(ex.Message & " 请重新尝试启动游戏。", ex)
+        End Try
+
+        For Each FilePath In Result.Extracted
+            McLaunchLog("已解压：" & FilePath)
+        Next
+        For Each FilePath In Result.Deleted
+            McLaunchLog("删除：" & FilePath)
+        Next
+        For Each FilePath In Result.Failed
+            McLaunchLog("Natives 文件操作失败（可能有一个 MC 正在运行）：" & FilePath)
         Next
 
     End Sub

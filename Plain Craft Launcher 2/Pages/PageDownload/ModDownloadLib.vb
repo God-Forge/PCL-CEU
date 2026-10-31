@@ -935,136 +935,22 @@ Retry:
         Dim Java As Java = SelectOrDownloadJava(ValueRange(Of Version).AtLeast(New Version(8, 0, 60)), True, Task.CreateCancellationToken, Task.CreateSyncProgressProvider(0, 0.2))
         If Task.IsCanceled Then Return
         If Java Is Nothing Then Throw New OperationCanceledException
-        '添加 Java Wrapper 作为主 Jar
-        Dim Arguments As String
+
+        Dim WrapperPath As String = Nothing
         If UseJavaWrapper AndAlso Not Settings.Get(Of Boolean)("LaunchAdvanceDisableJLW") Then
-            Arguments = $"-Doolloo.jlw.tmpdir=""{PathUtils.RemoveSlashSuffix(PathPure.Value)}"" -cp ""{PathTemp}Cache\forge_installer.jar;{Target}"" -jar ""{LaunchUtils.ExtractPatch("Launch\JavaWrapper.jar", PathPure.Value)}"" com.bangbang93.ForgeInstaller ""{McFolder}"
-        Else
-            Arguments = $"-cp ""{PathTemp}Cache\forge_installer.jar;{Target}"" com.bangbang93.ForgeInstaller ""{McFolder}"
+            WrapperPath = LaunchUtils.ExtractPatch("Launch\JavaWrapper.jar", PathPure.Value)
         End If
-        If Java.Version.Major >= 9 Then Arguments = "--add-exports cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED " & Arguments
-        '开始启动
+
         SyncLock InstallSyncLock
-            Dim Info = New ProcessStartInfo With {
-                .FileName = Java.JavaExePath,
-                .Arguments = Arguments,
-                .UseShellExecute = False,
-                .CreateNoWindow = True,
-                .RedirectStandardError = True,
-                .RedirectStandardOutput = True
-            }
-            Dim LoaderName As String = If(IsNeoForge, "NeoForge", "Forge")
-            Logger.Info($"开始安装 {LoaderName}：{Arguments}")
-            Dim process As New Process With {.StartInfo = Info}
-            Dim LastResults As New Queue(Of String)
-            Using outputWaitHandle As New AutoResetEvent(False)
-                Using errorWaitHandle As New AutoResetEvent(False)
-                    AddHandler process.OutputDataReceived,
-                    Function(sender, e)
-                        Try
-                            If e.Data Is Nothing Then
-                                outputWaitHandle.[Set]()
-                            Else
-                                LastResults.Enqueue(e.Data)
-                                If LastResults.Count > 100 Then LastResults.Dequeue()
-                                ForgelikeInjectorLine(e.Data, Task)
-                            End If
-                        Catch ex As ObjectDisposedException
-                        Catch ex As Exception
-                            Logger.Warn(ex, $"读取 {LoaderName} 安装器信息失败")
-                        End Try
-                        Try
-                            If Task.State = LoadState.Canceled AndAlso Not process.HasExited Then
-                                Logger.Info($"由于任务取消，已中止 {LoaderName} 安装")
-                                process.Kill()
-                            End If
-                        Catch
-                        End Try
-                        Return Nothing
-                    End Function
-                    AddHandler process.ErrorDataReceived,
-                    Function(sender, e)
-                        Try
-                            If e.Data Is Nothing Then
-                                errorWaitHandle.[Set]()
-                            Else
-                                LastResults.Enqueue(e.Data)
-                                If LastResults.Count > 100 Then LastResults.Dequeue()
-                                ForgelikeInjectorLine(e.Data, Task)
-                            End If
-                        Catch ex As ObjectDisposedException
-                        Catch ex As Exception
-                            Logger.Warn(ex, $"读取 {LoaderName} 安装器错误信息失败")
-                        End Try
-                        Try
-                            If Task.State = LoadState.Canceled AndAlso Not process.HasExited Then
-                                Logger.Info($"由于任务取消，已中止 {LoaderName} 安装")
-                                process.Kill()
-                            End If
-                        Catch
-                        End Try
-                        Return Nothing
-                    End Function
-                    process.Start()
-                    process.BeginOutputReadLine()
-                    process.BeginErrorReadLine()
-                    '等待
-                    Do Until process.HasExited
-                        Thread.Sleep(10)
-                    Loop
-                    '输出
-                    outputWaitHandle.WaitOne(10000)
-                    errorWaitHandle.WaitOne(10000)
-                    process.Dispose()
-                    '检查是否安装成功：最后 5 行中是否有 true（true 可能在倒数数行，见 #832）
-                    If LastResults.Reverse().Take(5).Any(Function(l) l = "true") Then Return
-                    Logger.Warn(LastResults.Join(vbCrLf))
-                    Dim LastLines As String = ""
-                    For i As Integer = Math.Max(0, LastResults.Count - 5) To LastResults.Count - 1 '最后 5 行
-                        LastLines &= vbCrLf & LastResults(i)
-                    Next
-                    Throw New Exception($"{LoaderName} 安装器出错，日志结束部分为：" & LastLines)
-                End Using
-            End Using
+            ForgelikeInjectorRunner.Run(
+                Java.JavaExePath, Target, McFolder,
+                WrapperPath IsNot Nothing, WrapperPath,
+                PathTemp, PathPure.Value, Java.Version.Major, IsNeoForge,
+                Sub(value) Task.Progress = value,
+                Sub(line) Logger.Info(line),
+                Sub(line) Logger.Trace(line),
+                Task.CreateCancellationToken)
         End SyncLock
-    End Sub
-    Private Sub ForgelikeInjectorLine(Content As String, Task As LoaderTask(Of Boolean, Boolean))
-        Select Case Content
-            Case "Extracting json"
-                Task.Progress = 0.27
-            Case "Downloading libraries"
-                Task.Progress = 0.28
-            Case "  File exists: Checksum validated."
-                Task.Progress += 0.003
-            Case "Building Processors"
-                Task.Progress = 0.38
-            Case "Task: DOWNLOAD_MOJMAPS" 'B
-                Task.Progress = 0.4
-            Case "Task: MERGE_MAPPING" 'B
-                Task.Progress = 0.5
-            Case "Splitting: "
-                Task.Progress = 0.55
-            Case "Parameter Annotations" 'B
-                Task.Progress = 0.6
-            Case "Processing Complete" 'B
-                Task.Progress = 0.67
-            Case "log: null" 'new
-                Task.Progress = 0.67
-            Case "Sorting" 'new
-                Task.Progress = 0.8
-            Case "Remapping final jar" 'A
-                Task.Progress = 0.85
-            Case "Remapping jar... 50%" 'A
-                Task.Progress = 0.9
-            Case "Remapping jar... 100%" 'A
-                Task.Progress = 0.95
-            Case "Injecting profile"
-                Task.Progress = 0.98
-            Case Else
-                Logger.Trace(Content)
-                Return
-        End Select
-        Logger.Info(Content)
     End Sub
 
     ''' <summary>

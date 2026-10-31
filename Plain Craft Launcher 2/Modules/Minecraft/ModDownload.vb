@@ -463,23 +463,15 @@ Public Module ModDownload
     ''' </summary>
     Public DlForgeListLoader As New LoaderTask(Of Integer, DlForgeListResult)("DlForgeList Main", AddressOf DlForgeListMain)
     Private Sub DlForgeListMain(Loader As LoaderTask(Of Integer, DlForgeListResult))
-        Select Case Settings.Get(Of Integer)("ToolDownloadVersion")
-            Case 0
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListBmclapiLoader, 30),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListOfficialLoader, 30 + 60)
-                }, Loader.IsForceRestarting)
-            Case 1
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListOfficialLoader, 5),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListBmclapiLoader, 5 + 30)
-                }, Loader.IsForceRestarting)
-            Case Else
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListOfficialLoader, 60),
-                    New KeyValuePair(Of LoaderTask(Of Integer, DlForgeListResult), Integer)(DlForgeListBmclapiLoader, 60 + 60)
-                }, Loader.IsForceRestarting)
-        End Select
+        Using Fetcher As New HttpStringFetcher()
+            Dim Service As New ForgeListService(Fetcher)
+            Dim Result = Service.GetAsync(Settings.Get(Of Integer)("ToolDownloadVersion"), Loader.CreateCancellationToken).Run()
+            Loader.Output = New DlForgeListResult With {
+                .IsOfficial = Result.IsOfficial,
+                .SourceName = Result.SourceName,
+                .Value = Result.Names.ToList()
+            }
+        End Using
     End Sub
 
     ''' <summary>

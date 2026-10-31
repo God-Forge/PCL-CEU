@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Windows
+Imports PCL.Core.Minecraft
 Imports PCL.Core.Tools
 
 ''' <summary>
@@ -289,6 +290,28 @@ Public Module ModCommandLine
                     Return 1
                 End Try
 
+            Case "--versions"
+                InitConsole(True)
+                Try
+                    Dim Root As String = ModCommandLineDownload.EnsureMcFolder()
+                    Dim Versions = MinecraftVersionScanner.Scan(Root)
+                    If Versions.Count = 0 Then
+                        Console.WriteLine("versions 目录中没有可读取的版本。")
+                    Else
+                        For Each VersionInfo In Versions
+                            Dim ErrorText As String = If(VersionInfo.Error, "")
+                            Dim DateText As String = If(VersionInfo.ReleaseTime?.ToString("yyyy-MM-dd"), "未知日期")
+                            Console.WriteLine(VersionInfo.Id & " | " & VersionInfo.Type & " | " & DateText & " | " & VersionInfo.MainClass & If(ErrorText = "", "", " | " & ErrorText))
+                        Next
+                    End If
+                    WaitForExit()
+                    Return 0
+                Catch ex As Exception
+                    Console.WriteLine("读取版本列表失败：" & ex.Message)
+                    WaitForExit()
+                    Return 1
+                End Try
+
             Case Else
                 If Command.StartsWith("--") Then
                     InitConsole(True)
@@ -403,6 +426,7 @@ Public Module ModCommandLine
         Console.WriteLine("  --javapkg-info <输入.javapkg>                    查看 Java 包信息")
         Console.WriteLine("  --javapkg-decode <输入.javapkg> <输出文件夹>     解压 Java 包")
         Console.WriteLine("  --backup <实例>        备份当前实例存档")
+        Console.WriteLine("  --versions             列出 versions 目录中的版本")
         Console.WriteLine("  --mods <实例>          检查当前实例的 Mod")
         Console.WriteLine("  --repair <实例>        检查并修复实例基础文件")
         Console.WriteLine("  --launch <实例>        启动 versions 下指定文件夹名的实例")
@@ -422,6 +446,7 @@ Public Module ModCommandLine
         Console.WriteLine("  PCL2-3.8.0ceu.exe --javapkg-info .\\21.0.1.jdk.javapkg")
         Console.WriteLine("  PCL2-3.8.0ceu.exe --javapkg-decode .\\21.0.1.jdk.javapkg .\\java21")
         Console.WriteLine("  PCL2-3.8.0ceu.exe --backup 1.20.1")
+        Console.WriteLine("  PCL2-3.8.0ceu.exe --versions")
         Console.WriteLine("  PCL2-3.8.0ceu.exe --mods 1.20.1")
         Console.WriteLine("  PCL2-3.8.0ceu.exe --repair 1.20.1")
         Console.WriteLine("  PCL2-3.8.0ceu.exe --launch 1.20.1")

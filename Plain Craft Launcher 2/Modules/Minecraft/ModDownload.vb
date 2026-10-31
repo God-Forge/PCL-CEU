@@ -981,21 +981,16 @@ Public Module ModDownload
     Private Sub DlLiteLoaderListOfficialMain(Loader As LoaderTask(Of Integer, DlLiteLoaderListResult))
         Dim Result As JObject = NetRequestByClientRetry("https://dl.liteloader.com/versions/versions.json", RequireJson:=True).DeserializeJson()
         Try
-            Dim Json As JObject = Result("versions")
-            Dim Versions As New List(Of DlLiteLoaderListEntry)
-            For Each Pair As KeyValuePair(Of String, JToken) In Json
-                If Pair.Key.StartsWithF("1.6") OrElse Pair.Key.StartsWithF("1.5") Then Continue For
-                Dim RealEntry As JToken = If(Pair.Value("artefacts"), Pair.Value("snapshots"))("com.mumfrey:liteloader")("latest")
-                Versions.Add(New DlLiteLoaderListEntry With {
-                             .Inherit = Pair.Key,
-                             .IsLegacy = Pair.Key.Split(".")(1) < 8,
-                             .IsPreview = RealEntry("stream").ToString.Lower = "snapshot",
-                             .FileName = "liteloader-installer-" & Pair.Key & If(Pair.Key = "1.8" OrElse Pair.Key = "1.9", ".0", "") & "-00-SNAPSHOT.jar",
-                             .MD5 = RealEntry("md5"),
-                             .ReleaseTime = GetLocalTime(GetDate(RealEntry("timestamp"))).ToString("yyyy'/'MM'/'dd HH':'mm"),
-                             .JsonToken = RealEntry
-                         })
-            Next
+            Dim Versions = LiteLoaderVersionParser.Parse(Result).
+                Select(Function(Item) New DlLiteLoaderListEntry With {
+                    .Inherit = Item.Inherit,
+                    .IsLegacy = Item.IsLegacy,
+                    .IsPreview = Item.IsPreview,
+                    .FileName = Item.FileName,
+                    .MD5 = Item.Md5,
+                    .ReleaseTime = Item.ReleaseTime,
+                    .JsonToken = Item.JsonToken
+                }).ToList()
             Loader.Output = New DlLiteLoaderListResult With {.IsOfficial = True, .SourceName = "LiteLoader 官方源", .Value = Versions}
         Catch ex As Exception
             Throw New Exception("LiteLoader 官方源版本列表解析失败（" & Result.ToString & "）", ex)
@@ -1009,21 +1004,16 @@ Public Module ModDownload
     Private Sub DlLiteLoaderListBmclapiMain(Loader As LoaderTask(Of Integer, DlLiteLoaderListResult))
         Dim Result As JObject = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/maven/com/mumfrey/liteloader/versions.json", RequireJson:=True).DeserializeJson()
         Try
-            Dim Json As JObject = Result("versions")
-            Dim Versions As New List(Of DlLiteLoaderListEntry)
-            For Each Pair As KeyValuePair(Of String, JToken) In Json
-                If Pair.Key.StartsWithF("1.6") OrElse Pair.Key.StartsWithF("1.5") Then Continue For
-                Dim RealEntry As JToken = If(Pair.Value("artefacts"), Pair.Value("snapshots"))("com.mumfrey:liteloader")("latest")
-                Versions.Add(New DlLiteLoaderListEntry With {
-                             .Inherit = Pair.Key,
-                             .IsLegacy = Pair.Key.Split(".")(1) < 8,
-                             .IsPreview = RealEntry("stream").ToString.Lower = "snapshot",
-                             .FileName = "liteloader-installer-" & Pair.Key & If(Pair.Key = "1.8" OrElse Pair.Key = "1.9", ".0", "") & "-00-SNAPSHOT.jar",
-                             .MD5 = RealEntry("md5"),
-                             .ReleaseTime = GetLocalTime(GetDate(RealEntry("timestamp"))).ToString("yyyy'/'MM'/'dd HH':'mm"),
-                             .JsonToken = RealEntry
-                         })
-            Next
+            Dim Versions = LiteLoaderVersionParser.Parse(Result).
+                Select(Function(Item) New DlLiteLoaderListEntry With {
+                    .Inherit = Item.Inherit,
+                    .IsLegacy = Item.IsLegacy,
+                    .IsPreview = Item.IsPreview,
+                    .FileName = Item.FileName,
+                    .MD5 = Item.Md5,
+                    .ReleaseTime = Item.ReleaseTime,
+                    .JsonToken = Item.JsonToken
+                }).ToList()
             Loader.Output = New DlLiteLoaderListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Versions}
         Catch ex As Exception
             Throw New Exception("LiteLoader BMCLAPI 版本列表解析失败（" & Result.ToString & "）", ex)

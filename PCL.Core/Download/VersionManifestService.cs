@@ -20,6 +20,11 @@ public sealed class VersionManifestService {
     }
 
     public async Task<string> GetVersionJsonAsync(string versionId, CancellationToken cancellationToken = default) {
+        var url = await GetVersionUrlAsync(versionId, cancellationToken).ConfigureAwait(false);
+        return await _fetcher.GetStringAsync(url, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<string> GetVersionUrlAsync(string versionId, CancellationToken cancellationToken = default) {
         var id = NormalizeId(versionId);
         Exception? lastError = null;
         foreach (var manifestUrl in ManifestUrls) {
@@ -28,15 +33,14 @@ public sealed class VersionManifestService {
                 var entry = manifest["versions"]?.OfType<JObject>()
                     .FirstOrDefault(item => string.Equals(item["id"]?.ToString(), id, StringComparison.OrdinalIgnoreCase));
                 var url = entry?["url"]?.ToString();
-                if (string.IsNullOrWhiteSpace(url)) continue;
-                return await _fetcher.GetStringAsync(url!, cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(url)) return url!;
             } catch (OperationCanceledException) {
                 throw;
             } catch (Exception ex) {
                 lastError = ex;
             }
         }
-        throw new InvalidOperationException($"未能获取 Minecraft {versionId} 的版本 JSON。", lastError);
+        throw new InvalidOperationException($"未能获取 Minecraft {versionId} 的版本 JSON 地址。", lastError);
     }
 
     private static string NormalizeId(string id) {

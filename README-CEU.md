@@ -216,6 +216,7 @@ Phase 3 已开始：
 - `ModNet.NetDownloadByLoader` 已从 VB `LoaderDownload`/`NetFile` 切换为 C# 多分片下载；NetFile 的完整任务引擎仍未迁移。
 - 新增 `PCL.Core/Download/VersionManifestService`，通过 C# 获取 Minecraft 版本 JSON（Mojang 优先，BMCLAPI 回退）。
 - 命令行 `--download` 已改为使用 C# 版本 JSON 服务，不再依赖 `DlClientListLoader`。
+- `ModDownload.DlClientListGet` 也已迁移到 `VersionManifestService`，不再使用 VB 版本列表 Loader。
 - 下一步：迁移剩余 ModNet NetFile 引擎，再迁移 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：

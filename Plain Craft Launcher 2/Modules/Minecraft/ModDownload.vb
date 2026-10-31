@@ -1,3 +1,6 @@
+Imports PCL.Core.Download
+Imports PCL.Core.Net
+
 Public Module ModDownload
 
 #Region "DlClient* | Minecraft 客户端"
@@ -297,29 +300,9 @@ Public Module ModDownload
     ''' </summary>
     Public Function DlClientListGet(Id As String)
         Try
-            '确认版本格式标准
-            Id = Id.Replace("_", "-") '1.7.10_pre4 在版本列表中显示为 1.7.10-pre4
-            If Id <> "1.0" AndAlso Id.EndsWithF(".0") Then Id = Left(Id, Id.Length - 2) 'OptiFine 1.8 的下载会触发此问题，显示版本为 1.8.0
-            '获取 Minecraft 版本列表
-            Select Case DlClientListLoader.State
-                Case LoadState.Finished
-                    '从当前的结果获取目标版本…
-                    For Each Version As JObject In DlClientListLoader.Output.Value("versions")
-                        If Version("id") = Id Then Return Version("url").ToString
-                    Next
-                    '…如果没有，则重新尝试获取（在版本刚更新时可能出现这种情况，#5195）
-                    DlClientListLoader.WaitForExit(Id, IsForceRestart:=True)
-                Case LoadState.Loading
-                    DlClientListLoader.WaitForExit(Id)
-                Case LoadState.Failed, LoadState.Canceled, LoadState.Waiting
-                    DlClientListLoader.WaitForExit(Id, IsForceRestart:=True)
-            End Select
-            '重新查找版本
-            For Each Version As JObject In DlClientListLoader.Output.Value("versions")
-                If Version("id") = Id Then Return Version("url").ToString
-            Next
-            Logger.Warn($"未发现版本 {Id} 的 json 下载地址，版本列表返回为：{vbCrLf}{DlClientListLoader.Output.Value}")
-            Return Nothing
+            Using Fetcher As New HttpStringFetcher()
+                Return New VersionManifestService(Fetcher).GetVersionUrlAsync(Id).Run()
+            End Using
         Catch ex As Exception
             Logger.Warn(ex, $"获取版本 {Id} 的 json 下载地址失败")
             Return Nothing

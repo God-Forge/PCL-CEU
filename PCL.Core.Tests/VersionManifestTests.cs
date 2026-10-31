@@ -32,6 +32,8 @@ public class VersionManifestTests {
         });
         var result = await new VersionManifestService(fetcher).GetVersionJsonAsync("1.20.1");
         await Assert.That(result).IsEqualTo(json);
+        var url = await new VersionManifestService(fetcher).GetVersionUrlAsync("1.20.1");
+        await Assert.That(url).IsEqualTo("https://example.com/1.20.1.json");
     }
 
     [Test]

@@ -1584,77 +1584,14 @@ NextInstance:
     ''' <summary>
     ''' 分割 Java 参数字符串。
     ''' </summary>
-    Private Iterator Function SplitJavaArguments(Arg As String) As IEnumerable(Of String)
-        Arg = Arg.ReplaceLineEndings(" ", mergeMultiple:=True).Trim '预处理换行符
-        If String.IsNullOrWhiteSpace(Arg) Then Return
-        Dim Current As New StringBuilder
-        Dim InQuotes As Boolean = False
-        Dim i As Integer = 0
-        While i < Arg.Length
-            Dim c As Char = Arg(i)
-            If c = "\"c AndAlso i + 1 < Arg.Length AndAlso Arg(i + 1) = """"c Then '检测 \"
-                '转义的双引号：保留反斜杠和引号，不切换 InQuotes
-                Current.Append("\""")
-                i += 1 '额外跳过下一个字符（双引号）
-            ElseIf c = """"c Then
-                '未转义的双引号：切换 InQuotes
-                InQuotes = Not InQuotes
-                Current.Append(c)
-            ElseIf c = " "c AndAlso Not InQuotes Then
-                '不在双引号内的空格：一个参数结束
-                If Current.Length > 0 Then
-                    Yield Current.ToString()
-                    Current.Clear()
-                End If
-            Else
-                '普通字符，直接添加
-                Current.Append(c)
-            End If
-            i += 1
-        End While
-        If Current.Length > 0 Then Yield Current.ToString '添加剩余的
+    Private Function SplitJavaArguments(Arg As String) As IEnumerable(Of String)
+        Return JavaArgumentParser.Split(Arg)
     End Function
     ''' <summary>
     ''' 对 Java 参数进行去重。
     ''' </summary>
     Private Function DeduplicateJavaArguments(Args As List(Of String), IsJVMArgs As Boolean) As List(Of String)
-        Dim Result As New List(Of String)
-        Dim i As Integer = 0
-        While i < Args.Count
-            Dim Key As String = Args(i)
-            If Not Key.StartsWithF("-") OrElse
-               (i + 1 >= Args.Count OrElse (Args(i + 1).StartsWithF("-") AndAlso Val(Args(i + 1).AfterFirst("-")) = 0)) Then '避免 -xPos 23 -xPos -50 中后面的 -50 被识别为参数
-                '单参数
-                i += 1
-                If Result.Contains(Key) Then
-                    McLaunchLog($"已去重单个{If(IsJVMArgs, " JVM ", "游戏")}参数：{Key}")
-                    Continue While
-                End If
-                Result.Add(Key)
-            Else
-                '以空格间隔的键值对（例如 --width 233）
-                Dim Value As String = Args(i + 1)
-                i += 2
-                For j = 0 To Result.Count - 2 '向前寻找相同的键
-                    If Result(j) <> Key Then Continue For
-                    '仅当是游戏参数且不是 tweakClass 时，用新的值覆盖旧的值
-                    '据测试，如果包含多个相同 --width 或 --uuid 等参数，两个都会直接失效，如果这发生在关键参数上会导致崩溃
-                    If Not IsJVMArgs AndAlso Key <> "--tweakClass" Then
-                        McLaunchLog($"已覆盖重复的{If(IsJVMArgs, " JVM ", "游戏")}参数：{Key} {Result(j + 1)} → {Key} {Value}")
-                        Result(j + 1) = Value
-                        Continue While
-                    End If
-                    '键和值完全相同，直接抛弃
-                    If Result(j + 1) = Value Then
-                        McLaunchLog($"已去重{If(IsJVMArgs, " JVM ", "游戏")}参数对：{Key} {Value}")
-                        Continue While
-                    End If
-                Next
-                Result.Add(Key)
-                Result.Add(Value)
-            End If
-        End While
-        Return Result
+        Return JavaArgumentParser.Deduplicate(Args, IsJVMArgs, AddressOf McLaunchLog)
     End Function
 
 #End Region

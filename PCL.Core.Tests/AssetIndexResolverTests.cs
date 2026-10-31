@@ -6,6 +6,21 @@ namespace PCL.Core.Tests;
 public class AssetIndexResolverTests {
 
     [Test]
+    public async Task 解析索引对象并支持仅URL回退() {
+        var chain = new[] {
+            JObject.Parse("""{ "assetIndex": { "id": "5", "url": "https://example.com/5.json" } }""")
+        };
+        var index = AssetIndexResolver.Resolve(chain, false);
+        await Assert.That(index!["id"]!.ToString()).IsEqualTo("5");
+
+        var urlOnly = new[] {
+            JObject.Parse("""{ "assetIndex": { "url": "https://example.com/x.json" } }""")
+        };
+        await Assert.That(AssetIndexResolver.Resolve(urlOnly, false)).IsNull();
+        await Assert.That(AssetIndexResolver.Resolve(urlOnly, true)).IsNotNull();
+    }
+
+    [Test]
     public async Task 优先使用assetIndex再回退assets() {
         var chain = new[] {
             JObject.Parse("""{ "assets": "legacy", "assetIndex": { "id": "5" } }""")

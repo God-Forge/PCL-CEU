@@ -1,4 +1,4 @@
-Imports PCL.Core.Minecraft
+﻿Imports PCL.Core.Minecraft
 
 Public Module ModMinecraft
 
@@ -1824,17 +1824,15 @@ OnLoaded:
     ''' 获取某版本资源文件索引的对应 Json 项，详见版本 Json 中的 assetIndex 项。失败会抛出异常。
     ''' </summary>
     Public Function McAssetsGetIndex(Instance As McInstance, Optional ReturnLegacyOnError As Boolean = False, Optional CheckURLEmpty As Boolean = False) As JToken
-        Dim AssetsName As String
         Try
+            Dim Chain As New List(Of JObject)
             Do While True
-                Dim Index As JToken = Instance.JsonObject("assetIndex")
-                If Index IsNot Nothing AndAlso Index("id") IsNot Nothing Then Return Index
-                If Instance.JsonObject("assets") IsNot Nothing Then AssetsName = Instance.JsonObject("assets").ToString
-                If CheckURLEmpty AndAlso Index("url") IsNot Nothing Then Return Index
-                '下一个版本
+                Chain.Add(Instance.JsonObject)
                 If Instance.InheritName = "" Then Exit Do
                 Instance = New McInstance(McFolderSelected & "versions\" & Instance.InheritName)
             Loop
+            Dim Index = AssetIndexResolver.Resolve(Chain, CheckURLEmpty)
+            If Index IsNot Nothing Then Return Index
         Catch
         End Try
         '无法获取到下载地址

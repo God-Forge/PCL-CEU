@@ -25,6 +25,15 @@ public static class AssetIndexResolver {
         return "legacy";
     }
 
+    public static JToken? Resolve(IEnumerable<JObject> versionChain, bool checkUrlEmpty) {
+        foreach (var versionJson in versionChain) {
+            var index = versionJson["assetIndex"];
+            if (index?["id"] is not null) return index;
+            if (checkUrlEmpty && index?["url"] is not null) return index;
+        }
+        return null;
+    }
+
     public static IReadOnlyList<AssetObjectInfo> ResolveObjects(JObject indexJson, string instancePathIndie, string mcFolder) {
         var result = new List<AssetObjectInfo>();
         if (indexJson["objects"] is not JObject objects) return result;

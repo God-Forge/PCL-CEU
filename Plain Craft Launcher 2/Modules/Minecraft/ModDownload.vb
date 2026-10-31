@@ -199,23 +199,42 @@ Public Module ModDownload
     ''' </summary>
     Public DlClientListLoader As New LoaderTask(Of String, DlClientListResult)("DlClientList Main", AddressOf DlClientListMain)
     Private Sub DlClientListMain(Loader As LoaderTask(Of String, DlClientListResult))
-        Select Case Settings.Get(Of Integer)("ToolDownloadVersion")
-            Case 0
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListBmclapiLoader, 30),
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListMojangLoader, 30 + 60)
-                }, Loader.IsForceRestarting)
-            Case 1
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListMojangLoader, 5),
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListBmclapiLoader, 5 + 30)
-                }, Loader.IsForceRestarting)
-            Case Else
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListMojangLoader, 60),
-                    New KeyValuePair(Of LoaderTask(Of String, DlClientListResult), Integer)(DlClientListBmclapiLoader, 60 + 60)
-                }, Loader.IsForceRestarting)
-        End Select
+        Using Fetcher As New HttpStringFetcher()
+            Dim Service As New ClientListService(Fetcher)
+            Dim Result = Service.GetAsync(
+                Settings.Get(Of Integer)("ToolDownloadVersion"),
+                Loader.Input,
+                PathTemp & "Cache\download.json",
+                Loader.CreateCancellationToken).Run()
+            If Result.IsOfficial AndAlso Not DlPreferMojang Then
+                DlPreferMojang = Result.ElapsedMilliseconds < 4000
+                Logger.Info($"Mojang 官方源加载耗时：{Result.ElapsedMilliseconds}ms，{If(DlPreferMojang, "可优先使用官方源", "不优先使用官方源")}")
+            End If
+            Loader.Output = New DlClientListResult With {
+                .IsOfficial = Result.IsOfficial,
+                .SourceName = Result.SourceName,
+                .Value = Result.Value
+            }
+            If Result.IsOfficial Then
+                Dim Version As String = Result.Value("latest")("snapshot")
+                If Settings.Get(Of Boolean)("ToolUpdateSnapshot") AndAlso
+                   Not Settings.Get(Of String)("ToolUpdateSnapshotLast") = "" AndAlso
+                   Settings.Get(Of String)("ToolUpdateSnapshotLast") <> Version AndAlso Not IsClientUpdateHinted Then
+                    IsClientUpdateHinted = True
+                    McDownloadClientUpdateHint(Version, Result.Value)
+                End If
+                Settings.Set("ToolUpdateSnapshotLast", If(Version, "Nothing"))
+
+                Version = Result.Value("latest")("release")
+                If Settings.Get(Of Boolean)("ToolUpdateRelease") AndAlso
+                   Not Settings.Get(Of String)("ToolUpdateReleaseLast") = "" AndAlso
+                   Settings.Get(Of String)("ToolUpdateReleaseLast") <> Version AndAlso Not IsClientUpdateHinted Then
+                    IsClientUpdateHinted = True
+                    McDownloadClientUpdateHint(Version, Result.Value)
+                End If
+                Settings.Set("ToolUpdateReleaseLast", Version)
+            End If
+        End Using
         '提取所有 Drop 序数
         Dim Drops As New List(Of Integer)
         For Each Version As JObject In Loader.Output.Value("versions")
@@ -1049,6 +1068,7 @@ Public Module ModDownload
 #Region "DlSource | 镜像下载源"
 
     Private DlPreferMojang As Boolean = False
+    Private IsClientUpdateHinted As Boolean = False
     ''' <summary>
     ''' 下载文件（而非获取版本列表）的时候，是否优先使用官方源。
     ''' </summary>

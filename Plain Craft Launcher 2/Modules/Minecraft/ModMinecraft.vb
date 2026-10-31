@@ -1554,46 +1554,7 @@ OnLoaded:
     ''' </summary>
     ''' <param name="RuleToken">Json 中的 "rules" 项目。</param>
     Public Function McJsonRuleCheck(RuleToken As JToken) As Boolean
-        If RuleToken Is Nothing Then Return True
-
-        '初始化
-        Dim Required As Boolean = False
-        For Each Rule As JToken In RuleToken
-
-            '单条条件验证
-            Dim IsRightRule As Boolean = True '是否为正确的规则
-            If Rule("os") IsNot Nothing Then '操作系统
-                If Rule("os")("name") IsNot Nothing Then '操作系统名称
-                    Dim OsName As String = Rule("os")("name").ToString
-                    If OsName = "unknown" Then
-                    ElseIf OsName = "windows" Then
-                        If Rule("os")("version") IsNot Nothing Then '操作系统版本
-                            IsRightRule = IsRightRule AndAlso OSVersion.RegexCheck(Rule("os")("version").ToString)
-                        End If
-                    Else
-                        IsRightRule = False
-                    End If
-                End If
-                If Rule("os")("arch") IsNot Nothing Then '操作系统架构
-                    IsRightRule = IsRightRule AndAlso Rule("os")("arch").ToString <> "x86" AndAlso Not Rule("os")("arch").Contains("arm")
-                End If
-            End If
-            If Not IsNothing(Rule("features")) Then '标签
-                IsRightRule = IsRightRule AndAlso IsNothing(Rule("features")("is_demo_user")) '反选是否为 Demo 用户
-                If CType(Rule("features"), JObject).Children.Any(Function(j As JProperty) j.Name.Contains("quick_play")) Then
-                    IsRightRule = False '不开 Quick Play，让玩家自己加去
-                End If
-            End If
-
-            '反选确认
-            If Rule("action").ToString = "allow" Then
-                If IsRightRule Then Required = True 'allow
-            Else
-                If IsRightRule Then Required = False 'disallow
-            End If
-
-        Next
-        Return Required
+        Return PclRuleEvaluator.IsAllowed(RuleToken, OSVersion)
     End Function
     Private OSVersion As String = My.Computer.Info.OSVersion
 
@@ -1844,13 +1805,7 @@ OnLoaded:
     ''' <param name="WithHead">是否包含 Lib 文件夹头部，若不包含，则会类似以 com\xxx\ 开头。</param>
     Public Function McLibGet(Original As String, Optional WithHead As Boolean = True, Optional IgnoreLiteLoader As Boolean = False, Optional CustomMcFolder As String = Nothing) As String
         CustomMcFolder = If(CustomMcFolder, McFolderSelected)
-        '有时候原始的有四段，例如 net.minecraftforge:forge:1.21.4-54.0.34:client
-        '文件夹名应该忽略最后一段（client），但文件名需要保留
-        '参见 #7306（以及 #5376 也是因为这里没有处理好导致的）
-        Dim Splited = Original.Split(":")
-        Dim Result = If(WithHead, CustomMcFolder & "libraries\", "") &
-            $"{Splited(0).Replace(".", "\")}\{Splited(1)}\{Splited(2)}\{Splited.Skip(1).Join("-")}.jar"
-        Return Result
+        Return LibraryResolver.GetLocalPath(Original, CustomMcFolder, WithHead)
     End Function
 
     ''' <summary>

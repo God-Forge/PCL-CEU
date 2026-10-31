@@ -78,6 +78,14 @@ public static class LibraryResolver {
 
     public static string? GetMavenPath(string name, string? classifier = null) => MavenPath(name, classifier);
 
+    public static string GetLocalPath(string name, string mcFolder, bool withHead = true) {
+        var path = MavenPath(name) ?? throw new ArgumentException("无效的 Maven 名称：" + name, nameof(name));
+        var local = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
+        return withHead
+            ? System.IO.Path.Combine(mcFolder, "libraries", local)
+            : local;
+    }
+
     private static string? MavenPath(string name, string? classifier = null) {
         var parts = name.Split(':');
         if (parts.Length < 3) return null;

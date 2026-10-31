@@ -95,47 +95,11 @@ Retry:
             Optional Content As Object = Nothing, Optional ContentType As String = Nothing, Optional Accept As String = "*/*",
             Optional Headers As String(,) = Nothing, Optional RequireJson As Boolean = False, Optional Timeout As Integer = 25000,
             Optional Encoding As Encoding = Nothing, Optional SimulateBrowserHeaders As Boolean = False) As String
-        Dim Threads As New List(Of Thread)
-        Dim RequestResult = Nothing
-        Dim RequestEx As Exception = Nothing
-        Dim FailCount As Integer = 0
-        For i = 1 To ThreadCount
-            Dim th As New Thread(
-            Sub()
-                Try
-                    RequestResult = NetRequestByClient(Url, Method, Content, ContentType, Accept, Timeout, Headers, RequireJson, Encoding, SimulateBrowserHeaders)
-                Catch ex As Exception
-                    FailCount += 1
-                    RequestEx = ex
-                End Try
-            End Sub)
-            th.Start()
-            Threads.Add(th)
-            Thread.Sleep(i * 250)
-            If RequestResult IsNot Nothing Then GoTo RequestFinished
+        Dim Requests As New List(Of Func(Of CancellationToken, Task(Of String)))
+        For i = 1 To Math.Max(1, ThreadCount)
+            Requests.Add(Function(token) Task.Run(Function() NetRequestByClient(Url, Method, Content, ContentType, Accept, Timeout, Headers, RequireJson, Encoding, SimulateBrowserHeaders)))
         Next
-        Do While True
-            If RequestResult IsNot Nothing Then
-RequestFinished:
-                Try
-                    For Each th In Threads
-                        If th.IsAlive Then th.Interrupt()
-                    Next
-                Catch
-                End Try
-                Return RequestResult
-            ElseIf FailCount = ThreadCount Then
-                Try
-                    For Each th In Threads
-                        If th.IsAlive Then th.Interrupt()
-                    Next
-                Catch
-                End Try
-                Throw RequestEx
-            End If
-            Thread.Sleep(20)
-        Loop
-        Return Nothing
+        Return MultiRequestCoordinator.FetchFirstAsync(Requests, 250).Run()
     End Function
 
     ''' <summary>

@@ -1243,27 +1243,13 @@ Public Module ModDownload
     ''' 不应使用它来获取版本列表（因为它只使用文件下载源设置来决定源顺序）。
     ''' </summary>
     Public Function DlSourceLauncherOrMetaGet(Original As String) As IEnumerable(Of String)
-        If Original Is Nothing Then Throw New Exception("无对应的 json 下载地址")
-        Return DlSourceOrder(
-            {Original},
-            {Original.
-                Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com").
-                Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com").
-                Replace("https://launcher.mojang.com", "https://bmclapi2.bangbang93.com").
-                Replace("https://launchermeta.mojang.com", "https://bmclapi2.bangbang93.com")
-            })
+        Dim Sources = DownloadSourceResolver.GetLauncherOrMeta(Original)
+        Return DlSourceOrder({Sources.Original}, {Sources.Mirror})
     End Function
 
     'Mod 下载源
     Public Function DlSourceModGet(Original As String) As String
-        Return Original.
-            Replace("api.modrinth.com", "mod.mcimirror.top/modrinth").
-            Replace("staging-api.modrinth.com", "mod.mcimirror.top/modrinth").
-            Replace("cdn.modrinth.com", "mod.mcimirror.top").
-            Replace("api.curseforge.com", "mod.mcimirror.top/curseforge").
-            Replace("edge.forgecdn.net", "mod.mcimirror.top").
-            Replace("mediafilez.forgecdn.net", "mod.mcimirror.top").
-            Replace("media.forgecdn.net", "mod.mcimirror.top")
+        Return DownloadSourceResolver.GetMod(Original)
     End Function
 
     'Loader 自动切换

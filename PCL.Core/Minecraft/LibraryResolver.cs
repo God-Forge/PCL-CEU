@@ -76,6 +76,8 @@ public static class LibraryResolver {
         return result;
     }
 
+    public static string? GetMavenPath(string name, string? classifier = null) => MavenPath(name, classifier);
+
     private static string? MavenPath(string name, string? classifier = null) {
         var parts = name.Split(':');
         if (parts.Length < 3) return null;

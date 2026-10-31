@@ -1,3 +1,6 @@
+Imports PCL.Core.Minecraft
+Imports PCL.Core.Net
+
 Public Module ModDownloadLib
 
 #Region "Minecraft 下载"
@@ -1139,45 +1142,19 @@ Retry:
             Loaders.Add(New LoaderTask(Of String, List(Of NetFile))($"分析 {LoaderName} 支持库文件",
             Sub(Task As LoaderTask(Of String, List(Of NetFile)))
                 Task.Output = New List(Of NetFile)
-                Dim Installer As ZipArchive = Nothing
                 Try
-                    '解压并获取、合并两个 Json 的信息
-                    Installer = FileUtils.OpenZip(InstallerAddress)
                     Task.Progress = 0.2
-                    Dim Json As JObject = Installer.GetEntry("install_profile.json").Open().ReadString().DeserializeJson()
-                    Dim Json2 As JObject = Installer.GetEntry("version.json").Open().ReadString().DeserializeJson()
-                    Json.Merge(Json2)
-                    '获取 Lib 下载信息
-                    Libs = McLibListGetWithJson(Json, True, CurrentMcFolder)
-                    '添加 Mappings 下载信息
-                    If Json("data") IsNot Nothing AndAlso Json("data")("MOJMAPS") IsNot Nothing Then
-                        '下载原版 Json 文件
-                        Task.Progress = 0.4
-                        Dim RawJson As JObject = NetRequestByLoader(DlSourceLauncherOrMetaGet(DlClientListGet(Inherit)), IsJson:=True).DeserializeJson()
-                        '[net.minecraft:client:1.17.1-20210706.113038:mappings@txt] 或 @tsrg]
-                        Dim OriginalName As String = Json("data")("MOJMAPS")("client").ToString.Trim("[]".ToCharArray()).BeforeFirst("@")
-                        Dim Address = Path.ChangeExtension(McLibGet(OriginalName, CustomMcFolder:=CurrentMcFolder), "." & Json("data")("MOJMAPS")("client").ToString.Trim("[]".ToCharArray()).Split("@")(1))
-                        Dim ClientMappings As JToken = RawJson("downloads")("client_mappings")
-                        Libs.Add(New McLibEntry With {
-                                 .IsNatives = False, .LocalPath = Address, .OriginalName = OriginalName,
-                                 .Url = ClientMappings("url"), .Size = ClientMappings("size"), .SHA1 = ClientMappings("sha1")})
-                        Logger.Info($"需要下载 Mappings：{ClientMappings("url")} (SHA1: {ClientMappings("sha1")})")
-                    End If
+                    Using Fetcher As New HttpStringFetcher()
+                        Dim Plan = ForgelikeInstallPlanner.CreatePlanAsync(
+                            InstallerAddress, LoaderName, Inherit, LoaderVersion,
+                            Fetcher, DlSourceLauncherOrMetaGet(DlClientListGet(Inherit)).First()).Run()
+                        Task.Progress = 0.6
+                        Libs = McLibListGetWithJson(Plan.Json, True, CurrentMcFolder)
+                    End Using
                     Task.Progress = 0.8
-                    '去除其中的原始 Forgelike 项
-                    For i = 0 To Libs.Count - 1
-                        If Libs(i).LocalPath.EndsWithF($"{LoaderName.Lower}-{Inherit}-{LoaderVersion}.jar") OrElse
-                           Libs(i).LocalPath.EndsWithF($"{LoaderName.Lower}-{Inherit}-{LoaderVersion}-client.jar") Then
-                            Logger.Warn($"已从待下载 {LoaderName} 支持库中移除：{Libs(i).LocalPath}")
-                            Libs.RemoveAt(i)
-                            Exit For
-                        End If
-                    Next
                     Task.Output = McLibNetFilesFromTokens(Libs, CurrentMcFolder)
                 Catch ex As Exception
                     Throw New Exception($"获取{If(IsNeoForge, " Neo", "新版 ")}Forge 支持库列表失败", ex)
-                Finally
-                    If Installer IsNot Nothing Then Installer.Dispose()
                 End Try
             End Sub) With {.ProgressWeight = 1})
             Loaders.Add(New LoaderDownload($"下载 {LoaderName} 支持库文件", New List(Of NetFile)) With {.ProgressWeight = 12})

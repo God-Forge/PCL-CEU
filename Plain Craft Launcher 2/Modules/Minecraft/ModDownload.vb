@@ -400,28 +400,16 @@ Public Module ModDownload
         Dim Result As String = NetRequestByClientRetry("https://optifine.net/downloads", Encoding:=Encoding.Default)
         If Result.Length < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
         Try
-            '获取所有版本信息
-            Dim Forge As List(Of String) = Result.RegexSearch("(?<=colForge'>)[^<]*").ToList
-            Dim ReleaseTime As List(Of String) = Result.RegexSearch("(?<=colDate'>)[^<]+").ToList
-            Dim Name As List(Of String) = Result.RegexSearch("(?<=OptiFine_)[0-9A-Za-z_.]+(?=.jar"")").ToList
-            If Not ReleaseTime.Count = Name.Count Then Throw New Exception("版本与发布时间数据无法对应")
-            If Not Forge.Count = Name.Count Then Throw New Exception("版本与 Forge 兼容数据无法对应")
-            If ReleaseTime.Count < 10 Then Throw New Exception("获取到的版本数量不足（" & Result & "）")
-            '转化为列表输出
-            Dim Versions As New List(Of DlOptiFineListEntry)
-            For i = 0 To ReleaseTime.Count - 1
-                Name(i) = Name(i).Replace("_", " ")
-                Dim Entry As New DlOptiFineListEntry With {
-                    .DisplayName = Name(i).Replace("HD U ", "").Replace(".0 ", " "),
-                    .ReleaseTime = {ReleaseTime(i).Split(".")(2), ReleaseTime(i).Split(".")(1), ReleaseTime(i).Split(".")(0)}.Join("/"c),
-                    .IsPreview = Name(i).ContainsIgnoreCase("pre"),
-                    .Inherit = Name(i).ToString.Split(" ")(0),
-                    .FileName = If(Name(i).ContainsIgnoreCase("pre"), "preview_", "") & "OptiFine_" & Name(i).Replace(" ", "_") & ".jar",
-                    .RequiredForgeVersion = Forge(i).Replace("Forge ", "").Replace("#", "")}
-                If Entry.RequiredForgeVersion.Contains("N/A") Then Entry.RequiredForgeVersion = Nothing
-                Entry.InstanceName = Entry.Inherit & "-OptiFine_" & Name(i).AfterFirst(" ").Replace(" ", "_")
-                Versions.Add(Entry)
-            Next
+            Dim Versions = OptiFineVersionParser.ParseOfficial(Result).
+                Select(Function(Item) New DlOptiFineListEntry With {
+                    .DisplayName = Item.DisplayName,
+                    .ReleaseTime = Item.ReleaseTime,
+                    .IsPreview = Item.IsPreview,
+                    .Inherit = Item.Inherit,
+                    .FileName = Item.FileName,
+                    .RequiredForgeVersion = Item.RequiredForgeVersion,
+                    .InstanceName = Item.InstanceName
+                }).ToList()
             Loader.Output = New DlOptiFineListResult With {.IsOfficial = True, .SourceName = "OptiFine 官方源", .Value = Versions}
         Catch ex As Exception
             Throw New Exception("OptiFine 官方源版本列表解析失败（" & Result & "）", ex)
@@ -435,20 +423,16 @@ Public Module ModDownload
     Private Sub DlOptiFineListBmclapiMain(Loader As LoaderTask(Of Integer, DlOptiFineListResult))
         Dim Json As JArray = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/optifine/versionList", RequireJson:=True).DeserializeJson()
         Try
-            Dim Versions As New List(Of DlOptiFineListEntry)
-            For Each Token As JObject In Json
-                Dim Entry As New DlOptiFineListEntry With {
-                    .DisplayName = (Token("mcversion").ToString & Token("type").ToString.Replace("HD_U", "").Replace("_", " ") & " " & Token("patch").ToString).Replace(".0 ", " "),
-                    .ReleaseTime = "",
-                    .IsPreview = Token("patch").ToString.ContainsIgnoreCase("pre"),
-                    .Inherit = Token("mcversion").ToString,
-                    .FileName = Token("filename").ToString,
-                    .RequiredForgeVersion = If(Token("forge"), "").ToString.Replace("Forge ", "").Replace("#", "")
-                }
-                If Entry.RequiredForgeVersion.Contains("N/A") Then Entry.RequiredForgeVersion = Nothing
-                Entry.InstanceName = Entry.Inherit & "-OptiFine_" & (Token("type").ToString & " " & Token("patch").ToString).Replace(".0 ", " ").Replace(" ", "_").Replace(Entry.Inherit & "_", "")
-                Versions.Add(Entry)
-            Next
+            Dim Versions = OptiFineVersionParser.ParseBmclapi(Json).
+                Select(Function(Item) New DlOptiFineListEntry With {
+                    .DisplayName = Item.DisplayName,
+                    .ReleaseTime = Item.ReleaseTime,
+                    .IsPreview = Item.IsPreview,
+                    .Inherit = Item.Inherit,
+                    .FileName = Item.FileName,
+                    .RequiredForgeVersion = Item.RequiredForgeVersion,
+                    .InstanceName = Item.InstanceName
+                }).ToList()
             Loader.Output = New DlOptiFineListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Versions}
         Catch ex As Exception
             Throw New Exception("OptiFine BMCLAPI 版本列表解析失败（" & Json.ToString & "）", ex)

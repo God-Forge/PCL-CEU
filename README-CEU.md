@@ -220,6 +220,9 @@ Phase 3 已开始：
 - `ModDownload.DlClientListGet` 也已迁移到 `VersionManifestService`，不再使用 VB 版本列表 Loader。
 - 新增 `PCL.Core.Minecraft.MinecraftVersionScanner`，只读扫描 `versions` 目录与版本 JSON。
 - 新增 CLI `--versions`，直接列出 `versions` 下的版本信息。
+- 新增 C# `RuleEvaluator`，支持 Minecraft 版本 JSON 的 os / features 规则。
+- 新增 C# `LibraryResolver`，解析 artifact、classifiers、natives、Maven 根地址与规则过滤。
+- `InstanceCheckService` 的 libraries 检查已改为使用 `LibraryResolver`。
 - 下一步：迁移剩余 ModNet NetFile 引擎，再迁移 ModDownload/ModMinecraft/ModLaunch 核心。
 
 运行测试：
@@ -228,4 +231,3 @@ Phase 3 已开始：
 & "C:\Users\neolx\.dotnet10\dotnet.exe" run --project "PCL.Core.Tests\PCL.Core.Tests.csproj" -c Release
 ```
 
-下一步计划：资源模块 DTO/搜索服务、崩溃日志解析核心。

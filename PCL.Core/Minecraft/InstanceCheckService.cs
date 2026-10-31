@@ -120,22 +120,11 @@ public static class InstanceCheckService {
     }
 
     private static void CheckLibraries(JObject json, string mcFolder, ICollection<InstanceCheckIssue> issues) {
-        if (json["libraries"] is not JArray libraries) return;
-        var missing = new List<string>();
-        foreach (var library in libraries.OfType<JObject>()) {
-            var path = library["downloads"]?["artifact"]?["path"]?.ToString();
-            if (string.IsNullOrWhiteSpace(path)) {
-                var name = library["name"]?.ToString();
-                if (string.IsNullOrWhiteSpace(name)) continue;
-                var parts = name!.Split(':');
-                if (parts.Length < 3) continue;
-                var classifier = parts.Length >= 4 ? "-" + parts[3] : "";
-                path = $"{parts[0].Replace('.', '/')}/{parts[1]}/{parts[2]}/{parts[1]}-{parts[2]}{classifier}.jar";
-            }
-            var full = Path.Combine(mcFolder, "libraries", path!.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(full)) missing.Add(path);
-        }
-
+        var libraries = LibraryResolver.Resolve(json, mcFolder);
+        var missing = libraries
+            .Where(library => !File.Exists(Path.Combine(mcFolder, library.LocalPath)))
+            .Select(library => library.LocalPath)
+            .ToList();
         if (missing.Count == 0) return;
         issues.Add(new InstanceCheckIssue {
             Severity = InstanceCheckSeverity.Warning,

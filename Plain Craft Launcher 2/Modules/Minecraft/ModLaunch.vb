@@ -1,4 +1,4 @@
-Imports PCL.Core.Minecraft
+﻿Imports PCL.Core.Minecraft
 
 Public Module ModLaunch
 
@@ -1413,22 +1413,8 @@ NextInstance:
 NextInstance:
             McLaunchLog($"新版游戏参数：从版本 JSON 获取（{CurrentInstance.Name}）")
             If CurrentInstance.JsonObject("arguments") IsNot Nothing AndAlso CurrentInstance.JsonObject("arguments")("game") IsNot Nothing Then
-                For Each SubJson As JToken In CurrentInstance.JsonObject("arguments")("game")
-                    Select Case SubJson.Type
-                        Case JTokenType.String
-                            AppendArg(SubJson.ToString)
-                        Case JTokenType.Object
-                            Dim Argument As JObject = CType(SubJson, JObject)
-                            If Argument.ContainsKey("rules") AndAlso Not McJsonRuleCheck(Argument("rules")) Then Continue For '不满足准则
-                            If Not Argument.ContainsKey("value") Then Continue For '没有 value 字段
-                            If Argument("value").Type = JTokenType.String Then
-                                AppendArg(Argument("value").ToString)
-                            Else
-                                For Each value As JToken In Argument("value")
-                                    AppendArg(value.ToString)
-                                Next
-                            End If
-                    End Select
+                For Each Argument In GameArgumentCollector.Collect(CurrentInstance.JsonObject, My.Computer.Info.OSVersion)
+                    AppendArg(Argument)
                 Next
             End If
             If CurrentInstance.InheritName <> "" Then

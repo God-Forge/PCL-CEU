@@ -232,7 +232,8 @@ Phase 3 已开始：
 - 新增 C# `FabricInstallService`，完成 Fabric profile 获取、依赖下载与版本 JSON 写入；CLI `--download <版本> -fabric` 已切换到该服务。
 - 新增 C# `ForgelikeInstallPlanner`，接管 Forge/NeoForge 安装器的 `install_profile.json` / `version.json` 合并、Mappings 补充与主库剔除。
 - 新增 C# `NativesExtractor`，接管启动前的 DLL 解压、大小相同跳过、损坏 jar 删除与多余文件清理。
-- 下一步：将 Forge/NeoForge 注入器执行与启动参数构建迁移到 C#。
+- 新增 C# `JavaArgumentParser`，接管启动参数拆分、转义引号处理与 JVM/游戏参数去重。
+- 下一步：将 Forge/NeoForge 注入器执行与完整启动参数构建迁移到 C#。
 
 运行测试：
 

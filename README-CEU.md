@@ -226,7 +226,8 @@ Phase 3 已开始：
 - `ModMinecraft.McLibListGetWithJson` 的 artifact/natives/classifiers/rules 解析已改为调用 C# `LibraryResolver`，仅保留 VB 侧去重逻辑。
 - 新增 C# `NetFileTask` / `NetLoader` 多文件任务引擎：并发、逐文件多源、断点续传、并行分片、进度聚合、取消与失败隔离。
 - `NetDownloadByLoader` 已改用 C# `NetLoader` 引擎。
-- 下一步：将 ModDownload 的 `NetFile`/`LoaderDownload` 调用方继续切换到 C# `NetLoader`，再迁移安装编排。
+- 新增 C# `VanillaInstallPlanner`，从版本 JSON 与资源索引生成客户端 JAR、libraries、asset index、assets 下载任务。
+- 下一步：将 `VanillaInstallPlanner` 接入 ModDownload 安装编排与 CLI 原版安装。
 
 运行测试：
 

@@ -1447,21 +1447,10 @@ NextInstance:
         '自动进入服务器
         Dim Server As String = If(String.IsNullOrEmpty(CurrentLaunchOptions.ServerIp), Settings.Get(Of String)("VersionServerEnter", McInstanceSelected), CurrentLaunchOptions.ServerIp)
         If Server.Any Then
-            If McInstanceSelected.ReleaseTime > New Date(2023, 4, 4) Then
-                'QuickPlay
-                Args.Add($"--quickPlayMultiplayer") : Args.Add(Server)
-            Else
-                '老版本
-                If Server.Contains(":") Then
-                    '包含端口号
-                    Args.Add("--server") : Args.Add(Server.Split(":")(0))
-                    Args.Add("--port") : Args.Add(Server.Split(":")(1))
-                Else
-                    '不包含端口号
-                    Args.Add("--server") : Args.Add(Server)
-                    Args.Add("--port") : Args.Add("25565")
-                End If
-                If McInstanceSelected.Version.HasOptiFine Then Hint("OptiFine 与自动进入服务器可能不兼容，有概率导致材质丢失甚至游戏崩溃！", HintType.Red)
+            Dim UseQuickPlay As Boolean = McInstanceSelected.ReleaseTime > New Date(2023, 4, 4)
+            Args.AddRange(ServerArgumentBuilder.Build(Server, UseQuickPlay))
+            If Not UseQuickPlay AndAlso McInstanceSelected.Version.HasOptiFine Then
+                Hint("OptiFine 与自动进入服务器可能不兼容，有概率导致材质丢失甚至游戏崩溃！", HintType.Red)
             End If
         End If
 

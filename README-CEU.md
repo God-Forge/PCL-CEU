@@ -256,6 +256,7 @@ Phase 3 已开始：
 - 新增 C# `LiteLoaderListService`，接管 LiteLoader 版本列表的源顺序、超时与回退。
 - 新增 C# `OptiFineListService`，接管 OptiFine 版本列表的源顺序、超时与回退。
 - 新增 C# `ForgeListService`，接管 Forge Minecraft 版本列表的源顺序、超时与回退。
+- 新增 C# `FabricListService`，接管 Fabric 版本列表的源顺序、超时与回退。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

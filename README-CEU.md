@@ -234,6 +234,7 @@ Phase 3 已开始：
 - 新增 C# `NativesExtractor`，接管启动前的 DLL 解压、大小相同跳过、损坏 jar 删除与多余文件清理。
 - 新增 C# `JavaArgumentParser`，接管启动参数拆分、转义引号处理与 JVM/游戏参数去重。
 - 新增 C# `ForgelikeInjectorRunner`，接管 Forge/NeoForge 安装器进程、输出进度解析、取消与成功判定。
+- 新增 C# `PclRuleEvaluator` 与 `LibraryResolver.GetLocalPath`，接管 ModMinecraft 的规则判断与 Maven 本地路径生成。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

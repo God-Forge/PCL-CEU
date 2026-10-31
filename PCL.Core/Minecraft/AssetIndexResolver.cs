@@ -16,6 +16,15 @@ public sealed class AssetObjectInfo {
 /// </summary>
 public static class AssetIndexResolver {
 
+    public static string GetName(IEnumerable<JObject> versionChain) {
+        foreach (var versionJson in versionChain) {
+            var index = versionJson["assetIndex"];
+            if (index?["id"] is not null) return index["id"]!.ToString();
+            if (versionJson["assets"] is not null) return versionJson["assets"]!.ToString();
+        }
+        return "legacy";
+    }
+
     public static IReadOnlyList<AssetObjectInfo> ResolveObjects(JObject indexJson, string instancePathIndie, string mcFolder) {
         var result = new List<AssetObjectInfo>();
         if (indexJson["objects"] is not JObject objects) return result;

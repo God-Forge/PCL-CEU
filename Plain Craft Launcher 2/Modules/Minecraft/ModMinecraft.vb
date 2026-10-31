@@ -1862,16 +1862,13 @@ OnLoaded:
     ''' </summary>
     Public Function McAssetsGetIndexName(Instance As McInstance) As String
         Try
+            Dim Chain As New List(Of JObject)
             Do While True
-                If Instance.JsonObject("assetIndex") IsNot Nothing AndAlso Instance.JsonObject("assetIndex")("id") IsNot Nothing Then
-                    Return Instance.JsonObject("assetIndex")("id").ToString
-                End If
-                If Instance.JsonObject("assets") IsNot Nothing Then
-                    Return Instance.JsonObject("assets").ToString
-                End If
+                Chain.Add(Instance.JsonObject)
                 If Instance.InheritName = "" Then Exit Do
                 Instance = New McInstance(McFolderSelected & "versions\" & Instance.InheritName)
             Loop
+            Return AssetIndexResolver.GetName(Chain)
         Catch ex As Exception
             Logger.Warn(ex, "获取资源文件索引名失败")
         End Try

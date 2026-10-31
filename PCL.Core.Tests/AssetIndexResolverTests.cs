@@ -1,9 +1,19 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PCL.Core.Minecraft;
 
 namespace PCL.Core.Tests;
 
 public class AssetIndexResolverTests {
+
+    [Test]
+    public async Task 优先使用assetIndex再回退assets() {
+        var chain = new[] {
+            JObject.Parse("""{ "assets": "legacy", "assetIndex": { "id": "5" } }""")
+        };
+        await Assert.That(AssetIndexResolver.GetName(chain)).IsEqualTo("5");
+        await Assert.That(AssetIndexResolver.GetName([JObject.Parse("""{ "assets": "legacy" }""")])).IsEqualTo("legacy");
+        await Assert.That(AssetIndexResolver.GetName([])).IsEqualTo("legacy");
+    }
 
     [Test]
     public async Task 解析普通对象路径() {

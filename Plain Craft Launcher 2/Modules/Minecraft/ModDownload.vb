@@ -490,10 +490,9 @@ Public Module ModDownload
         Dim Result As String = NetRequestByClientRetry("https://files.minecraftforge.net/maven/net/minecraftforge/forge/index_1.2.4.html", Encoding:=Encoding.Default, Accept:="text/html", SimulateBrowserHeaders:=True)
         If Result.Length < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
         '获取所有版本信息
-        Dim Names As List(Of String) = Result.RegexSearch("(?<=a href=""index_)[0-9.]+((_pre|[_-]snapshot[_-]?)[0-9]?)?(?=.html)").ToList
-        Names.Add("1.2.4") '1.2.4 不会被匹配上
+        Dim Names = ForgeListParser.ParseOfficial(Result)
         If Names.Count < 10 Then Throw New Exception("获取到的版本数量不足（" & Result & "）")
-        Loader.Output = New DlForgeListResult With {.IsOfficial = True, .SourceName = "Forge 官方源", .Value = Names}
+        Loader.Output = New DlForgeListResult With {.IsOfficial = True, .SourceName = "Forge 官方源", .Value = Names.ToList()}
     End Sub
 
     ''' <summary>
@@ -503,7 +502,7 @@ Public Module ModDownload
     Private Sub DlForgeListBmclapiMain(Loader As LoaderTask(Of Integer, DlForgeListResult))
         Dim Result As JArray = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/forge/minecraft",
                                                        Encoding:=Encoding.Default, RequireJson:=True).DeserializeJson()
-        Dim Names As List(Of String) = Result.Select(Function(v) v.ToString).ToList
+        Dim Names As List(Of String) = ForgeListParser.ParseBmclapi(Result).ToList()
         If Names.Count < 10 Then Throw New Exception("获取到的版本数量不足")
         Loader.Output = New DlForgeListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Names}
     End Sub

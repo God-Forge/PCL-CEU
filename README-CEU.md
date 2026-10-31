@@ -238,6 +238,7 @@ Phase 3 已开始：
 - 新增 C# `ForgeVersionParser`，接管 BMCLAPI Forge 版本列表的安装类型、Hash、推荐版本与发布时间解析。
 - `ModNet.NetRequestByLoader` 已改为直接使用 C# `NetLoader`，移除 VB `LoaderDownload` 调用。
 - 新增 C# `ClasspathBuilder`，接管启动 classpath 拼接与 OptiFine 插入规则。
+- 新增 C# `LaunchArgumentFormatter`，接管启动参数替换与特殊字符引号处理。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

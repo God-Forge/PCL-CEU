@@ -1222,22 +1222,8 @@ Retry:
 NextInstance:
             McLaunchLog($"新版 JVM 参数：从版本 JSON 获取（{CurrentInstance.Name}）")
             If CurrentInstance.JsonObject("arguments") IsNot Nothing AndAlso CurrentInstance.JsonObject("arguments")("jvm") IsNot Nothing Then
-                For Each SubJson As JToken In CurrentInstance.JsonObject("arguments")("jvm")
-                    Select Case SubJson.Type
-                        Case JTokenType.String
-                            Args.Add(SubJson.ToString.Trim)
-                        Case JTokenType.Object
-                            Dim Argument As JObject = CType(SubJson, JObject)
-                            If Argument.ContainsKey("rules") AndAlso Not McJsonRuleCheck(Argument("rules")) Then Continue For '不满足准则
-                            If Not Argument.ContainsKey("value") Then Continue For '没有 value 字段
-                            If Argument("value").Type = JTokenType.String Then
-                                Args.Add(Argument("value").ToString.Trim)
-                            Else
-                                For Each value As JToken In Argument("value")
-                                    Args.Add(value.ToString.Trim)
-                                Next
-                            End If
-                    End Select
+                For Each Argument In JvmArgumentCollector.Collect(CurrentInstance.JsonObject, My.Computer.Info.OSVersion)
+                    Args.Add(Argument)
                 Next
             End If
             If CurrentInstance.InheritName <> "" Then

@@ -1059,32 +1059,11 @@ Public Module ModDownload
     ''' </summary>
     Public Function DlModRequest(Url As String, Optional Method As HttpMethod = Nothing,
                                  Optional Content As String = Nothing, Optional ContentType As String = Nothing) As JToken
-        Dim Urls As New List(Of (Url As String, Timeout As Integer))
-        Dim McimUrl As String = DlSourceModGet(Url)
-        If McimUrl <> Url Then
-            Select Case Settings.Get(Of Integer)("ToolDownloadMod")
-                Case 0
-                    Urls.Add((McimUrl, 10))
-                    Urls.Add((McimUrl, 10))
-                    Urls.Add((Url, 30))
-                Case 1
-                    Urls.Add((Url, If(Url.Contains("modrinth"), 20, 10))) '至少 20s，要不然 Modrinth 返回不过来
-                    Urls.Add((McimUrl, 10))
-                    Urls.Add((Url, 30))
-                    Urls.Add((McimUrl, 30))
-                Case Else
-                    Urls.Add((Url, If(Url.Contains("modrinth"), 20, 10)))
-                    Urls.Add((Url, 30))
-                    Urls.Add((McimUrl, 30))
-            End Select
-        Else
-            Urls.Add((Url, If(Url.Contains("modrinth"), 20, 10)))
-            Urls.Add((Url, 30))
-        End If
+        Dim Urls = DownloadSourceResolver.GetModRequestSources(Url, Settings.Get(Of Integer)("ToolDownloadMod"))
         Dim Errors As New List(Of Exception)
         For Each Source In Urls
             Try
-                Return NetRequestByClient(Source.Url, Method, Content, ContentType, Timeout:=Source.Timeout * 1000, Encoding:=Encoding.UTF8, RequireJson:=True).DeserializeJson()
+                Return NetRequestByClient(Source.Url, Method, Content, ContentType, Timeout:=Source.TimeoutSeconds * 1000, Encoding:=Encoding.UTF8, RequireJson:=True).DeserializeJson()
             Catch ex As Exception
                 Errors.Add(ex)
             End Try

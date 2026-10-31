@@ -13,6 +13,18 @@ public class DownloadSourceResolverTests {
     }
 
     [Test]
+    public async Task 生成Mod请求源顺序() {
+        var mirrorFirst = DownloadSourceResolver.GetModRequestSources("https://api.modrinth.com/v2/project/a", 0);
+        await Assert.That(mirrorFirst.Count).IsEqualTo(3);
+        await Assert.That(mirrorFirst[0].Url).IsEqualTo("https://mod.mcimirror.top/modrinth/v2/project/a");
+        await Assert.That(mirrorFirst[2].TimeoutSeconds).IsEqualTo(30);
+
+        var officialOnly = DownloadSourceResolver.GetModRequestSources("https://example.com/a", 0);
+        await Assert.That(officialOnly.Count).IsEqualTo(2);
+        await Assert.That(officialOnly[0].TimeoutSeconds).IsEqualTo(10);
+    }
+
+    [Test]
     public async Task 库文件特殊源不包含原版() {
         var special = DownloadSourceResolver.GetLibrary("https://libraries.minecraft.net/minecraftforge/a.jar");
         await Assert.That(special.UseOriginal).IsFalse();

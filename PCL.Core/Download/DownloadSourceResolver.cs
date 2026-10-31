@@ -48,4 +48,17 @@ public static class DownloadSourceResolver {
             .Replace("media.forgecdn.net", "mod.mcimirror.top");
     }
 
+    public static IReadOnlyList<(string Url, int TimeoutSeconds)> GetModRequestSources(string url, int setting) {
+        var mirror = GetMod(url);
+        if (mirror == url) {
+            var timeout = url.Contains("modrinth") ? 20 : 10;
+            return [(url, timeout), (url, 30)];
+        }
+        return setting switch {
+            0 => [(mirror, 10), (mirror, 10), (url, 30)],
+            1 => [(url, url.Contains("modrinth") ? 20 : 10), (mirror, 10), (url, 30), (mirror, 30)],
+            _ => [(url, url.Contains("modrinth") ? 20 : 10), (url, 30), (mirror, 30)]
+        };
+    }
+
 }

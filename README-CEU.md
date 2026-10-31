@@ -245,6 +245,7 @@ Phase 3 已开始：
 - 新增 C# `AssetIndexResolver`，接管 assets objects 的普通、virtual 与 map_to_resources 路径解析，以及 assetIndex/assets 名称回退和索引对象解析。
 - 新增 C# `DownloadSourceResolver`，接管 Mojang、Assets、Libraries 与 Modrinth/CurseForge 下载镜像地址生成，以及 Mod 请求源顺序。
 - 新增 C# `ServerArgumentBuilder`，接管自动进入服务器的 QuickPlay 与旧版 host/port 参数。
+- 新增 C# `LaunchTokenBuilder`，接管启动替换标记、窗口尺寸与空 version_type 处理。
 - 新增 C# `NeoForgeVersionParser`，接管 NeoForge Maven 版本名提取与不可下载版本过滤。
 - 新增 C# `LiteLoaderVersionParser`，接管 LiteLoader versions.json 的版本、文件名、预览状态与 MD5 解析。
 - 新增 C# `OptiFineVersionParser`，接管 OptiFine 官方 HTML 与 BMCLAPI 版本列表、Forge 兼容与实例名生成。

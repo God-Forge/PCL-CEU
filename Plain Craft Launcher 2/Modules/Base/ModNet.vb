@@ -150,15 +150,38 @@ RequestFinished:
     ''' 不支持缓存协商；若需缓存协商，需要换用 NetRequestByClient。
     ''' </summary>
     Public Function NetRequestByLoader(Urls As IEnumerable(Of String), Optional Timeout As Integer = 45000, Optional IsJson As Boolean = False, Optional SimulateBrowserHeaders As Boolean = False) As String
+        Dim UrlList As List(Of String) = Urls.ToList()
         Dim Temp As String = RequestTaskTempFolder() & "download.txt"
-        Dim NewTask As New LoaderDownload("源码获取 " & GetUuid() & "#", New List(Of NetFile) From {New NetFile(Urls, Temp, New FileChecker With {.IsJson = IsJson}, SimulateBrowserHeaders)})
+        Dim FileTask As New NetFileTask With {
+            .Name = "源码获取 " & GetUuid() & "#",
+            .TargetPath = Temp,
+            .Sources = UrlList,
+            .UseParallel = True,
+            .ParallelCount = 4,
+            .SimulateBrowserHeaders = SimulateBrowserHeaders
+        }
+        Dim Cts As New CancellationTokenSource()
         Try
-            NewTask.WaitForExitTime(Timeout, TimeoutMessage:="连接服务器超时（第一下载源：" & Urls.First & "）")
-            Dim Result = FileUtils.ReadAsString(Temp)
-            FileUtils.Delete(Temp)
-            Return Result
+            Cts.CancelAfter(Timeout)
+            Dim Result = New NetLoader().DownloadAsync({FileTask}, Nothing, maxConcurrency:=4, cancellationToken:=Cts.Token).Run()
+            If Not Result.Success Then
+                If Cts.IsCancellationRequested Then
+                    Throw New TimeoutException("连接服务器超时（第一下载源：" & UrlList.First() & "）")
+                End If
+                Throw If(Result.Files.FirstOrDefault()?.Error, New Exception("下载失败"))
+            End If
+            Dim Text = File.ReadAllText(Temp, Encoding.UTF8)
+            If IsJson Then
+                Dim Trimmed = Text.Trim((vbCrLf & " ").ToCharArray)
+                If Not (Trimmed.StartsWithF("{") AndAlso Trimmed.EndsWithF("}")) AndAlso
+                   Not (Trimmed.StartsWithF("[") AndAlso Trimmed.EndsWithF("]")) Then
+                    Throw New FormatException("返回结果并非 JSON 格式")
+                End If
+            End If
+            Return Text
         Finally
-            NewTask.Cancel()
+            Cts.Dispose()
+            FileUtils.Delete(Temp)
         End Try
     End Function
 

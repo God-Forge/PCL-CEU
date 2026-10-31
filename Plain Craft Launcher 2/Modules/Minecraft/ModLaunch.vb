@@ -1250,7 +1250,7 @@ NextInstance:
 
         '统一通行证
         If McLoginLoader.Output.Type = "Nide" Then
-            Args.Add("-javaagent:""${pure_directory}\nide8auth.jar""=""" & Settings.Get(Of String)("VersionServerNide", Instance:=McInstanceSelected) & """")
+            Args.Add(JvmInjectionArgumentBuilder.BuildNide(Settings.Get(Of String)("VersionServerNide", Instance:=McInstanceSelected)))
         End If
         'Authlib-Injector
         If McLoginLoader.Output.Type = "Auth" Then
@@ -1259,9 +1259,7 @@ NextInstance:
             Try
                 McLaunchLog($"开始 Authlib Injector Prefetch")
                 Dim Response As String = NetRequestByClientRetry(Server, Encoding:=Encoding.UTF8)
-                Args.Add("-javaagent:""${pure_directory}\authlib-injector.jar""=""" & Server & """")
-                Args.Add("-Dauthlibinjector.side=client")
-                Args.Add("-Dauthlibinjector.yggdrasil.prefetched=" & Convert.ToBase64String(Encoding.UTF8.GetBytes(Response)))
+                Args.AddRange(JvmInjectionArgumentBuilder.BuildAuthlib(Server, Response))
             Catch ex As Exception
                 Throw New Exception("无法连接到第三方登录服务器（" & If(Server, Nothing) & "）", ex)
             End Try

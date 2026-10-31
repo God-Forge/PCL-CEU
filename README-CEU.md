@@ -12,9 +12,10 @@
 
 ## 版本
 
-- 版本号：`3.8.0-CEU`
-- 输出文件：`PCL2-3.8.0ceu.exe`
-- 程序集版本：`3.8.0.0`
+- 版本号：`0.8.0-ceu`
+- 输出文件：`PCL-0.8.0ceu.exe`
+- 程序集版本：`0.8.0.0`
+- 版本规则：VB → C# 迁移完成前统一使用 `0.x.y`；tag 格式为 `x.y.z-ceu`，产物为 `PCL-x.y.zceu.exe`。
 
 ## 本改版的主要调整（与开源版相比）
 
@@ -39,22 +40,22 @@
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL2-3.8.0ceu.exe --help
-.\PCL2-3.8.0ceu.exe --version
-.\PCL2-3.8.0ceu.exe --luck
-.\PCL2-3.8.0ceu.exe --mca
-.\PCL2-3.8.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL2-3.8.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL2-3.8.0ceu.exe --payload-import .\1.20.1.payload
-.\PCL2-3.8.0ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
-.\PCL2-3.8.0ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
-.\PCL2-3.8.0ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
-.\PCL2-3.8.0ceu.exe --backup 1.20.1
-.\PCL2-3.8.0ceu.exe --mods 1.20.1
-.\PCL2-3.8.0ceu.exe --repair 1.20.1
-.\PCL2-3.8.0ceu.exe --launch 1.20.1
-.\PCL2-3.8.0ceu.exe --download 1.20.1 -forge
-.\PCL2-3.8.0ceu.exe --memory
+.\PCL-0.8.0ceu.exe --help
+.\PCL-0.8.0ceu.exe --version
+.\PCL-0.8.0ceu.exe --luck
+.\PCL-0.8.0ceu.exe --mca
+.\PCL-0.8.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL-0.8.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.8.0ceu.exe --payload-import .\1.20.1.payload
+.\PCL-0.8.0ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
+.\PCL-0.8.0ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
+.\PCL-0.8.0ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
+.\PCL-0.8.0ceu.exe --backup 1.20.1
+.\PCL-0.8.0ceu.exe --mods 1.20.1
+.\PCL-0.8.0ceu.exe --repair 1.20.1
+.\PCL-0.8.0ceu.exe --launch 1.20.1
+.\PCL-0.8.0ceu.exe --download 1.20.1 -forge
+.\PCL-0.8.0ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -121,8 +122,8 @@ C++ 工具：
 命令行：
 
 ```powershell
-.\PCL2-3.5.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
-.\PCL2-3.5.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.8.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
+.\PCL-0.8.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
 ```
 
 也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。

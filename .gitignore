@@ -350,3 +350,4 @@ MaskFiles/
 /Log*.txt
 /logs/
 /PCL2-*.exe
+/PCL-*.exe

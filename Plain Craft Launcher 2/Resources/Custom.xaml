@@ -339,7 +339,7 @@ local:MyIconButton（图标按钮）：
  - xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  - xmlns:sys="clr-namespace:System;assembly=mscorlib"
  - xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- - xmlns:local="clr-namespace:PCL;assembly=PCL2-3.0.0ceu"
+ - xmlns:local="clr-namespace:PCL;assembly=PCL-0.8.0ceu"
 除此之外，不能声明其他命名空间。
 
 -->

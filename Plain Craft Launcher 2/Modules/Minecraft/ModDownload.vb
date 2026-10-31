@@ -1138,30 +1138,9 @@ Public Module ModDownload
     ''' 下载 Libraries 文件。
     ''' </summary>
     Public Function DlSourceLibraryGet(Original As String) As IEnumerable(Of String)
-        If {"minecraftforge", "fabricmc", "neoforged"}.Any(Function(k) Original.Contains(k)) Then '不添加原版源
-            Return {
-                Original.
-                    Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/maven").
-                    Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/maven").
-                    Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/maven"),
-                Original.
-                    Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/libraries").
-                    Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/libraries").
-                    Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries")
-            }
-        Else
-            Return DlSourceOrder(
-                {Original},
-                {Original.
-                    Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/maven").
-                    Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/maven").
-                    Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/maven"),
-                 Original.
-                    Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/libraries").
-                    Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/libraries").
-                    Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries")
-                })
-        End If
+        Dim Sources = DownloadSourceResolver.GetLibrary(Original)
+        If Not Sources.UseOriginal Then Return Sources.Mirrors
+        Return DlSourceOrder({Original}, Sources.Mirrors)
     End Function
     ''' <summary>
     ''' 下载 Launcher 或 Meta 文件。

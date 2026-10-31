@@ -1,4 +1,4 @@
-using PCL.Core.Download;
+﻿using PCL.Core.Download;
 
 namespace PCL.Core.Tests;
 
@@ -10,6 +10,18 @@ public class DownloadSourceResolverTests {
             "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
         await Assert.That(original).IsEqualTo("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
         await Assert.That(mirror).IsEqualTo("https://bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json");
+    }
+
+    [Test]
+    public async Task 库文件特殊源不包含原版() {
+        var special = DownloadSourceResolver.GetLibrary("https://libraries.minecraft.net/minecraftforge/a.jar");
+        await Assert.That(special.UseOriginal).IsFalse();
+        await Assert.That(special.Mirrors.Length).IsEqualTo(2);
+        await Assert.That(special.Mirrors[0]).Contains("bmclapi2.bangbang93.com/maven");
+
+        var normal = DownloadSourceResolver.GetLibrary("https://libraries.minecraft.net/a.jar");
+        await Assert.That(normal.UseOriginal).IsTrue();
+        await Assert.That(normal.Mirrors[1]).IsEqualTo("https://bmclapi2.bangbang93.com/libraries/a.jar");
     }
 
     [Test]

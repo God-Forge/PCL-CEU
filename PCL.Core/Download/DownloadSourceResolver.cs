@@ -24,6 +24,19 @@ public static class DownloadSourceResolver {
         return (original, mirror);
     }
 
+    public static (bool UseOriginal, string[] Mirrors) GetLibrary(string original) {
+        var useOriginal = !new[] { "minecraftforge", "fabricmc", "neoforged" }.Any(key => original.Contains(key));
+        var maven = original
+            .Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/maven")
+            .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/maven")
+            .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/maven");
+        var libraries = original
+            .Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
+            .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
+            .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries");
+        return (useOriginal, [maven, libraries]);
+    }
+
     public static string GetMod(string original) {
         return original
             .Replace("api.modrinth.com", "mod.mcimirror.top/modrinth")

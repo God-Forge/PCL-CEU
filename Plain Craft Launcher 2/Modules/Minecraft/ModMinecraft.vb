@@ -1914,23 +1914,12 @@ OnLoaded:
             Dim Json As JObject = FileUtils.ReadAsJson($"{McFolderSelected}assets\indexes\{IndexName}.json")
 
             '读取列表
-            For Each File As JProperty In Json("objects").Children
-                Dim LocalPath As String
-                If Json("map_to_resources") IsNot Nothing AndAlso Json("map_to_resources").ToObject(Of Boolean) Then
-                    'Remap
-                    LocalPath = $"{Instance.PathIndie}resources\{File.Name}"
-                ElseIf Json("virtual") IsNot Nothing AndAlso Json("virtual").ToObject(Of Boolean) Then
-                    'Virtual
-                    LocalPath = $"{McFolderSelected}assets\virtual\legacy\{File.Name}"
-                Else
-                    '正常
-                    LocalPath = $"{McFolderSelected}assets\objects\{Left(File.Value()("hash").ToString, 2)}\{File.Value()("hash")}"
-                End If
+            For Each Asset In AssetIndexResolver.ResolveObjects(Json, Instance.PathIndie, McFolderSelected)
                 Result.Add(New McAssetsToken With {
-                    .LocalPath = LocalPath.Replace("/", "\"),
-                    .SourcePath = File.Name,
-                    .Hash = File.Value()("hash").ToString,
-                    .Size = File.Value()("size").ToString
+                    .LocalPath = Asset.LocalPath.Replace("/", "\"),
+                    .SourcePath = Asset.SourcePath,
+                    .Hash = Asset.Hash,
+                    .Size = Asset.Size
                 })
             Next
             Return Result

@@ -1,6 +1,7 @@
 ﻿Imports Newtonsoft.Json.Linq
 Imports PCLCS
 Imports PCL.Core.Download
+Imports PCL.Core.Minecraft
 Imports PCL.Core.Net
 Imports PCL.Core.Tasks
 
@@ -14,6 +15,13 @@ Public Module ModCommandLineDownload
 
         Dim McFolder As String = EnsureMcFolder()
         Dim LoaderName As String = If(Loader, "").Trim().ToLowerInvariant()
+
+        If LoaderName = "" OrElse LoaderName = "vanilla" OrElse LoaderName = "none" Then
+            Dim Folder As String = New VanillaInstallService().InstallAsync(McFolder, Version).Run()
+            McInstanceListForceRefresh = True
+            Return "已安装 " & PathUtils.GetLastPart(Folder.TrimEnd("\"c))
+        End If
+
         Dim ForgeEntry As DlForgeVersionEntry = Nothing
         Dim NeoForgeEntry As DlNeoForgeListEntry = Nothing
         Dim ForgeVersion As String = Nothing

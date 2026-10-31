@@ -26,6 +26,7 @@ public static class VanillaInstallPlanner {
                     TargetPath = System.IO.Path.Combine(versionFolder, versionId + ".jar"),
                     Sources = [url!],
                     Sha256 = null,
+                    Sha1 = client["sha1"]?.ToString(),
                     MinSize = client["size"]?.ToObject<long>(),
                     UseParallel = true,
                     ParallelCount = 4
@@ -40,6 +41,7 @@ public static class VanillaInstallPlanner {
                 TargetPath = System.IO.Path.Combine(mcFolder, library.LocalPath),
                 Sources = [library.Url!],
                 Sha256 = null,
+                Sha1 = library.Sha1,
                 MinSize = library.Size >= 0 ? library.Size : null,
                 UseParallel = true,
                 ParallelCount = 4
@@ -56,6 +58,7 @@ public static class VanillaInstallPlanner {
                     TargetPath = System.IO.Path.Combine(mcFolder, "assets", "indexes", assetIndexId + ".json"),
                     Sources = [url!],
                     MinSize = assetIndex?["size"]?.ToObject<long>(),
+                    Sha1 = assetIndex?["sha1"]?.ToString(),
                     UseParallel = false
                 });
             }
@@ -80,6 +83,7 @@ public static class VanillaInstallPlanner {
                             mirrorBase + prefix + "/" + hash
                         ],
                         MinSize = property.Value["size"]?.ToObject<long>(),
+                        Sha1 = hash,
                         UseParallel = false
                     });
                 }

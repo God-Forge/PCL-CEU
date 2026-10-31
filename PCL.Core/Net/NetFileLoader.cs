@@ -14,6 +14,7 @@ public sealed class NetFileTask {
     public string TargetPath { get; init; } = "";
     public IReadOnlyList<string> Sources { get; init; } = Array.Empty<string>();
     public string? Sha256 { get; init; }
+    public string? Sha1 { get; init; }
     public long? MinSize { get; init; }
     public bool UseParallel { get; init; }
     public int ParallelCount { get; init; } = 4;
@@ -120,6 +121,9 @@ public sealed class NetLoader {
 
                 var service = file.UseParallel ? _parallel : _single;
                 var result = await service.DownloadAsync(request, fileProgress, cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(file.Sha1)) {
+                    VerifySha1(file.TargetPath, file.Sha1!);
+                }
                 file.BytesReceived = result.Bytes;
                 file.TotalBytes = result.Bytes;
                 file.State = NetFileState.Finished;
@@ -140,6 +144,16 @@ public sealed class NetLoader {
         })).ConfigureAwait(false);
 
         return new NetLoaderResult { Files = list };
+    }
+
+    private static void VerifySha1(string path, string expected) {
+        using var sha = System.Security.Cryptography.SHA1.Create();
+        using var stream = File.OpenRead(path);
+        var actual = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+        if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)) {
+            try { File.Delete(path); } catch { }
+            throw new InvalidDataException("文件 SHA-1 校验失败。");
+        }
     }
 
 }

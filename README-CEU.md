@@ -236,6 +236,7 @@ Phase 3 已开始：
 - 新增 C# `ForgelikeInjectorRunner`，接管 Forge/NeoForge 安装器进程、输出进度解析、取消与成功判定。
 - 新增 C# `PclRuleEvaluator` 与 `LibraryResolver.GetLocalPath`，接管 ModMinecraft 的规则判断与 Maven 本地路径生成。
 - 新增 C# `ForgeVersionParser`，接管 BMCLAPI Forge 版本列表的安装类型、Hash、推荐版本与发布时间解析。
+- `ModNet.NetRequestByLoader` 已改为直接使用 C# `NetLoader`，移除 VB `LoaderDownload` 调用。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

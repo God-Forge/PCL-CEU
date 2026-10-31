@@ -249,6 +249,7 @@ Phase 3 已开始：
 - 新增 C# `LiteLoaderVersionParser`，接管 LiteLoader versions.json 的版本、文件名、预览状态与 MD5 解析。
 - 新增 C# `OptiFineVersionParser`，接管 OptiFine 官方 HTML 与 BMCLAPI 版本列表、Forge 兼容与实例名生成。
 - 新增 C# `ForgeListParser`，接管 Forge Minecraft 版本列表的官方 HTML 与 BMCLAPI 解析。
+- `ForgeVersionParser` 新增官方 HTML 解析，Forge 版本列表的官方源与 BMCLAPI 源均已迁移。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

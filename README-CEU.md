@@ -229,7 +229,10 @@ Phase 3 已开始：
 - 新增 C# `VanillaInstallPlanner`，从版本 JSON 与资源索引生成客户端 JAR、libraries、asset index、assets 下载任务。
 - 新增 C# `VanillaInstallService`，完成原版版本 JSON、资源索引、文件下载与版本 JSON 写入。
 - CLI `--download <版本>` 的原版分支已切换到 C# `VanillaInstallService`。
-- 下一步：将 Forge/NeoForge/Fabric 安装编排迁移到 C#。
+- 新增 C# `FabricInstallService`，完成 Fabric profile 获取、依赖下载与版本 JSON 写入；CLI `--download <版本> -fabric` 已切换到该服务。
+- 新增 C# `ForgelikeInstallPlanner`，接管 Forge/NeoForge 安装器的 `install_profile.json` / `version.json` 合并、Mappings 补充与主库剔除。
+- 新增 C# `NativesExtractor`，接管启动前的 DLL 解压、大小相同跳过、损坏 jar 删除与多余文件清理。
+- 下一步：将 Forge/NeoForge 注入器执行与启动参数构建迁移到 C#。
 
 运行测试：
 

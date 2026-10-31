@@ -22,6 +22,16 @@ Public Module ModCommandLineDownload
             Return "已安装 " & PathUtils.GetLastPart(Folder.TrimEnd("\"c))
         End If
 
+        If LoaderName = "fabric" Then
+            Using Fetcher As New HttpStringFetcher()
+                Dim Service As New LoaderVersionService(Fetcher)
+                Dim SelectedFabricVersion As String = Service.FindFabricAsync(Version).Run().VersionName
+                Dim Folder As String = New FabricInstallService(Fetcher).InstallAsync(McFolder, Version, SelectedFabricVersion).Run()
+                McInstanceListForceRefresh = True
+                Return "已安装 " & PathUtils.GetLastPart(Folder.TrimEnd("\"c))
+            End Using
+        End If
+
         Dim ForgeEntry As DlForgeVersionEntry = Nothing
         Dim NeoForgeEntry As DlNeoForgeListEntry = Nothing
         Dim ForgeVersion As String = Nothing

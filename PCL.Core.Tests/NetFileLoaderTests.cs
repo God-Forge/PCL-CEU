@@ -1,4 +1,4 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 using PCL.Core.Net;
 
 namespace PCL.Core.Tests;
@@ -29,6 +29,12 @@ public class NetFileLoaderTests {
 
     }
 
+    private sealed class SynchronousProgress(Action<NetLoaderProgress> action) : IProgress<NetLoaderProgress> {
+
+        public void Report(NetLoaderProgress value) => action(value);
+
+    }
+
     private static string CreateRoot() {
         var path = Path.Combine(Path.GetTempPath(), "pcl-netloader-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
@@ -45,7 +51,7 @@ public class NetFileLoaderTests {
             };
             var progress = new List<NetLoaderProgress>();
             var loader = new NetLoader(new FakeDownloadService(), new FakeDownloadService());
-            var result = await loader.DownloadAsync(files, new Progress<NetLoaderProgress>(progress.Add), maxConcurrency: 2);
+            var result = await loader.DownloadAsync(files, new SynchronousProgress(progress.Add), maxConcurrency: 2);
             await Assert.That(result.Success).IsTrue();
             await Assert.That(files.All(file => file.State == NetFileState.Finished)).IsTrue();
             await Assert.That(progress.Any(value => value.FilesCompleted == 2)).IsTrue();

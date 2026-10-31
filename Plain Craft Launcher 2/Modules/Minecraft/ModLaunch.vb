@@ -1932,25 +1932,13 @@ IgnoreCustomSkin:
     Private Sub McLaunchRun(Loader As LoaderTask(Of Integer, Process))
 
         '启动信息
-        Dim StartInfo As New ProcessStartInfo(McLaunchJavaSelected.JavaExePath) '使用 javaw.exe 会导致 #6263
-
-        '设置环境变量
-        Dim PathEnv As String = StartInfo.EnvironmentVariables("Path")
-        Dim Paths As New List(Of String)
-        If Not String.IsNullOrEmpty(PathEnv) Then Paths.AddRange(PathEnv.Split(";"))
-        Paths.Add(PathUtils.ToShortPath(McLaunchJavaSelected.Folder))
-        StartInfo.EnvironmentVariables("Path") = Paths.Distinct.Join(";"c)
-        StartInfo.EnvironmentVariables("appdata") = PathUtils.ToShortPath(McFolderSelected)
-
-        '设置其他参数
-        StartInfo.WorkingDirectory = McInstanceSelected.PathIndie
-        StartInfo.UseShellExecute = False
-        StartInfo.StandardOutputEncoding = McLaunchEncoding
-        StartInfo.StandardErrorEncoding = McLaunchEncoding
-        StartInfo.RedirectStandardOutput = True
-        StartInfo.RedirectStandardError = True
-        StartInfo.CreateNoWindow = True
-        StartInfo.Arguments = McLaunchArgument
+        Dim StartInfo = JavaProcessLauncher.BuildStartInfo(
+            McLaunchJavaSelected.JavaExePath,
+            PathUtils.ToShortPath(McLaunchJavaSelected.Folder),
+            PathUtils.ToShortPath(McFolderSelected),
+            McInstanceSelected.PathIndie,
+            McLaunchArgument,
+            McLaunchEncoding)
 
         '开始进程
         Dim GameProcess = StartProcess(StartInfo)

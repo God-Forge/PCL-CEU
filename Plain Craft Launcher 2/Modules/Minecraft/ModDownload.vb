@@ -609,25 +609,20 @@ Public Module ModDownload
     ''' Forge 版本列表，主加载器。
     ''' </summary>
     Public Sub DlForgeVersionMain(Loader As LoaderTask(Of String, List(Of DlForgeVersionEntry)))
-        Dim DlForgeVersionOfficialLoader As New LoaderTask(Of String, List(Of DlForgeVersionEntry))("DlForgeVersion Official", AddressOf DlForgeVersionOfficialMain)
-        Dim DlForgeVersionBmclapiLoader As New LoaderTask(Of String, List(Of DlForgeVersionEntry))("DlForgeVersion Bmclapi", AddressOf DlForgeVersionBmclapiMain)
-        Select Case Settings.Get(Of Integer)("ToolDownloadVersion")
-            Case 0
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionBmclapiLoader, 30),
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionOfficialLoader, 30 + 60)
-                }, Loader.IsForceRestarting)
-            Case 1
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionOfficialLoader, 5),
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionBmclapiLoader, 5 + 30)
-                }, Loader.IsForceRestarting)
-            Case Else
-                DlSourceLoader(Loader, New List(Of KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)) From {
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionOfficialLoader, 60),
-                    New KeyValuePair(Of LoaderTask(Of String, List(Of DlForgeVersionEntry)), Integer)(DlForgeVersionBmclapiLoader, 60 + 60)
-                }, Loader.IsForceRestarting)
-        End Select
+        Using Fetcher As New HttpStringFetcher()
+            Dim Service As New ForgeVersionService(Fetcher)
+            Dim Items = Service.GetVersionsAsync(
+                Loader.Input,
+                Settings.Get(Of Integer)("ToolDownloadVersion"),
+                McDownloadForgeRecommendedGet(Loader.Input),
+                Loader.CreateCancellationToken).Run()
+            Loader.Output = Items.Select(Function(Item) New DlForgeVersionEntry(Item.VersionName, Item.Branch, Loader.Input) With {
+                .Hash = Item.Hash,
+                .Category = Item.Category,
+                .IsRecommended = Item.IsRecommended,
+                .ReleaseTime = Item.ReleaseTime
+            }).ToList()
+        End Using
     End Sub
 
     ''' <summary>

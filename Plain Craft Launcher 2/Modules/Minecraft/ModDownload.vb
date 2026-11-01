@@ -414,10 +414,12 @@ Public Module ModDownload
     ''' </summary>
     Public DlOptiFineListBmclapiLoader As New LoaderTask(Of Integer, DlOptiFineListResult)("DlOptiFineList Bmclapi", AddressOf DlOptiFineListBmclapiMain)
     Private Sub DlOptiFineListBmclapiMain(Loader As LoaderTask(Of Integer, DlOptiFineListResult))
-        Dim Json As JArray = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/optifine/versionList", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Versions = OptiFineVersionParser.ParseBmclapi(Json).
-                Select(Function(Item) New DlOptiFineListEntry With {
+        Using Fetcher As New HttpStringFetcher()
+            Dim Result = New OptiFineListService(Fetcher).GetAsync(0, Loader.CreateCancellationToken).Run()
+            Loader.Output = New DlOptiFineListResult With {
+                .IsOfficial = Result.IsOfficial,
+                .SourceName = Result.SourceName,
+                .Value = Result.Versions.Select(Function(Item) New DlOptiFineListEntry With {
                     .DisplayName = Item.DisplayName,
                     .ReleaseTime = Item.ReleaseTime,
                     .IsPreview = Item.IsPreview,
@@ -426,10 +428,8 @@ Public Module ModDownload
                     .RequiredForgeVersion = Item.RequiredForgeVersion,
                     .InstanceName = Item.InstanceName
                 }).ToList()
-            Loader.Output = New DlOptiFineListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Versions}
-        Catch ex As Exception
-            Throw New Exception("OptiFine BMCLAPI 版本列表解析失败（" & Json.ToString & "）", ex)
-        End Try
+            }
+        End Using
     End Sub
 
 #End Region

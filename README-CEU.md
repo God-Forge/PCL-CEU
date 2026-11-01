@@ -242,6 +242,7 @@ Phase 3 已开始：
 - 新增 C# `LaunchArgumentFormatter`，接管启动参数替换、单个参数格式化与特殊字符引号处理。
 - 新增 C# `GameArgumentCollector`，接管版本 JSON `arguments.game` 的规则过滤与参数收集。
 - 新增 C# `LegacyGameArgumentBuilder`，接管旧版 `minecraftArguments` 的分辨率参数追加。
+- 新增 C# `FullscreenArgumentBuilder`，接管全屏游戏参数生成。
 - 新增 C# `ClientJarInfoResolver`，接管版本 JSON `downloads.client` 的 URL、SHA1 与大小解析。
 - 新增 C# `AssetIndexInfoResolver`，接管资源索引的 id 与 url 读取。
 - 新增 C# `NativesFolderResolver`，接管 Natives 目录的 ASCII 回退与提前创建。

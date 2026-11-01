@@ -111,7 +111,32 @@
                     </WrapPanel>
                 </StackPanel>
             </local:MyCard>
-            <local:MyCard Margin="0,15,0,15" Title="Java 打包">
+            <local:MyCard Margin="0,0,0,15" Title="高级维护与诊断">
+                <StackPanel Margin="21,40,21,16">
+                    <WrapPanel>
+                        <local:MyButton x:Name="BtnAdvancedAudit" Text="运行高级体检" MinWidth="150" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnOfflinePack" Text="导出离线整合包" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnMigrate" Text="迁移实例" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnWorldManage" Text="查看存档列表" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnWorldBackupSelected" Text="备份选中存档" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnWorldRestoreSelected" Text="恢复选中存档" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnModAutoFix" Text="自动修复 Mod" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnModConfig" Text="打开 Mod 配置目录" MinWidth="180" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnResourceBackup" Text="备份资源包/光影" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnResourceRestore" Text="恢复资源包/光影" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnCrashCompare" Text="对比崩溃报告" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnEnvironment" Text="环境诊断" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnJvmLow" Text="JVM 低配" MinWidth="130" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnJvmBalanced" Text="JVM 均衡" MinWidth="130" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnJvmHigh" Text="JVM 高性能" MinWidth="140" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProcessMonitor" Text="游戏资源监控" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnSourceHistory" Text="下载源历史/自动选择" MinWidth="210" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnLiveLog" Text="开始实时日志" MinWidth="160" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnLiveLogStop" Text="停止实时日志" MinWidth="160" Height="35" Margin="0,0,10,10" />
+                    </WrapPanel>
+                    <TextBox x:Name="TxtLiveLog" Height="160" Margin="0,8,0,0" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas" />
+                </StackPanel>
+            </local:MyCard>            <local:MyCard Margin="0,15,0,15" Title="Java 打包">
                 <StackPanel Margin="21,40,21,16">
                     <TextBlock Text="选择电脑上的 java.exe，自动识别 JDK/JRE 与版本，打包为 &lt;版本&gt;.jdk.javapkg 或 &lt;版本&gt;.jre.javapkg。导入时会解压并加入 Java 列表。"
                                TextWrapping="Wrap" LineHeight="18" />
@@ -125,6 +150,8 @@
         </StackPanel>
     </local:MyScrollViewer>
 </local:MyPageRight>
+
+
 
 
 

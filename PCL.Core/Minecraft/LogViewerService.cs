@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace PCL.Core.Minecraft;
 
@@ -34,6 +34,12 @@ public static class LogViewerService {
             Lines = errors,
             FoundErrors = errors.Count > 0 && lines.Any(line => line.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) >= 0)
         };
+    }
+
+    public static IReadOnlyList<string> ReadTail(string path, int maximum = 200) {
+        if (!File.Exists(path)) return Array.Empty<string>();
+        var lines = File.ReadAllLines(path, Encoding.UTF8);
+        return lines.Skip(Math.Max(0, lines.Length - Math.Max(1, maximum))).ToList();
     }
 
     public static string Format(LogViewResult result) {

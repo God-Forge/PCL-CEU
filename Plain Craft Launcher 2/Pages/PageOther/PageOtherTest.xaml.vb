@@ -1,6 +1,7 @@
 ﻿Imports System.Diagnostics
 Imports PCL.Core.Download
 Imports PCL.Core.Memory
+Imports PCL.Core.Worlds
 Imports PCL.Core.Minecraft
 Imports PCL.Core.Tools
 
@@ -28,6 +29,8 @@ Public Class PageOtherTest
     Private Shared _MaintenanceBusy As Boolean
     Private Shared _JavaBusy As Boolean
     Private Shared _AdvancedBusy As Boolean
+    Private Shared _LogTimer As System.Windows.Threading.DispatcherTimer
+    Private Shared _LogPath As String
 
     Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
         RefreshMemoryStatus()
@@ -996,6 +999,346 @@ Public Class PageOtherTest
     Private Sub BtnLaunchTiming_Click(sender As Object, e As EventArgs) Handles BtnLaunchTiming.Click
         Dim Records = LaunchTimingService.List(PathPure.Value & "LaunchTiming.json")
         MyMsgBox(LaunchTimingService.Format(Records), "启动耗时")
+    End Sub
+
+    Private Sub BtnAdvancedAudit_Click(sender As Object, e As EventArgs) Handles BtnAdvancedAudit.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        _AdvancedBusy = True
+        Hint("正在运行高级体检……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Report = AdvancedAuditService.FormatReport(Instance.PathVersion, McFolderSelected, PathPure.Value & "LaunchTiming.json")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            MyMsgBox(Report, "高级体检")
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "高级体检失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("高级体检失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnOfflinePack_Click(sender As Object, e As EventArgs) Handles BtnOfflinePack.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Output = Dialogs.SaveFile("导出离线整合包", Instance.Name & "-offline.zip", McFolderSelected, filter:={("zip", "离线整合包")})
+        If String.IsNullOrEmpty(Output) Then Return
+        _AdvancedBusy = True
+        Hint("正在导出离线整合包，文件较大时可能需要一会儿……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                AdvancedMaintenanceService.ExportOfflinePack(Instance.PathVersion, McFolderSelected, Output)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("离线整合包已导出：" & Output, HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "导出离线整合包失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("导出离线整合包失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnMigrate_Click(sender As Object, e As EventArgs) Handles BtnMigrate.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim TargetRoot = Dialogs.SelectFolder("选择迁移到的 Minecraft 文件夹", False, McFolderSelected).FirstOrDefault()
+        If String.IsNullOrEmpty(TargetRoot) Then Return
+        Dim TargetName = Instance.Name & "-Moved"
+        Dim TargetPath = IO.Path.Combine(TargetRoot, "versions", TargetName)
+        If Directory.Exists(TargetPath) Then
+            Hint("目标实例已存在：" & TargetPath, HintType.Red)
+            Return
+        End If
+        Dim DeleteSource = MyMsgBox("迁移完成后是否删除源实例？", "迁移实例", "迁移并删除", "仅复制") = 1
+        _AdvancedBusy = True
+        Hint("正在迁移实例……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                AdvancedMaintenanceService.Migrate(Instance.PathVersion, TargetPath, DeleteSource)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            McInstanceListForceRefresh = True
+                            Hint("实例已迁移到：" & TargetPath, HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "迁移实例失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("迁移实例失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnWorldManage_Click(sender As Object, e As EventArgs) Handles BtnWorldManage.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Worlds = AdvancedAuditService.ListWorlds(Instance.PathVersion)
+        If Worlds.Count = 0 Then
+            Hint("当前实例没有存档。", HintType.Red)
+            Return
+        End If
+        Dim Text = String.Join(vbCrLf, Worlds.Select(Function(world) $"{world.Name}：{AdvancedAuditService.FormatSize(world.Size)}，最后游玩 {world.LastWrite:yyyy-MM-dd HH:mm}"))
+        MyMsgBox(Text, "存档列表")
+    End Sub
+
+    Private Sub BtnWorldBackupSelected_Click(sender As Object, e As EventArgs) Handles BtnWorldBackupSelected.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim WorldFolder = Dialogs.SelectFolder("选择要备份的世界文件夹", False, Instance.PathVersion & "saves").FirstOrDefault()
+        If String.IsNullOrEmpty(WorldFolder) Then Return
+        _AdvancedBusy = True
+        Hint("正在备份世界……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Backup = AdvancedMaintenanceService.BackupWorld(WorldFolder, ModWorldBackup.BackupRoot, Instance.Name)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("世界备份完成：" & Backup, HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "备份世界失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("备份世界失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnWorldRestoreSelected_Click(sender As Object, e As EventArgs) Handles BtnWorldRestoreSelected.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim BackupPath = Dialogs.SelectFile("选择世界备份", False, ModWorldBackup.BackupRoot, filter:={({"zip"}, "世界备份")}).FirstOrDefault()
+        If String.IsNullOrEmpty(BackupPath) Then Return
+        Dim Backup = New WorldBackupService().ListBackups(ModWorldBackup.BackupRoot, Instance.Name).
+            FirstOrDefault(Function(item) item.Path = BackupPath)
+        If Backup Is Nothing Then
+            Hint("无法读取该备份的元数据。", HintType.Red)
+            Return
+        End If
+        Dim Target = IO.Path.Combine(Instance.PathVersion, "saves", Backup.WorldName)
+        If MyMsgBox($"将恢复存档 {Backup.WorldName}，当前存档会先自动备份。是否继续？", "恢复世界", "继续", "取消") <> 1 Then Return
+        _AdvancedBusy = True
+        Hint("正在恢复世界……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                AdvancedMaintenanceService.RestoreWorld(BackupPath, Target, ModWorldBackup.BackupRoot, Instance.Name)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("世界已恢复：" & Target, HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "恢复世界失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("恢复世界失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnModAutoFix_Click(sender As Object, e As EventArgs) Handles BtnModAutoFix.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        If MyMsgBox("将删除哈希重复的 Mod，并禁用重复 ID 的 Mod。是否继续？", "自动修复 Mod", "继续", "取消") <> 1 Then Return
+        _AdvancedBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Lines = AdvancedMaintenanceService.AutoFixMods(Instance.PathVersion)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            MyMsgBox(String.Join(vbCrLf, Lines), "自动修复 Mod")
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "自动修复 Mod 失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("自动修复 Mod 失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnResourceBackup_Click(sender As Object, e As EventArgs) Handles BtnResourceBackup.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Output = Dialogs.SaveFile("备份资源包/光影", Instance.Name & "-resources.zip", McFolderSelected, filter:={("zip", "资源包备份")})
+        If String.IsNullOrEmpty(Output) Then Return
+        _AdvancedBusy = True
+        RunInThread(
+        Sub()
+            Try
+                AdvancedMaintenanceService.BackupResourcePacks(Instance.PathVersion, Output)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("资源包/光影已备份：" & Output, HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "备份资源包失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("备份资源包失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnResourceRestore_Click(sender As Object, e As EventArgs) Handles BtnResourceRestore.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim InputPath = Dialogs.SelectFile("选择资源包/光影备份", False, McFolderSelected, filter:={({"zip"}, "资源包备份")}).FirstOrDefault()
+        If String.IsNullOrEmpty(InputPath) Then Return
+        If MyMsgBox("恢复会覆盖同名资源包/光影文件，是否继续？", "恢复资源包", "继续", "取消") <> 1 Then Return
+        _AdvancedBusy = True
+        RunInThread(
+        Sub()
+            Try
+                AdvancedMaintenanceService.RestoreResourcePacks(InputPath, Instance.PathVersion)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("资源包/光影已恢复。", HintType.Green, Log:=False)
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "恢复资源包失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("恢复资源包失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnCrashCompare_Click(sender As Object, e As EventArgs) Handles BtnCrashCompare.Click
+        Dim OldFile = Dialogs.SelectFile("选择旧崩溃报告", False, McFolderSelected, filter:={({"txt"}, "崩溃报告")}).FirstOrDefault()
+        If String.IsNullOrEmpty(OldFile) Then Return
+        Dim NewFile = Dialogs.SelectFile("选择新崩溃报告", False, McFolderSelected, filter:={({"txt"}, "崩溃报告")}).FirstOrDefault()
+        If String.IsNullOrEmpty(NewFile) Then Return
+        Try
+            MyMsgBox(AdvancedDiagnosticsService.CompareLogs(OldFile, NewFile), "崩溃报告对比")
+        Catch ex As Exception
+            Hint("对比崩溃报告失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub BtnEnvironment_Click(sender As Object, e As EventArgs) Handles BtnEnvironment.Click
+        Try
+            Dim Info = AdvancedDiagnosticsService.CollectEnvironment(If(McLaunchJavaSelected Is Nothing, Nothing, McLaunchJavaSelected.JavaExePath))
+            MyMsgBox($"系统：{Info.Os}{vbCrLf}显卡：{Info.Gpu}{vbCrLf}Java：{Info.Java}", "环境诊断")
+        Catch ex As Exception
+            Hint("环境诊断失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub ApplyJvmPreset(Index As Integer)
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Preset = AdvancedMaintenanceService.JvmPresets()(Index)
+        For Each Pair In Preset.Settings
+            Settings.Set(Pair.Key, Pair.Value, Instance)
+        Next
+        Hint("已应用 JVM 预设：" & Preset.Name, HintType.Green)
+    End Sub
+
+    Private Sub BtnJvmLow_Click(sender As Object, e As EventArgs) Handles BtnJvmLow.Click
+        ApplyJvmPreset(0)
+    End Sub
+
+    Private Sub BtnJvmBalanced_Click(sender As Object, e As EventArgs) Handles BtnJvmBalanced.Click
+        ApplyJvmPreset(1)
+    End Sub
+
+    Private Sub BtnJvmHigh_Click(sender As Object, e As EventArgs) Handles BtnJvmHigh.Click
+        ApplyJvmPreset(2)
+    End Sub
+
+    Private Sub BtnProcessMonitor_Click(sender As Object, e As EventArgs) Handles BtnProcessMonitor.Click
+        Dim Running = McWatcherList.FirstOrDefault(Function(watcher) watcher.State = Watcher.MinecraftState.Running)
+        If Running Is Nothing Then
+            Hint("当前没有正在运行的 Minecraft 进程。", HintType.Red)
+            Return
+        End If
+        _AdvancedBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Sample = AdvancedMaintenanceService.SampleProcess(Running.GameProcess)
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            If Sample Is Nothing Then
+                                Hint("无法读取游戏进程资源。", HintType.Red)
+                            Else
+                                MyMsgBox($"内存：{AdvancedAuditService.FormatSize(Sample.WorkingSet)}{vbCrLf}CPU：{Sample.CpuPercent:F1}%{vbCrLf}线程：{Sample.Threads}", "游戏资源监控")
+                            End If
+                        End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "读取游戏资源失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("读取游戏资源失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnSourceHistory_Click(sender As Object, e As EventArgs) Handles BtnSourceHistory.Click
+        Dim HistoryPath = PathPure.Value & "DownloadSourceHistory.json"
+        Dim Records = AdvancedDiagnosticsService.LoadSourceHistory(HistoryPath)
+        If Records.Count = 0 Then
+            Hint("暂无下载源测速历史，请先运行「测试下载源」。", HintType.Red)
+            Return
+        End If
+        Dim Fastest = AdvancedDiagnosticsService.ChooseFastest(Records.First.Results)
+        If Not String.IsNullOrEmpty(Fastest) Then
+            If Fastest.Contains("Mojang") Then Settings.Set("ToolDownloadVersion", 1)
+            If Fastest.Contains("BMCLAPI") Then Settings.Set("ToolDownloadVersion", 0)
+        End If
+        MyMsgBox(AdvancedDiagnosticsService.FormatSourceHistory(Records), "下载源历史")
+    End Sub
+
+    Private Sub BtnLiveLog_Click(sender As Object, e As EventArgs) Handles BtnLiveLog.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        _LogPath = IO.Path.Combine(Instance.PathVersion, "logs", "latest.log")
+        If _LogTimer IsNot Nothing Then _LogTimer.Stop()
+        _LogTimer = New System.Windows.Threading.DispatcherTimer With {.Interval = TimeSpan.FromSeconds(1)}
+        AddHandler _LogTimer.Tick, Sub()
+                                        If Not File.Exists(_LogPath) Then Return
+                                        TxtLiveLog.Text = String.Join(vbCrLf, LogViewerService.ReadTail(_LogPath, 200))
+                                        TxtLiveLog.ScrollToEnd()
+                                    End Sub
+        _LogTimer.Start()
+        Hint("实时日志已启动。", HintType.Green)
+    End Sub
+
+    Private Sub BtnLiveLogStop_Click(sender As Object, e As EventArgs) Handles BtnLiveLogStop.Click
+        If _LogTimer IsNot Nothing Then _LogTimer.Stop()
+        Hint("实时日志已停止。", Log:=False)
+    End Sub
+
+    Private Sub BtnModConfig_Click(sender As Object, e As EventArgs) Handles BtnModConfig.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Try
+            OpenExplorer(Instance.PathVersion & "config")
+        Catch ex As Exception
+            Hint("打开 Mod 配置目录失败：" & ex.Message, HintType.Red)
+        End Try
     End Sub
 
 End Class

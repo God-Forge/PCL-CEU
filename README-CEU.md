@@ -263,6 +263,7 @@ Phase 3 已开始：
 - 新增 C# `JvmWrapperArgumentBuilder`，接管 JLW 与 LUA 的 JVM 参数。
 - 新增 C# `JvmMemoryArgumentBuilder`，接管 `-Xmx`、G1GC/ZGC 选择与旧 GC 参数清理。
 - 新增 C# `JvmEncodingArgumentBuilder`，接管 Java stdout/stderr 编码与 `file.encoding=COMPAT` 参数。
+- 新增 C# `McFolderListParser`，接管自定义 Minecraft 文件夹设置的解析与无效项识别。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 
 运行测试：

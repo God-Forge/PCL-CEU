@@ -1,3 +1,5 @@
+﻿Imports PCL.Core.Minecraft
+
 Public Module ModWatcher
 
     '对全体的监视
@@ -281,6 +283,8 @@ Public Module ModWatcher
                     WindowHandle = MinecraftWindowHandle
                     WatcherLog($"Minecraft 窗口已加载：{MinecraftWindowName}（{MinecraftWindowHandle.ToInt64}）")
                     IsWindowFinished = True
+                    LaunchTimingService.Mark("窗口已加载")
+                    LaunchTimingService.Finish(PathPure.Value & "LaunchTiming.json")
                     '最大化
                     If Settings.Get(Of Integer)("LaunchArgumentWindowType") = 4 Then
                         RunInNewThread(
@@ -356,6 +360,7 @@ Public Module ModWatcher
         Private Sub Crashed()
             If State = MinecraftState.Crashed OrElse State = MinecraftState.Ended Then Return
             State = MinecraftState.Crashed
+            LaunchTimingService.Finish(PathPure.Value & "LaunchTiming.json")
             '崩溃分析
             WatcherLog("Minecraft 已崩溃，将在 2 秒后开始崩溃分析", LogLevel.Error)
             Hint("检测到 Minecraft 出现错误，错误分析已开始……", HintType.Red)
@@ -366,6 +371,9 @@ Public Module ModWatcher
                     Thread.Sleep(2000)
                     WatcherLog("崩溃分析开始")
                     Dim Analyzer As New CrashAnalyzer(Instance)
+                    Analyzer.ExitCode = GameProcess.ExitCode
+                    Dim ExitInfo = ExitCodeAnalyzer.Analyze(GameProcess.ExitCode)
+                    If ExitInfo IsNot Nothing Then WatcherLog("退出码分析：" & ExitInfo.Description & "；" & ExitInfo.Suggestion, LogLevel.Info)
                     Analyzer.Collect(Instance.PathIndie, LatestLog.ToList)
                     Analyzer.Prepare()
                     Analyzer.Analyze()

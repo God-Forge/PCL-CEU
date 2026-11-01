@@ -922,4 +922,80 @@ Public Class PageOtherTest
         End Sub)
     End Sub
 
+    Private Shared ReadOnly LaunchConfigKeys As String() = {
+        "VersionRamType", "VersionRamCustom", "VersionRamOptimize",
+        "VersionArgumentJavaV2", "VersionArgumentJavaSelect", "VersionArgumentJavaRange",
+        "VersionArgumentJvm", "VersionArgumentGame", "VersionArgumentInfo", "VersionArgumentTitle",
+        "VersionArgumentWindowType", "VersionArgumentWindowWidth", "VersionArgumentWindowHeight",
+        "VersionAdvanceJvm", "VersionAdvanceGame", "VersionAdvanceGC",
+        "VersionAdvanceDisableJLW", "VersionAdvanceDisableLUA", "VersionServerEnter"
+    }
+
+    Private Sub BtnCrashHistory_Click(sender As Object, e As EventArgs) Handles BtnCrashHistory.Click
+        MyMsgBox(CrashHistoryService.Format(PathPure.Value & "CrashHistory.json"), "崩溃历史")
+    End Sub
+
+    Private Sub BtnLogViewer_Click(sender As Object, e As EventArgs) Handles BtnLogViewer.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Result = LogViewerService.ExtractLatest(Instance.PathVersion)
+        If Result.Lines.Count = 0 Then
+            Hint("未找到 latest.log 或日志为空。", HintType.Red)
+            Return
+        End If
+        MyMsgBox(LogViewerService.Format(Result), "日志查看器")
+    End Sub
+
+    Private Sub BtnDiagnosticShare_Click(sender As Object, e As EventArgs) Handles BtnDiagnosticShare.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Latest = CrashHistoryService.Latest(PathPure.Value & "CrashHistory.json")
+        Dim LogResult = LogViewerService.ExtractLatest(Instance.PathVersion)
+        Dim Text = DiagnosticShareService.Build(
+            Instance.Name,
+            If(Latest Is Nothing, Array.Empty(Of String), Latest.Reasons),
+            If(Latest Is Nothing, 0, Latest.ExitCode),
+            LogResult.Lines)
+        Clipboard.SetText(Text)
+        Hint("诊断摘要已复制到剪贴板。", HintType.Green)
+    End Sub
+
+    Private Sub BtnExportLaunchConfig_Click(sender As Object, e As EventArgs) Handles BtnExportLaunchConfig.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Output = Dialogs.SaveFile("保存启动配置", "启动配置-" & Instance.Name & ".json", McFolderSelected, filter:={("json", "启动配置")})
+        If String.IsNullOrEmpty(Output) Then Return
+        Dim Values As New Dictionary(Of String, Object)
+        For Each Key In LaunchConfigKeys
+            Try
+                Values(Key) = Settings.Get(Key, Instance)
+            Catch
+            End Try
+        Next
+        InstanceLaunchConfigService.Export(Output, Values, Instance.Name)
+        Hint("启动配置已导出：" & Output, HintType.Green)
+    End Sub
+
+    Private Sub BtnImportLaunchConfig_Click(sender As Object, e As EventArgs) Handles BtnImportLaunchConfig.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim InputPath = Dialogs.SelectFile("选择启动配置", False, McFolderSelected, filter:={({"json"}, "启动配置")}).FirstOrDefault()
+        If String.IsNullOrEmpty(InputPath) Then Return
+        If MyMsgBox("导入会覆盖当前实例的启动相关设置，是否继续？", "导入启动配置", "继续", "取消") <> 1 Then Return
+        Dim Values = InstanceLaunchConfigService.Import(InputPath)
+        For Each Pair In Values
+            Try
+                Settings.Set(Pair.Key, Pair.Value.ToObject(Of Object)(), Instance)
+            Catch ex As Exception
+                Logger.Warn(ex, "导入启动配置项失败：" & Pair.Key)
+            End Try
+        Next
+        Hint("启动配置已导入。", HintType.Green)
+    End Sub
+
+    Private Sub BtnLaunchTiming_Click(sender As Object, e As EventArgs) Handles BtnLaunchTiming.Click
+        Dim Records = LaunchTimingService.List(PathPure.Value & "LaunchTiming.json")
+        MyMsgBox(LaunchTimingService.Format(Records), "启动耗时")
+    End Sub
+
 End Class

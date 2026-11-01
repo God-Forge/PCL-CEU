@@ -102,7 +102,12 @@
                         <local:MyButton x:Name="BtnResourceScan" Text="扫描资源包/光影" MinWidth="170" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnResourceToggle" Text="启用/禁用资源包" MinWidth="170" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnResourceOpen" Text="打开资源包/光影目录" MinWidth="190" Height="35" Margin="0,0,10,10" />
-                        <local:MyButton x:Name="BtnSpeedTest" Text="测试下载源" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnSpeedTest" Text="测试下载源" MinWidth="150" Height="35" Margin="0,0,10,10" />                        <local:MyButton x:Name="BtnCrashHistory" Text="崩溃历史" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnLogViewer" Text="查看最新日志" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnDiagnosticShare" Text="复制诊断摘要" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnExportLaunchConfig" Text="导出启动配置" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnImportLaunchConfig" Text="导入启动配置" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnLaunchTiming" Text="查看启动耗时" MinWidth="170" Height="35" Margin="0,0,10,10" />
                     </WrapPanel>
                 </StackPanel>
             </local:MyCard>
@@ -120,5 +125,8 @@
         </StackPanel>
     </local:MyScrollViewer>
 </local:MyPageRight>
+
+
+
 
 

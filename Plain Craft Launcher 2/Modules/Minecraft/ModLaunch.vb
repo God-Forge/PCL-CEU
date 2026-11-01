@@ -1,4 +1,4 @@
-﻿Imports PCL.Core.Minecraft
+Imports PCL.Core.Minecraft
 
 Public Module ModLaunch
 
@@ -1798,6 +1798,7 @@ IgnoreCustomSkin:
     End Sub
     Private Sub McLaunchRun(Loader As LoaderTask(Of Integer, Process))
 
+        LaunchTimingService.Begin(McInstanceSelected.Name)
         '启动信息
         Dim StartInfo = JavaProcessLauncher.BuildStartInfo(
             McLaunchJavaSelected.JavaExePath,
@@ -1809,6 +1810,7 @@ IgnoreCustomSkin:
 
         '开始进程
         Dim GameProcess = StartProcess(StartInfo)
+        LaunchTimingService.Mark("Java 进程已启动")
         McLaunchLog("已启动游戏进程：" & McLaunchJavaSelected.JavaExePath)
         If Loader.IsCanceled Then
             McLaunchLog("由于取消启动，已强制结束游戏进程") '#1631

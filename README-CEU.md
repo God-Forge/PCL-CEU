@@ -1,4 +1,4 @@
-﻿# Plain Craft Launcher (PCL) CEU 修改版
+# Plain Craft Launcher (PCL) CEU 修改版
 
 本仓库是第三方基于 **Plain Craft Launcher (PCL)** 独立修改的版本，**并非 PCL 官方作品，与官方无关**。
 
@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`0.9.0-ceu`
-- 输出文件：`PCL-0.9.0ceu.exe`
-- 程序集版本：`0.9.0.0`
+- 版本号：`0.9.1-ceu`
+- 输出文件：`PCL-0.9.1ceu.exe`
+- 程序集版本：`0.9.1.0`
 - 版本规则：VB → C# 迁移完成前统一使用 `0.x.y`；tag 格式为 `x.y.z-ceu`，产物为 `PCL-x.y.zceu.exe`。
 
 ## 本改版的主要调整（与开源版相比）
@@ -37,6 +37,8 @@
 - 新增实例克隆/迁移、实例快照与恢复。
 - 新增资源包/光影扫描、启用/禁用与目录打开。
 - 新增 Mojang/BMCLAPI/镜像下载源测速。
+- 新增崩溃历史、常见退出码识别、最新日志查看与可粘贴诊断摘要。
+- 新增实例启动配置导出/导入与启动阶段耗时记录。
 - Payload 支持直接导入为 `versions` 下的实例。
 - 新增 `.javapkg` Java 打包格式：可把本机 JDK/JRE 打包为 `<版本>.jdk.javapkg` / `<版本>.jre.javapkg`，并在其他电脑解压导入。
 
@@ -45,22 +47,22 @@
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL-0.9.0ceu.exe --help
-.\PCL-0.9.0ceu.exe --version
-.\PCL-0.9.0ceu.exe --luck
-.\PCL-0.9.0ceu.exe --mca
-.\PCL-0.9.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL-0.9.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL-0.9.0ceu.exe --payload-import .\1.20.1.payload
-.\PCL-0.9.0ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
-.\PCL-0.9.0ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
-.\PCL-0.9.0ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
-.\PCL-0.9.0ceu.exe --backup 1.20.1
-.\PCL-0.9.0ceu.exe --mods 1.20.1
-.\PCL-0.9.0ceu.exe --repair 1.20.1
-.\PCL-0.9.0ceu.exe --launch 1.20.1
-.\PCL-0.9.0ceu.exe --download 1.20.1 -forge
-.\PCL-0.9.0ceu.exe --memory
+.\PCL-0.9.1ceu.exe --help
+.\PCL-0.9.1ceu.exe --version
+.\PCL-0.9.1ceu.exe --luck
+.\PCL-0.9.1ceu.exe --mca
+.\PCL-0.9.1ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL-0.9.1ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.9.1ceu.exe --payload-import .\1.20.1.payload
+.\PCL-0.9.1ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
+.\PCL-0.9.1ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
+.\PCL-0.9.1ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
+.\PCL-0.9.1ceu.exe --backup 1.20.1
+.\PCL-0.9.1ceu.exe --mods 1.20.1
+.\PCL-0.9.1ceu.exe --repair 1.20.1
+.\PCL-0.9.1ceu.exe --launch 1.20.1
+.\PCL-0.9.1ceu.exe --download 1.20.1 -forge
+.\PCL-0.9.1ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -127,8 +129,8 @@ C++ 工具：
 命令行：
 
 ```powershell
-.\PCL-0.9.0ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
-.\PCL-0.9.0ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.9.1ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
+.\PCL-0.9.1ceu.exe --payload-decode .\1.20.1.payload .\decoded
 ```
 
 也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。
@@ -294,6 +296,7 @@ Phase 3 已开始：
 ```powershell
 & "C:\Users\neolx\.dotnet10\dotnet.exe" run --project "PCL.Core.Tests\PCL.Core.Tests.csproj" -c Release
 ```
+
 
 
 

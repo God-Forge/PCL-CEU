@@ -336,6 +336,7 @@ Extracted:
     Private LogAll As String
     '可能导致崩溃的原因与附加信息
     Private CrashReasons As New Dictionary(Of CrashReason, List(Of String))
+    Public ExitCode As Integer = 0
     ''' <summary>
     ''' 导致崩溃的原因枚举。
     ''' </summary>
@@ -891,6 +892,16 @@ NextStack:
         '弹窗提示
         FrmMain.ShowWindowToTop()
         Dim Detail As String = GetAnalyzeResult(IsManualAnalyze)
+        Try
+            CrashHistoryService.Add(PathPure.Value & "CrashHistory.json", New CrashHistoryEntry With {
+                .Instance = If(TargetInstance Is Nothing, "", TargetInstance.Name),
+                .ExitCode = ExitCode,
+                .Reasons = CrashReasons.Keys.Select(Function(key) key.ToString()).ToList(),
+                .Summary = If(Detail.Length > 500, Detail.Substring(0, 500), Detail)
+            })
+        Catch ex As Exception
+            Logger.Warn(ex, "保存崩溃历史失败")
+        End Try
         Select Case MyMsgBox(Detail, If(IsManualAnalyze, "错误报告分析结果", "Minecraft 出现错误"),
             "确定", If(IsManualAnalyze OrElse DirectFile Is Nothing, "", "查看输出"), If(IsManualAnalyze, "", "导出错误报告"),
             Button2Action:=If(IsManualAnalyze OrElse DirectFile Is Nothing, Nothing,

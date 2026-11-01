@@ -254,6 +254,7 @@ Phase 3 已开始：
 - 新增 C# `NativesFolderResolver`，接管 Natives 目录的 ASCII 回退与提前创建。
 - 新增 C# `DownloadSpeedTracker`，接管 ModNet 加权下载速度与速度下限计算。
 - 新增 C# `DownloadProgressCalculator`，接管下载任务加权总进度计算。
+- 新增 C# `DownloadFileValidator`，接管下载 URL 与本地文件路径校验。
 - 新增 C# `JvmArgumentCollector`，接管版本 JSON `arguments.jvm` 的规则过滤与参数收集。
 - 新增 C# `AssetIndexResolver`，接管 assets objects 的普通、virtual 与 map_to_resources 路径解析，以及 assetIndex/assets 名称回退和索引对象解析。
 - 新增 C# `DownloadSourceResolver`，接管 Mojang、Assets、Libraries 与 Modrinth/CurseForge 下载镜像地址生成，以及 Mod 请求源顺序。

@@ -1421,15 +1421,13 @@ FinishExCatch:
                     For Each File As NetFile In Files
                         If File Is Nothing Then Throw New ArgumentException("存在空文件请求！")
                         For Each Source As NetSource In File.Sources
-                            If Not (Source.Url.StartsWithF("https://", True) OrElse Source.Url.StartsWithF("http://", True)) Then
+                            If Not DownloadFileValidator.IsHttpUrl(Source.Url) Then
                                 Source.Ex = New ArgumentException("输入的下载链接不正确：" & Source.Url)
                                 Source.IsFailed = True
                             End If
                         Next
                         If Not File.HasAvailableSource() Then Throw New ArgumentException("输入的下载链接不正确！")
-                        File.LocalPath = File.LocalPath.Replace("/", "\")
-                        If Not File.LocalPath.Contains(":\") Then Throw New ArgumentException("输入的本地文件地址不正确：" & File.LocalPath)
-                        If File.LocalPath.EndsWithF("\") Then Throw New ArgumentException("请输入含文件名的完整文件路径：" & File.LocalPath)
+                        File.LocalPath = DownloadFileValidator.NormalizeLocalPath(File.LocalPath)
                         DirectoryUtils.Create(PathUtils.RemoveLastPart(File.LocalPath)) '创建目标文件夹
                     Next
                     '接入下载管理器，获取新开始下载的文件列表

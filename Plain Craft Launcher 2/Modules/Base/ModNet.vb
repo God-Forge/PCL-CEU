@@ -1,4 +1,4 @@
-Imports System.Net.Sockets
+﻿Imports System.Net.Sockets
 Imports PCL.Core.Net
 
 Public Module ModNet
@@ -1685,6 +1685,7 @@ FinishExCatch:
         ''' 当前的全局下载速度，单位为 Byte / 秒。
         ''' </summary>
         Public Speed As Long = 0
+        Private ReadOnly SpeedTracker As New DownloadSpeedTracker()
 
         Public ReadOnly Uuid As Integer = GetUuid()
 
@@ -1699,27 +1700,12 @@ FinishExCatch:
                 If DeltaTime = 0 Then Return
                 RefreshStatLast += DeltaTime
 #Region "刷新整体速度"
-                '计算瞬时速度
-                Static SpeedLast As New List(Of Long) '记录至多最近 30 次下载速度的记录，较新的在前面
-                Static SpeedLastDone As Long = 0 '上次记速时的已下载大小
-                Dim ActualSpeed As Double = Math.Max(0, (DownloadDone - SpeedLastDone) / (DeltaTime / 1000))
-                SpeedLast.Insert(0, ActualSpeed)
-                If SpeedLast.Count >= 31 Then SpeedLast.RemoveAt(30)
-                SpeedLastDone = DownloadDone
-                '计算用于显示的速度
-                Dim SpeedSum As Long = 0, SpeedDiv As Long = 0, Weight = SpeedLast.Count
-                For Each SpeedRecord In SpeedLast
-                    SpeedSum += SpeedRecord * Weight
-                    SpeedDiv += Weight
-                    Weight -= 1
-                Next
-                Speed = If(SpeedDiv > 0, SpeedSum / SpeedDiv, 0)
-                '计算新的速度下限
-                Dim Limit As Long = 0
-                If SpeedLast.Count >= 10 Then Limit = SpeedLast.Take(10).Average * 0.85 '取近 1 秒的平均速度的 85%
-                If Limit > NetTaskSpeedLimitLow Then
-                    NetTaskSpeedLimitLow = Limit
-                    Logger.Info($"速度下限已提升到 {StringUtils.FormatByteSize(Limit)}")
+                '计算瞬时速度与速度下限
+                SpeedTracker.Record(DownloadDone, DeltaTime)
+                Speed = SpeedTracker.Speed
+                If SpeedTracker.Limit > NetTaskSpeedLimitLow Then
+                    NetTaskSpeedLimitLow = SpeedTracker.Limit
+                    Logger.Info($"速度下限已提升到 {StringUtils.FormatByteSize(SpeedTracker.Limit)}")
                 End If
 #End Region
 #Region "刷新下载任务属性"

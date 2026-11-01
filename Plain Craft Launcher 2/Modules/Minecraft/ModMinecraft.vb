@@ -88,13 +88,12 @@ Public Module ModMinecraft
 #Region "读取自定义（Custom）文件夹，可能没有结果"
 
             '格式：TMZ 12>C://xxx/xx/|Test>D://xxx/xx/|名称>路径
-            For Each Folder As String In Settings.Get(Of String)("LaunchFolders").ToString.Split("|"c, True)
-                If Folder = "" Then Continue For
-                If Not Folder.Contains(">") OrElse Not Folder.EndsWithF("\") Then
-                    Hint("无效的 Minecraft 文件夹：" & Folder, HintType.Red)
-                    Continue For
-                End If
-                Dim FolderName As String = Folder.BeforeFirst(">"), FolderPath As String = Folder.AfterFirst(">")
+            Dim ParsedFolders = McFolderListParser.Parse(Settings.Get(Of String)("LaunchFolders"))
+            For Each InvalidFolder In ParsedFolders.Invalid
+                Hint("无效的 Minecraft 文件夹：" & InvalidFolder, HintType.Red)
+            Next
+            For Each Item In ParsedFolders.Entries
+                Dim FolderName As String = Item.Name, FolderPath As String = Item.Path
                 Try
                     CheckPermissionWithException(FolderPath)
                     '若已有该文件夹，则直接重命名；没有则添加

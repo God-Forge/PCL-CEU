@@ -491,31 +491,6 @@ Public Module ModDownload
         End Using
     End Sub
 
-    ''' <summary>
-    ''' Forge 版本列表，官方源。
-    ''' </summary>
-    Public DlForgeListOfficialLoader As New LoaderTask(Of Integer, DlForgeListResult)("DlForgeList Official", AddressOf DlForgeListOfficialMain)
-    Private Sub DlForgeListOfficialMain(Loader As LoaderTask(Of Integer, DlForgeListResult))
-        Dim Result As String = NetRequestByClientRetry("https://files.minecraftforge.net/maven/net/minecraftforge/forge/index_1.2.4.html", Encoding:=Encoding.Default, Accept:="text/html", SimulateBrowserHeaders:=True)
-        If Result.Length < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
-        '获取所有版本信息
-        Dim Names = ForgeListParser.ParseOfficial(Result)
-        If Names.Count < 10 Then Throw New Exception("获取到的版本数量不足（" & Result & "）")
-        Loader.Output = New DlForgeListResult With {.IsOfficial = True, .SourceName = "Forge 官方源", .Value = Names.ToList()}
-    End Sub
-
-    ''' <summary>
-    ''' Forge 版本列表，BMCLAPI。
-    ''' </summary>
-    Public DlForgeListBmclapiLoader As New LoaderTask(Of Integer, DlForgeListResult)("DlForgeList Bmclapi", AddressOf DlForgeListBmclapiMain)
-    Private Sub DlForgeListBmclapiMain(Loader As LoaderTask(Of Integer, DlForgeListResult))
-        Dim Result As JArray = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/forge/minecraft",
-                                                       Encoding:=Encoding.Default, RequireJson:=True).DeserializeJson()
-        Dim Names As List(Of String) = ForgeListParser.ParseBmclapi(Result).ToList()
-        If Names.Count < 10 Then Throw New Exception("获取到的版本数量不足")
-        Loader.Output = New DlForgeListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Names}
-    End Sub
-
 #End Region
 
 #Region "DlForgeVersion | Forge 版本列表"
@@ -632,64 +607,6 @@ Public Module ModDownload
                 .ReleaseTime = Item.ReleaseTime
             }).ToList()
         End Using
-    End Sub
-
-    ''' <summary>
-    ''' Forge 版本列表，官方源。
-    ''' </summary>
-    Public Sub DlForgeVersionOfficialMain(Loader As LoaderTask(Of String, List(Of DlForgeVersionEntry)))
-        Dim Result As String
-        Try
-            Result = NetRequestByLoader("https://files.minecraftforge.net/maven/net/minecraftforge/forge/index_" &
-                                          Loader.Input.Replace("-", "_") & '兼容 Forge 1.7.10-pre4，#4057
-                                          ".html", SimulateBrowserHeaders:=True)
-        Catch ex As Exception
-            If ex.GetDisplay(False).Contains("(404)") Then
-                Throw New Exception("无")
-            Else
-                Throw
-            End If
-        End Try
-        If Result.Length < 1000 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
-        Dim Versions As New List(Of DlForgeVersionEntry)
-        Try
-            For Each Item In ForgeVersionParser.ParseOfficial(Result, Loader.Input)
-                Versions.Add(New DlForgeVersionEntry(Item.VersionName, Item.Branch, Loader.Input) With {
-                    .Category = Item.Category,
-                    .IsRecommended = Item.IsRecommended,
-                    .Hash = Item.Hash,
-                    .ReleaseTime = Item.ReleaseTime
-                })
-            Next
-        Catch ex As Exception
-            Throw New Exception("Forge 官方源版本列表解析失败（" & Result & "）", ex)
-        End Try
-        If Not Versions.Any() Then Throw New Exception("无")
-        Loader.Output = Versions
-    End Sub
-
-    ''' <summary>
-    ''' Forge 版本列表，BMCLAPI。
-    ''' </summary>
-    Public Sub DlForgeVersionBmclapiMain(Loader As LoaderTask(Of String, List(Of DlForgeVersionEntry)))
-        Dim Json As JArray = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/forge/minecraft/" &
-            Loader.Input.Replace("-", "_"), RequireJson:=True).DeserializeJson() '兼容 Forge 1.7.10-pre4，#4057
-        Dim Versions As New List(Of DlForgeVersionEntry)
-        Try
-            Dim Recommended As String = McDownloadForgeRecommendedGet(Loader.Input)
-            For Each Item In ForgeVersionParser.ParseBmclapi(Json, Loader.Input, Recommended)
-                Versions.Add(New DlForgeVersionEntry(Item.VersionName, Item.Branch, Loader.Input) With {
-                    .Hash = Item.Hash,
-                    .Category = Item.Category,
-                    .IsRecommended = Item.IsRecommended,
-                    .ReleaseTime = Item.ReleaseTime
-                })
-            Next
-        Catch ex As Exception
-            Throw New Exception("Forge BMCLAPI 版本列表解析失败（" & Json.ToString & "）", ex)
-        End Try
-        If Not Versions.Any() Then Throw New Exception("无")
-        Loader.Output = Versions
     End Sub
 
 #End Region
@@ -1129,4 +1046,6 @@ Public Module ModDownload
 #End Region
 
 End Module
+
+
 

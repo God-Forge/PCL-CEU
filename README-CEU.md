@@ -243,6 +243,7 @@ Phase 3 已开始：
 - 新增 C# `GameArgumentCollector`，接管版本 JSON `arguments.game` 的规则过滤与参数收集。
 - 新增 C# `LegacyGameArgumentBuilder`，接管旧版 `minecraftArguments` 的分辨率参数追加。
 - 新增 C# `ClientJarInfoResolver`，接管版本 JSON `downloads.client` 的 URL、SHA1 与大小解析。
+- 新增 C# `AssetIndexInfoResolver`，接管资源索引的 id 与 url 读取。
 - 新增 C# `DownloadSpeedTracker`，接管 ModNet 加权下载速度与速度下限计算。
 - 新增 C# `DownloadProgressCalculator`，接管下载任务加权总进度计算。
 - 新增 C# `JvmArgumentCollector`，接管版本 JSON `arguments.jvm` 的规则过滤与参数收集。

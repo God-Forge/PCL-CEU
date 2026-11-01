@@ -1,4 +1,5 @@
-Imports PCL.Core.Download
+﻿Imports PCL.Core.Download
+Imports PCL.Core.Minecraft
 Imports PCL.Core.Net
 
 Public Module ModDownload
@@ -19,15 +20,13 @@ Public Module ModDownload
             Logger.Warn(ex, "获取底层继承版本失败")
         End Try
         '检查 Json 是否标准
-        If Instance.JsonObject("downloads") Is Nothing OrElse Instance.JsonObject("downloads")("client") Is Nothing OrElse Instance.JsonObject("downloads")("client")("url") Is Nothing Then
-            Throw New Exception("底层版本 " & Instance.Name & " 中无 jar 文件下载信息")
-        End If
+        Dim ClientJar = ClientJarInfoResolver.Resolve(Instance.JsonObject)
+        If ClientJar Is Nothing Then Throw New Exception("底层版本 " & Instance.Name & " 中无 jar 文件下载信息")
         '检查文件
-        Dim Checker As New FileChecker With {.MinSize = 1024, .ActualSize = If(Instance.JsonObject("downloads")("client")("size"), -1), .Hash = Instance.JsonObject("downloads")("client")("sha1")}
+        Dim Checker As New FileChecker With {.MinSize = 1024, .ActualSize = ClientJar.Size, .Hash = ClientJar.Sha1}
         If ReturnNothingOnFileUseable AndAlso Checker.Check(Instance.PathVersion & Instance.Name & ".jar") Is Nothing Then Return Nothing '通过校验
         '返回下载信息
-        Dim JarUrl As String = Instance.JsonObject("downloads")("client")("url")
-        Return New NetFile(DlSourceLauncherOrMetaGet(JarUrl), Instance.PathVersion & Instance.Name & ".jar", Checker)
+        Return New NetFile(DlSourceLauncherOrMetaGet(ClientJar.Url), Instance.PathVersion & Instance.Name & ".jar", Checker)
     End Function
 
     ''' <summary>

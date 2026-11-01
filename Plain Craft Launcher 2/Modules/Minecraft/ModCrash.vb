@@ -1,3 +1,5 @@
+Imports PCL.Core.Minecraft
+
 Public Class CrashAnalyzer
 
     '构造函数
@@ -384,6 +386,13 @@ Extracted:
         Forge安装不完整
         Mod需要Java11
         Mod缺少前置或MC版本错误
+        堆栈溢出
+        原生库加载失败
+        文件访问失败
+        启动参数过长
+        存档或区块损坏
+        资源包或光影加载失败
+        Mod版本或API不兼容
     End Enum
     ''' <summary>
     ''' 根据 AnalyzeLogs 与可能的版本信息分析崩溃原因。
@@ -580,6 +589,26 @@ Done:
             If LogCrash.Contains("LoaderExceptionModCrash: Caught exception from ") Then AppendReason(CrashReason.确定Mod导致游戏崩溃, TryAnalyzeModName(If(LogCrash.RegexSeek("(?<=LoaderExceptionModCrash: Caught exception from )[^\n]+"), "").TrimEnd((vbCrLf & " ").ToCharArray)))
             If LogCrash.Contains("Failed loading config file ") Then AppendReason(CrashReason.Mod配置文件导致游戏崩溃, {TryAnalyzeModName(If(LogCrash.RegexSeek("(?<=Failed loading config file .+ for modid )[^\n]+"), "").TrimEnd(vbCrLf)).First, If(LogCrash.RegexSeek("(?<=Failed loading config file ).+(?= of type)"), "").TrimEnd(vbCrLf)})
         End If
+
+        '补充规则：原生库、文件访问、命令行过长、存档损坏、光影与 API 兼容
+        For Each Finding In CrashPatternAnalyzer.Analyze(LogMc, LogCrash, LogHs, LogMcDebug)
+            Select Case Finding.Reason
+                Case "堆栈溢出"
+                    AppendReason(CrashReason.堆栈溢出, Finding.Detail)
+                Case "原生库加载失败"
+                    AppendReason(CrashReason.原生库加载失败, Finding.Detail)
+                Case "文件访问失败"
+                    AppendReason(CrashReason.文件访问失败, Finding.Detail)
+                Case "启动参数过长"
+                    AppendReason(CrashReason.启动参数过长, Finding.Detail)
+                Case "存档或区块损坏"
+                    AppendReason(CrashReason.存档或区块损坏, Finding.Detail)
+                Case "资源包或光影加载失败"
+                    AppendReason(CrashReason.资源包或光影加载失败, Finding.Detail)
+                Case "Mod版本或API不兼容"
+                    AppendReason(CrashReason.Mod版本或API不兼容, Finding.Detail)
+            End Select
+        Next
 
     End Sub
     ''' <summary>

@@ -12,9 +12,9 @@
 
 ## 版本
 
-- 版本号：`0.8.1-ceu`
-- 输出文件：`PCL-0.8.1ceu.exe`
-- 程序集版本：`0.8.1.0`
+- 版本号：`0.8.2-ceu`
+- 输出文件：`PCL-0.8.2ceu.exe`
+- 程序集版本：`0.8.2.0`
 - 版本规则：VB → C# 迁移完成前统一使用 `0.x.y`；tag 格式为 `x.y.z-ceu`，产物为 `PCL-x.y.zceu.exe`。
 
 ## 本改版的主要调整（与开源版相比）
@@ -40,22 +40,22 @@
 以 `{文件名} {参数}` 方式启动时，PCL 会进入命令行模式，不再显示主窗口。命令参数使用 `--{英文单词}` 形式。
 
 ```powershell
-.\PCL-0.8.1ceu.exe --help
-.\PCL-0.8.1ceu.exe --version
-.\PCL-0.8.1ceu.exe --luck
-.\PCL-0.8.1ceu.exe --mca
-.\PCL-0.8.1ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
-.\PCL-0.8.1ceu.exe --payload-decode .\1.20.1.payload .\decoded
-.\PCL-0.8.1ceu.exe --payload-import .\1.20.1.payload
-.\PCL-0.8.1ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
-.\PCL-0.8.1ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
-.\PCL-0.8.1ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
-.\PCL-0.8.1ceu.exe --backup 1.20.1
-.\PCL-0.8.1ceu.exe --mods 1.20.1
-.\PCL-0.8.1ceu.exe --repair 1.20.1
-.\PCL-0.8.1ceu.exe --launch 1.20.1
-.\PCL-0.8.1ceu.exe --download 1.20.1 -forge
-.\PCL-0.8.1ceu.exe --memory
+.\PCL-0.8.2ceu.exe --help
+.\PCL-0.8.2ceu.exe --version
+.\PCL-0.8.2ceu.exe --luck
+.\PCL-0.8.2ceu.exe --mca
+.\PCL-0.8.2ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload
+.\PCL-0.8.2ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.8.2ceu.exe --payload-import .\1.20.1.payload
+.\PCL-0.8.2ceu.exe --javapkg-encode .\jdk\bin\java.exe .\21.0.1.jdk.javapkg
+.\PCL-0.8.2ceu.exe --javapkg-info .\21.0.1.jdk.javapkg
+.\PCL-0.8.2ceu.exe --javapkg-decode .\21.0.1.jdk.javapkg .\java21
+.\PCL-0.8.2ceu.exe --backup 1.20.1
+.\PCL-0.8.2ceu.exe --mods 1.20.1
+.\PCL-0.8.2ceu.exe --repair 1.20.1
+.\PCL-0.8.2ceu.exe --launch 1.20.1
+.\PCL-0.8.2ceu.exe --download 1.20.1 -forge
+.\PCL-0.8.2ceu.exe --memory
 ```
 
 | 命令 | 说明 |
@@ -122,8 +122,8 @@ C++ 工具：
 命令行：
 
 ```powershell
-.\PCL-0.8.1ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
-.\PCL-0.8.1ceu.exe --payload-decode .\1.20.1.payload .\decoded
+.\PCL-0.8.2ceu.exe --payload-encode .\versions\1.20.1 .\1.20.1.payload "1.20.1"
+.\PCL-0.8.2ceu.exe --payload-decode .\1.20.1.payload .\decoded
 ```
 
 也可以在“更多 → 百宝箱 → Payload 版本包”中使用“打包当前版本”与“解包 Payload”。
@@ -255,6 +255,7 @@ Phase 3 已开始：
 - 新增 C# `DownloadSpeedTracker`，接管 ModNet 加权下载速度与速度下限计算。
 - 新增 C# `DownloadProgressCalculator`，接管下载任务加权总进度计算。
 - 新增 C# `DownloadFileValidator`，接管下载 URL 与本地文件路径校验。
+- 增强崩溃分析：新增 C# `CrashPatternAnalyzer`，识别堆栈溢出、原生库/文件访问失败、命令行过长、区块损坏、光影/资源包错误与 Mod API 不兼容。
 - 新增 C# `JvmArgumentCollector`，接管版本 JSON `arguments.jvm` 的规则过滤与参数收集。
 - 新增 C# `AssetIndexResolver`，接管 assets objects 的普通、virtual 与 map_to_resources 路径解析，以及 assetIndex/assets 名称回退和索引对象解析。
 - 新增 C# `DownloadSourceResolver`，接管 Mojang、Assets、Libraries 与 Modrinth/CurseForge 下载镜像地址生成，以及 Mod 请求源顺序。
@@ -288,5 +289,6 @@ Phase 3 已开始：
 ```powershell
 & "C:\Users\neolx\.dotnet10\dotnet.exe" run --project "PCL.Core.Tests\PCL.Core.Tests.csproj" -c Release
 ```
+
 
 

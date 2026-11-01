@@ -7,12 +7,12 @@ Public Module ModBase
 #Region "声明"
 
     '下列版本信息由更新器自动修改
-    Public Const VersionBaseName As String = "0.8.1-ceu" '显示用版本名
+    Public Const VersionBaseName As String = "0.8.2-ceu" '显示用版本名
     Public Const CommitHash As String = "" 'Commit Hash，由 GitHub Workflow 自动替换
 #If RELEASE Then
-    Public Const VersionCode As Integer = 810 '正式版
+    Public Const VersionCode As Integer = 820 '正式版
 #Else
-    Public Const VersionCode As Integer = 811 '快照版
+    Public Const VersionCode As Integer = 821 '快照版
 #End If
 
     '版本信息
@@ -1217,4 +1217,5 @@ Public Module ModBase
 #End Region
 
 End Module
+
 

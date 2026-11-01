@@ -241,6 +241,7 @@ Phase 3 已开始：
 - 新增 C# `ClasspathBuilder`，接管启动 classpath 拼接与 OptiFine 插入规则。
 - 新增 C# `LaunchArgumentFormatter`，接管启动参数替换与特殊字符引号处理。
 - 新增 C# `GameArgumentCollector`，接管版本 JSON `arguments.game` 的规则过滤与参数收集。
+- 新增 C# `LegacyGameArgumentBuilder`，接管旧版 `minecraftArguments` 的分辨率参数追加。
 - 新增 C# `JvmArgumentCollector`，接管版本 JSON `arguments.jvm` 的规则过滤与参数收集。
 - 新增 C# `AssetIndexResolver`，接管 assets objects 的普通、virtual 与 map_to_resources 路径解析，以及 assetIndex/assets 名称回退和索引对象解析。
 - 新增 C# `DownloadSourceResolver`，接管 Mojang、Assets、Libraries 与 Modrinth/CurseForge 下载镜像地址生成，以及 Mod 请求源顺序。

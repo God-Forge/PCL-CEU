@@ -22,4 +22,13 @@ public class McFolderListParserTests {
         await Assert.That(result.Invalid.Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task 格式化文件夹列表() {
+        var text = McFolderListParser.Format([
+            new McFolderEntry { Name = "A", Path = @"C:\mc\" },
+            new McFolderEntry { Name = "B", Path = @"D:\game\" }
+        ]);
+        await Assert.That(text).IsEqualTo(@"A>C:\mc\|B>D:\game\");
+    }
+
 }

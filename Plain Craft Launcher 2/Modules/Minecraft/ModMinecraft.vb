@@ -113,12 +113,10 @@ Public Module ModMinecraft
             Next
 
             '将自定义文件夹情况同步到设置
-            Dim NewSetup As New List(Of String)
-            For Each Folder As McFolder In CacheMcFolderList
-                If Not Folder.Type = McFolder.Types.Vanilla Then NewSetup.Add(Folder.Name & ">" & Folder.Location)
-            Next
-            If Not NewSetup.Any() Then NewSetup.Add("") '防止 0 元素 Join 返回 Nothing
-            Settings.Set("LaunchFolders", NewSetup.Join("|"c))
+            Dim NewSetup = CacheMcFolderList.
+                Where(Function(Folder) Not Folder.Type = McFolder.Types.Vanilla).
+                Select(Function(Folder) New McFolderEntry With {.Name = Folder.Name, .Path = Folder.Location}).ToList()
+            Settings.Set("LaunchFolders", If(NewSetup.Any(), McFolderListParser.Format(NewSetup), ""))
 
 #End Region
 

@@ -39,4 +39,8 @@ public static class McFolderListParser {
         };
     }
 
+    public static string Format(IEnumerable<McFolderEntry> entries) {
+        return string.Join("|", entries.Select(entry => entry.Name + ">" + entry.Path));
+    }
+
 }

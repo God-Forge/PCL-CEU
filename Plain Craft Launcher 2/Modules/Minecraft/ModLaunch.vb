@@ -1509,15 +1509,13 @@ NextInstance:
     ''' </summary>
     Public Function GetNativesFolder(Optional Instance As McInstance = Nothing) As String
         If Instance Is Nothing Then Instance = McInstanceSelected
-        Dim Result As String = PathUtils.AddSlashSuffix(PathUtils.ToShortPath(Instance.PathVersion)) & Instance.Name & "-natives\"
-        If Not (IsGBKEncoding OrElse Result.IsAsciiOnly()) Then
-            Result = Paths.AppData & ".minecraft\bin\natives\"
-            If Not Result.IsAsciiOnly() Then
-                Result = OsDrive & "ProgramData\PCL\natives\"
-            End If
-        End If
-        DirectoryUtils.Create(Result) '提前创建，这样 DirectoryUtils.Shorten 才有结果（否则在长路径下首次启动 Forge 会崩溃）
-        Return PathUtils.AddSlashSuffix(PathUtils.ToShortPath(Result))
+        Return NativesFolderResolver.Resolve(
+            Instance.PathVersion,
+            Instance.Name,
+            IsGBKEncoding,
+            Paths.AppData,
+            OsDrive,
+            AddressOf PathUtils.ToShortPath)
     End Function
 
 #End Region

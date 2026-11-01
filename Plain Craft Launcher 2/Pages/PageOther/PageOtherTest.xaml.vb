@@ -1,5 +1,7 @@
-Imports System.Diagnostics
+﻿Imports System.Diagnostics
+Imports PCL.Core.Download
 Imports PCL.Core.Memory
+Imports PCL.Core.Minecraft
 Imports PCL.Core.Tools
 
 Public Class PageOtherTest
@@ -25,6 +27,7 @@ Public Class PageOtherTest
     Private Shared _PayloadBusy As Boolean
     Private Shared _MaintenanceBusy As Boolean
     Private Shared _JavaBusy As Boolean
+    Private Shared _AdvancedBusy As Boolean
 
     Private Sub PageOtherTest_Loaded(sender As Object, e As EventArgs) Handles Me.Loaded
         RefreshMemoryStatus()
@@ -714,5 +717,209 @@ Public Class PageOtherTest
     Public Shared Function GetRandomPresetHint() As String
         Return "为便于维护，开源内容中不包含百宝箱功能……"
     End Function
+
+    Private Function AdvancedInstance() As McInstance
+        If McInstanceSelected Is Nothing Then
+            Hint("请先选择一个 Minecraft 实例！", HintType.Red)
+            Return Nothing
+        End If
+        If _AdvancedBusy Then
+            Hint("实例高级操作正在进行中，请稍候……", Log:=False)
+            Return Nothing
+        End If
+        Return McInstanceSelected
+    End Function
+
+    Private Sub BtnCrashDiagnostic_Click(sender As Object, e As EventArgs) Handles BtnCrashDiagnostic.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Output = Dialogs.SaveFile("保存崩溃诊断包", "诊断包-" & Instance.Name & "-" & Date.Now.ToString("yyyyMMdd-HHmmss") & ".zip", McFolderSelected, filter:={("zip", "诊断包")})
+        If String.IsNullOrEmpty(Output) Then Return
+        _AdvancedBusy = True
+        Hint("正在生成诊断包……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = DiagnosticPackageService.Create(Instance.PathVersion, McFolderSelected, Output)
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    Hint($"诊断包已生成：{Result.Path}", HintType.Green, Log:=False)
+                    OpenExplorer(IO.Path.GetDirectoryName(Result.Path))
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "生成诊断包失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("生成诊断包失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnCloneInstance_Click(sender As Object, e As EventArgs) Handles BtnCloneInstance.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim TargetRoot = Dialogs.SelectFolder("选择克隆到的 Minecraft 文件夹", False, McFolderSelected).FirstOrDefault()
+        If String.IsNullOrEmpty(TargetRoot) Then Return
+        Dim IncludeSaves = MyMsgBox("是否同时复制存档？", "克隆实例", "包含存档", "不包含存档") = 1
+        Dim TargetName = Instance.Name & "-Copy"
+        Dim TargetPath = IO.Path.Combine(TargetRoot, "versions", TargetName)
+        Dim Index = 2
+        While Directory.Exists(TargetPath)
+            TargetName = Instance.Name & "-Copy" & Index
+            TargetPath = IO.Path.Combine(TargetRoot, "versions", TargetName)
+            Index += 1
+        End While
+        _AdvancedBusy = True
+        Hint("正在克隆实例……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                InstanceCloneService.Clone(Instance.PathVersion, TargetPath,
+                    New InstanceCloneOptions With {.IncludeSaves = IncludeSaves})
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    McInstanceListForceRefresh = True
+                    Hint($"实例已克隆到：{TargetPath}", HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "克隆实例失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("克隆实例失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnSnapshot_Click(sender As Object, e As EventArgs) Handles BtnSnapshot.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        _AdvancedBusy = True
+        Hint("正在创建实例快照……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Info = InstanceSnapshotService.Create(Instance.PathVersion, PathPure.Value & "InstanceSnapshots\")
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    Hint($"快照已创建：{Info.Name}", HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "创建实例快照失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("创建实例快照失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnSnapshotRestore_Click(sender As Object, e As EventArgs) Handles BtnSnapshotRestore.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim Snapshots = InstanceSnapshotService.List(Instance.PathVersion, PathPure.Value & "InstanceSnapshots\")
+        If Snapshots.Count = 0 Then
+            Hint("当前实例没有可用快照。", HintType.Red)
+            Return
+        End If
+        Dim Latest = Snapshots.First
+        If MyMsgBox($"恢复快照 {Latest.Name} 会覆盖当前 Mod 与配置，是否继续？", "恢复实例快照", "继续", "取消") <> 1 Then Return
+        _AdvancedBusy = True
+        Hint("正在恢复实例快照……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                InstanceSnapshotService.Restore(Latest.Path, Instance.PathVersion)
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    Hint("实例快照已恢复。", HintType.Green, Log:=False)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "恢复实例快照失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("恢复实例快照失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnResourceScan_Click(sender As Object, e As EventArgs) Handles BtnResourceScan.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        _AdvancedBusy = True
+        RunInThread(
+        Sub()
+            Try
+                Dim Result = ResourcePackService.Scan(Instance.PathVersion)
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    MyMsgBox(ResourcePackService.Format(Result), "资源包/光影", IsWarn:=Result.Issues.Count > 0)
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "扫描资源包失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("扫描资源包失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
+
+    Private Sub BtnResourceToggle_Click(sender As Object, e As EventArgs) Handles BtnResourceToggle.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Dim FilePath = Dialogs.SelectFile("选择要启用/禁用的资源包或光影", False, Instance.PathVersion,
+            filter:={({"zip", "zip.disabled"}, "资源包或光影")}).FirstOrDefault()
+        If String.IsNullOrEmpty(FilePath) Then Return
+        Try
+            Dim Result = ResourcePackService.Toggle(FilePath)
+            Hint("已切换资源包状态：" & IO.Path.GetFileName(Result), HintType.Green)
+        Catch ex As Exception
+            Hint("切换资源包失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub BtnResourceOpen_Click(sender As Object, e As EventArgs) Handles BtnResourceOpen.Click
+        Dim Instance = AdvancedInstance()
+        If Instance Is Nothing Then Return
+        Try
+            OpenExplorer(Instance.PathVersion & "resourcepacks")
+        Catch ex As Exception
+            Hint("打开资源包目录失败：" & ex.Message, HintType.Red)
+        End Try
+    End Sub
+
+    Private Sub BtnSpeedTest_Click(sender As Object, e As EventArgs) Handles BtnSpeedTest.Click
+        If _AdvancedBusy Then
+            Hint("实例高级操作正在进行中，请稍候……", Log:=False)
+            Return
+        End If
+        _AdvancedBusy = True
+        Hint("正在测试下载源……", Log:=False)
+        RunInThread(
+        Sub()
+            Try
+                Dim Results = New DownloadSourceSpeedTester().TestAllAsync(DownloadSourceSpeedTester.DefaultTargets()).Run()
+                RunInUi(
+                Sub()
+                    _AdvancedBusy = False
+                    MyMsgBox(DownloadSourceSpeedTester.Format(Results), "下载源测速")
+                End Sub)
+            Catch ex As Exception
+                Logger.Error(ex, "测试下载源失败")
+                RunInUi(Sub()
+                            _AdvancedBusy = False
+                            Hint("测试下载源失败：" & ex.Message, HintType.Red)
+                        End Sub)
+            End Try
+        End Sub)
+    End Sub
 
 End Class

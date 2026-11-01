@@ -71,4 +71,18 @@ public class ModScannerTests {
         }
     }
 
+    [Test]
+    public async Task 识别Fabric与Forge混装() {
+        var folder = CreateModsFolder();
+        try {
+            CreateJar(Path.Combine(folder, "fabric.jar"), ("fabric.mod.json", "{\"id\":\"fabricmod\",\"version\":\"1.0\"}"));
+            CreateJar(Path.Combine(folder, "forge.jar"), ("META-INF/mods.toml", "[[mods]]\nmodId=\"forgemod\"\nversion=\"1.0\"\n"));
+
+            var result = ModScanner.Scan(folder);
+            await Assert.That(result.Issues.Any(issue => issue.Message.Contains("同时检测到"))).IsTrue();
+        } finally {
+            Directory.Delete(folder, true);
+        }
+    }
+
 }

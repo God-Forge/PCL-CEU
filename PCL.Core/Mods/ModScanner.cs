@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json.Linq;
@@ -90,6 +90,7 @@ public static class ModScanner {
 
         AddDuplicateIssues(mods, issues);
         AddMissingDependencyIssues(mods, issues);
+        AddLoaderConflictIssues(mods, issues);
         return new ModScanResult {
             Mods = mods.OrderBy(mod => mod.FileName, StringComparer.OrdinalIgnoreCase).ToList(),
             Issues = issues
@@ -276,6 +277,25 @@ public static class ModScanner {
         }
     }
 
+    private static void AddLoaderConflictIssues(IReadOnlyList<ModInfo> mods, ICollection<ModIssue> issues) {
+        var loaders = mods.Where(mod => mod.Enabled)
+            .Select(mod => mod.Loader)
+            .Where(loader => loader is "fabric" or "forge" or "neoforge" or "quilt")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var hasFabric = loaders.Any(loader => string.Equals(loader, "fabric", StringComparison.OrdinalIgnoreCase))
+                        || loaders.Any(loader => string.Equals(loader, "quilt", StringComparison.OrdinalIgnoreCase));
+        var hasForge = loaders.Any(loader => string.Equals(loader, "forge", StringComparison.OrdinalIgnoreCase))
+                       || loaders.Any(loader => string.Equals(loader, "neoforge", StringComparison.OrdinalIgnoreCase));
+        if (hasFabric && hasForge) {
+            issues.Add(new ModIssue {
+                Severity = ModIssueSeverity.Error,
+                FileName = "mods",
+                Message = "同时检测到 Fabric/Quilt 与 Forge/NeoForge Mod，游戏很可能无法启动。"
+            });
+        }
+    }
+
     private static void AddMissingDependencyIssues(IReadOnlyList<ModInfo> mods, ICollection<ModIssue> issues) {
         var ids = new HashSet<string>(mods.Select(mod => mod.ModId).Where(id => !string.IsNullOrWhiteSpace(id)), StringComparer.OrdinalIgnoreCase);
         foreach (var mod in mods) {
@@ -311,3 +331,4 @@ public static class ModScanner {
     }
 
 }
+

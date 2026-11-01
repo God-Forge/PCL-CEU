@@ -1132,7 +1132,12 @@ NextStack:
                 Case CrashReason.没有可用的分析文件
                     Results.Add("你的游戏出现了一些问题，但 PCL 未能找到相关记录文件，因此无法进行分析。\h")
                 Case Else
-                    Results.Add("PCL 获取到了没有详细信息的错误原因（" & CrashReasons.First.Key & "），请向 PCL 作者提交反馈以获取详情。\h")
+                    Dim Suggestion = CrashFixSuggestionService.GetSuggestion(Reason.Key.ToString())
+                    If Suggestion IsNot Nothing Then
+                        Results.Add(Suggestion)
+                    Else
+                        Results.Add("PCL 获取到了没有详细信息的错误原因（" & CrashReasons.First.Key & "），请向 PCL 作者提交反馈以获取详情。\h")
+                    End If
             End Select
         Next
 

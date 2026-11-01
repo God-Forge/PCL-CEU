@@ -42,6 +42,28 @@ public static class InstanceCheckService {
             };
         }
 
+        if (instanceFolder.Any(character => character > 127)) {
+            issues.Add(new InstanceCheckIssue {
+                Severity = InstanceCheckSeverity.Info,
+                Message = "实例路径包含非 ASCII 字符，部分旧版本或 Natives 可能无法正常加载。",
+                Path = instanceFolder
+            });
+        }
+        try {
+            var root = Path.GetPathRoot(Path.GetFullPath(mcFolder));
+            if (!string.IsNullOrEmpty(root)) {
+                var drive = new DriveInfo(root);
+                if (drive.AvailableFreeSpace < 2L * 1024 * 1024 * 1024) {
+                    issues.Add(new InstanceCheckIssue {
+                        Severity = InstanceCheckSeverity.Warning,
+                        Message = $"磁盘剩余空间不足 2 GB（当前 {drive.AvailableFreeSpace / 1024 / 1024} MB），下载或更新可能失败。",
+                        Path = root
+                    });
+                }
+            }
+        } catch {
+        }
+
         var folderName = Path.GetFileName(instanceFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var jsonPath = Path.Combine(instanceFolder, folderName + ".json");
         if (!File.Exists(jsonPath)) {

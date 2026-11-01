@@ -1551,69 +1551,14 @@ NextInstance:
         End If
 
         '更新 launcher_profiles.json
-        Try
-            '确保可用
-            If Not McLoginLoader.Output.Type = "Microsoft" Then Exit Try
-            McFolderLauncherProfilesJsonCreate(McFolderSelected)
-            '构建需要替换的 Json 对象
-            Dim ReplaceJsonString As String = "
-            {
-              ""authenticationDatabase"": {
-                ""00000111112222233333444445555566"": {
-                  ""username"": """ & McLoginLoader.Output.Name.Replace("""", "-") & """,
-                  ""profiles"": {
-                    ""66666555554444433333222221111100"": {
-                        ""displayName"": """ & McLoginLoader.Output.Name & """
-                    }
-                  }
-                }
-              },
-              ""clientToken"": """ & McLoginLoader.Output.ClientToken & """,
-              ""selectedUser"": {
-                ""account"": ""00000111112222233333444445555566"", 
-                ""profile"": ""66666555554444433333222221111100""
-              }
-            }"
-            Dim ReplaceJson As JObject = (ReplaceJsonString).DeserializeJson()
-            '更新文件
-            Dim Profiles As JObject = FileUtils.ReadAsJson(McFolderSelected & "launcher_profiles.json")
-            Profiles.Merge(ReplaceJson)
-            FileUtils.Write(McFolderSelected & "launcher_profiles.json", Profiles.ToString, encoding:=Encoding.GetEncoding("GB18030"))
-            McLaunchLog("已更新 launcher_profiles.json")
-        Catch ex As Exception
-            Logger.Warn(ex, "更新 launcher_profiles.json 失败，将在删除文件后重试")
-            Try
-                FileUtils.Delete(McFolderSelected & "launcher_profiles.json")
-                McFolderLauncherProfilesJsonCreate(McFolderSelected)
-                '构建需要替换的 Json 对象
-                Dim ReplaceJsonString As String = "
-                    {
-                      ""authenticationDatabase"": {
-                        ""00000111112222233333444445555566"": {
-                          ""username"": """ & McLoginLoader.Output.Name.Replace("""", "-") & """,
-                          ""profiles"": {
-                            ""66666555554444433333222221111100"": {
-                                ""displayName"": """ & McLoginLoader.Output.Name & """
-                            }
-                          }
-                        }
-                      },
-                      ""clientToken"": """ & McLoginLoader.Output.ClientToken & """,
-                      ""selectedUser"": {
-                        ""account"": ""00000111112222233333444445555566"", 
-                        ""profile"": ""66666555554444433333222221111100""
-                      }
-                    }"
-                Dim ReplaceJson As JObject = ReplaceJsonString.DeserializeJson()
-                '更新文件
-                Dim Profiles As JObject = FileUtils.ReadAsJson(McFolderSelected & "launcher_profiles.json")
-                Profiles.Merge(ReplaceJson)
-                FileUtils.Write(McFolderSelected & "launcher_profiles.json", Profiles.ToString, encoding:=Encoding.GetEncoding("GB18030"))
-                McLaunchLog("已在删除后更新 launcher_profiles.json")
-            Catch exx As Exception
-                Logger.Error(exx, "更新 launcher_profiles.json 失败")
-            End Try
-        End Try
+        If McLoginLoader.Output.Type = "Microsoft" Then
+            Dim Result = LauncherProfilesService.Update(McFolderSelected, McLoginLoader.Output.Name, McLoginLoader.Output.ClientToken)
+            If Result.Success Then
+                McLaunchLog("已更新 launcher_profiles.json")
+            Else
+                Logger.Warn(Result.Error, "更新 launcher_profiles.json 失败")
+            End If
+        End If
 
         '更新 options.txt
         Dim SetupFileAddress As String = McInstanceSelected.PathIndie & "options.txt"

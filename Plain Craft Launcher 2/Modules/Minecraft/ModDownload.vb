@@ -1126,77 +1126,7 @@ Public Module ModDownload
         Return DownloadSourceResolver.GetMod(Original)
     End Function
 
-    'Loader 自动切换
-    Private Sub DlSourceLoader(Of InputType, OutputType)(MainLoader As LoaderTask(Of InputType, OutputType),
-                                                         LoaderList As List(Of KeyValuePair(Of LoaderTask(Of InputType, OutputType), Integer)),
-                                                         Optional IsForceRestart As Boolean = False)
-        Dim WaitCycle As Integer = 0
-        Do While True
-            '检查状态
-            Dim BeforeLoadersAllFailed As Boolean = True
-            For Each SubLoader In LoaderList
-                If WaitCycle = 0 Then '判断是否可以不加载，直接使用已经加载好的结果
-                    If IsForceRestart Then Continue For '强制刷新，不行
-                    If (SubLoader.Key.Input Is Nothing Xor MainLoader.Input Is Nothing) OrElse
-                       (SubLoader.Key.Input IsNot Nothing AndAlso Not SubLoader.Key.Input.Equals(MainLoader.Input)) Then Continue For '父子加载器的输入不一样，也不行
-                End If
-                If SubLoader.Key.State <> LoadState.Failed Then BeforeLoadersAllFailed = False
-                If SubLoader.Key.State = LoadState.Finished Then
-                    '检查加载器成功
-                    MainLoader.Output = SubLoader.Key.Output
-                    DlSourceLoaderCancel(LoaderList)
-                    Return
-                ElseIf BeforeLoadersAllFailed Then
-                    '此前的加载器全部失败，直接启动后续加载器
-                    If WaitCycle < SubLoader.Value * 100 Then WaitCycle = SubLoader.Value * 100
-                End If
-            Next
-            '第一轮时：既然不直接使用已经加载好的结果，那就启动第一个加载器
-            If WaitCycle = 0 Then
-                LoaderList.First.Key.Start(MainLoader.Input, IsForceRestart)
-                For Each Loader In LoaderList.Skip(1)
-                    Loader.Key.State = LoadState.Waiting '将其他源标记为未启动，以确保可以切换下载源（#184）
-                Next
-            End If
-            '检查加载器失败或超时
-            For i = 0 To LoaderList.Count - 1
-                If WaitCycle <> LoaderList(i).Value * 100 Then Continue For
-                If i < LoaderList.Count - 1 AndAlso Not LoaderList.All(Function(l) l.Key.State = LoadState.Failed) Then
-                    '若还有下一个源，则启动下一个源
-                    LoaderList(i + 1).Key.Start(MainLoader.Input, IsForceRestart)
-                Else
-                    '若没有，则失败
-                    Dim ErrorInfo As Exception = Nothing
-                    For ii = 0 To LoaderList.Count - 1
-                        LoaderList(ii).Key.Input = Nothing '重置输入，以免以同样的输入“重试加载”时直接失败
-                        If LoaderList(ii).Key.Error IsNot Nothing Then
-                            If ErrorInfo Is Nothing OrElse LoaderList(ii).Key.Error.Message = "无" Then
-                                ErrorInfo = LoaderList(ii).Key.Error
-                            End If
-                        End If
-                    Next
-                    If ErrorInfo Is Nothing Then ErrorInfo = New TimeoutException("下载源连接超时")
-                    DlSourceLoaderCancel(LoaderList)
-                    Throw ErrorInfo
-                End If
-                Exit For
-            Next
-            '计时
-            Thread.Sleep(10)
-            WaitCycle += 1
-            '检查父加载器中断
-            If MainLoader.IsCanceled Then
-                DlSourceLoaderCancel(LoaderList)
-                Return
-            End If
-        Loop
-    End Sub
-    Private Sub DlSourceLoaderCancel(Of InputType, OutputType)(LoaderList As List(Of KeyValuePair(Of LoaderTask(Of InputType, OutputType), Integer)))
-        For Each Loader In LoaderList
-            If Loader.Key.State = LoadState.Loading Then Loader.Key.Cancel()
-        Next
-    End Sub
-
 #End Region
 
 End Module
+

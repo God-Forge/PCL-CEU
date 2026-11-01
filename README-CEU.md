@@ -244,6 +244,7 @@ Phase 3 已开始：
 - 新增 C# `LegacyGameArgumentBuilder`，接管旧版 `minecraftArguments` 的分辨率参数追加。
 - 新增 C# `FullscreenArgumentBuilder`，接管全屏游戏参数生成。
 - 移除已无调用方的 VB `DlSourceLoader` 源切换逻辑，统一由 C# 服务处理源顺序与回退。
+- 移除已无调用方的 VB Forge 版本源加载方法，Forge 版本列表统一由 C# `ForgeVersionService` 获取。
 - 新增 C# `ClientJarInfoResolver`，接管版本 JSON `downloads.client` 的 URL、SHA1 与大小解析。
 - 新增 C# `AssetIndexInfoResolver`，接管资源索引的 id 与 url 读取。
 - 新增 C# `NativesFolderResolver`，接管 Natives 目录的 ASCII 回退与提前创建。

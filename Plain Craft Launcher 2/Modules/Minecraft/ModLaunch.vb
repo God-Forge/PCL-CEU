@@ -1274,19 +1274,14 @@ NextInstance:
             UseJLW = False
             McLaunchLog("由于使用了自定义 javaagent，已禁用 JLW，这可能导致游戏崩溃！", LogLevel.Warn)
         End If
-        If UseJLW Then
-            If McLaunchJavaSelected.Version.Major >= 9 Then
-                Args.Add("--add-exports") : Args.Add("cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED")
-            End If
-            Args.Add("-Doolloo.jlw.tmpdir=${pure_directory}") '这里需要不以 \ 结尾
-        End If
+        Args.AddRange(JvmWrapperArgumentBuilder.BuildJLW(UseJLW, McLaunchJavaSelected.Version.Major))
         McLaunchLog("使用 JLW：" & UseJLW)
 
         'LUA
         Dim UseLUA As Boolean =
             Not Settings.Get(Of Boolean)("LaunchAdvanceDisableLUA") AndAlso Not Settings.Get(Of Boolean)("VersionAdvanceDisableLUA", McInstanceSelected) AndAlso
             McLibListGet(McInstanceSelected, False).Select(Function(e) e.OriginalName).Contains("org.lwjgl:lwjgl:3.4.1")
-        If UseLUA Then Args.Add($"-javaagent:""{LaunchUtils.ExtractPatch("Launch\LwjglUnsafeAgent.jar", PathPure.Value)}""")
+        If UseLUA Then Args.Add(JvmWrapperArgumentBuilder.BuildLUA(LaunchUtils.ExtractPatch("Launch\LwjglUnsafeAgent.jar", PathPure.Value)))
         McLaunchLog("使用 LUA：" & UseLUA)
 
 #Region "内存管理"

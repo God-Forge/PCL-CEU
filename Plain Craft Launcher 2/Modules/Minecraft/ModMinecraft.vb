@@ -1614,13 +1614,14 @@ OnLoaded:
     ''' </summary>
     Public Function McLibListGetWithJson(JsonObject As JObject, Optional KeepSameNameDifferentVersionResult As Boolean = False, Optional CustomMcFolder As String = Nothing) As List(Of McLibEntry)
         CustomMcFolder = If(CustomMcFolder, McFolderSelected)
-
-        '转换为 LibToken
-        Dim BasicArray As New List(Of McLibEntry)
-        For Each Library In LibraryResolver.Resolve(JsonObject, CustomMcFolder)
+        Dim Result As New List(Of McLibEntry)
+        For Each Library In LibraryDeduplicator.Deduplicate(
+                LibraryResolver.Resolve(JsonObject, CustomMcFolder),
+                KeepSameNameDifferentVersionResult,
+                AddressOf Logger.Info)
             Dim OriginalName As String = Library.Name
             If Library.IsNative AndAlso OriginalName.Contains(":") Then OriginalName = OriginalName.BeforeLast(":")
-            BasicArray.Add(New McLibEntry With {
+            Result.Add(New McLibEntry With {
                 .OriginalName = OriginalName,
                 .Url = Library.Url,
                 .LocalPath = PathUtils.AddSlashSuffix(CustomMcFolder) & Library.LocalPath,
@@ -1629,36 +1630,7 @@ OnLoaded:
                 .SHA1 = Library.Sha1
             })
         Next
-
-        '去重
-        Dim ResultArray As New Dictionary(Of String, McLibEntry)
-        Dim GetVersion =
-        Function(Token As McLibEntry) As String
-            '测试例：
-            'D:\Minecraft\test\libraries\net\neoforged\mergetool\2.0.0\mergetool-2.0.0-api.jar
-            'D:\Minecraft\test\libraries\org\apache\commons\commons-collections4\4.2\commons-collections4-4.2.jar
-            'D:\Minecraft\test\libraries\com\google\guava\guava\31.1-jre\guava-31.1-jre.jar
-            Return PathUtils.GetLastPart(PathUtils.RemoveLastPart(Token.LocalPath))
-        End Function
-        For i = 0 To BasicArray.Count - 1
-            Dim Key As String = BasicArray(i).Name & BasicArray(i).IsNatives.ToString
-            If ResultArray.ContainsKey(Key) Then
-                Dim BasicArrayVersion As String = GetVersion(BasicArray(i))
-                Dim ResultArrayVersion As String = GetVersion(ResultArray(Key))
-                If BasicArrayVersion <> ResultArrayVersion AndAlso KeepSameNameDifferentVersionResult Then
-                    Logger.Info($"发现疑似重复的支持库：{BasicArray(i)} ({BasicArrayVersion}) 与 {ResultArray(Key)} ({ResultArrayVersion})")
-                    ResultArray.Add(Key & GetUuid(), BasicArray(i))
-                Else
-                    Logger.Info($"发现重复的支持库：{BasicArray(i)} ({BasicArrayVersion}) 与 {ResultArray(Key)} ({ResultArrayVersion})，已忽略其中之一")
-                    If McUtils.CompareVersionGE(BasicArrayVersion, ResultArrayVersion) Then
-                        ResultArray(Key) = BasicArray(i)
-                    End If
-                End If
-            Else
-                ResultArray.Add(Key, BasicArray(i))
-            End If
-        Next
-        Return ResultArray.Values.ToList
+        Return Result
     End Function
 
     ''' <summary>

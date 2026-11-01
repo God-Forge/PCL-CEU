@@ -248,6 +248,7 @@ Phase 3 已开始：
 - 移除已无调用方的 VB OptiFine 官方源加载器，OptiFine 列表统一由 C# `OptiFineListService` 获取。
 - 移除已无调用方的 VB NeoForge/LiteLoader/Fabric 源加载器，版本列表统一由 C# 服务获取。
 - OptiFine BMCLAPI 加载器已委托给 C# `OptiFineListService`。
+- Minecraft 客户端列表的 Mojang/BMCLAPI 分加载器已委托给 C# `ClientListService`。
 - 新增 C# `ClientJarInfoResolver`，接管版本 JSON `downloads.client` 的 URL、SHA1 与大小解析。
 - 新增 C# `AssetIndexInfoResolver`，接管资源索引的 id 与 url 读取。
 - 新增 C# `NativesFolderResolver`，接管 Natives 目录的 ASCII 回退与提前创建。

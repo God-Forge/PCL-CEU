@@ -410,30 +410,6 @@ Public Module ModDownload
     End Sub
 
     ''' <summary>
-    ''' OptiFine 版本列表，官方源。
-    ''' </summary>
-    Public DlOptiFineListOfficialLoader As New LoaderTask(Of Integer, DlOptiFineListResult)("DlOptiFineList Official", AddressOf DlOptiFineListOfficialMain)
-    Private Sub DlOptiFineListOfficialMain(Loader As LoaderTask(Of Integer, DlOptiFineListResult))
-        Dim Result As String = NetRequestByClientRetry("https://optifine.net/downloads", Encoding:=Encoding.Default)
-        If Result.Length < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Result & "）")
-        Try
-            Dim Versions = OptiFineVersionParser.ParseOfficial(Result).
-                Select(Function(Item) New DlOptiFineListEntry With {
-                    .DisplayName = Item.DisplayName,
-                    .ReleaseTime = Item.ReleaseTime,
-                    .IsPreview = Item.IsPreview,
-                    .Inherit = Item.Inherit,
-                    .FileName = Item.FileName,
-                    .RequiredForgeVersion = Item.RequiredForgeVersion,
-                    .InstanceName = Item.InstanceName
-                }).ToList()
-            Loader.Output = New DlOptiFineListResult With {.IsOfficial = True, .SourceName = "OptiFine 官方源", .Value = Versions}
-        Catch ex As Exception
-            Throw New Exception("OptiFine 官方源版本列表解析失败（" & Result & "）", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
     ''' OptiFine 版本列表，BMCLAPI。
     ''' </summary>
     Public DlOptiFineListBmclapiLoader As New LoaderTask(Of Integer, DlOptiFineListResult)("DlOptiFineList Bmclapi", AddressOf DlOptiFineListBmclapiMain)
@@ -1046,6 +1022,7 @@ Public Module ModDownload
 #End Region
 
 End Module
+
 
 
 

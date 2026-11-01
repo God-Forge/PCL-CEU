@@ -1572,39 +1572,18 @@ NextInstance:
             End If
         End If
         Try
-            '语言
-            '1.0-     ：没有语言选项
-            '1.1 ~ 5  ：zh_CN 时正常，zh_cn 时崩溃（最后两位字母必须大写，否则将会 NPE 崩溃）
-            '1.6 ~ 10 ：zh_CN 时正常，zh_cn 时自动切换为英文
-            '1.11 ~ 12：zh_cn 时正常，zh_CN 时虽然显示了中文但语言设置会错误地显示选择英文
-            '1.13+    ：zh_cn 时正常，zh_CN 时自动切换为英文
-            Dim CurrentLang As String = ReadIni(SetupFileAddress, "lang", "none")
-            Dim RequiredLang As String = If(CurrentLang = "none" OrElse Not DirectoryUtils.Exists(McInstanceSelected.PathIndie & "saves"), '#3844，整合包可能已经自带了 options.txt
-                If(Settings.Get(Of Boolean)("ToolHelpChinese"), "zh_cn", "en_us"), CurrentLang.Lower)
-            If Not McInstanceSelected.Version.Valid OrElse McInstanceSelected.Version.Vanilla.Major <= 10 Then
-                '将最后两位改为大写，前面的部分保留
-                RequiredLang = RequiredLang.Substring(0, RequiredLang.Length - 2) & RequiredLang.Substring(RequiredLang.Length - 2).Upper
-            End If
-            If CurrentLang = RequiredLang Then
-                McLaunchLog($"需要的语言为 {RequiredLang}，当前语言为 {CurrentLang}，无需修改")
+            Dim OptionsResult = OptionsTxtUpdater.Update(
+                SetupFileAddress,
+                DirectoryUtils.Exists(McInstanceSelected.PathIndie & "saves"),
+                McInstanceSelected.Version.Valid,
+                McInstanceSelected.Version.Vanilla.Major,
+                Settings.Get(Of Boolean)("ToolHelpChinese"),
+                Settings.Get(Of Integer)("LaunchArgumentWindowType"))
+            If OptionsResult.LanguageChanged Then
+                McLaunchLog($"已将语言从 {OptionsResult.CurrentLanguage} 修改为 {OptionsResult.RequiredLanguage}")
             Else
-                WriteIni(SetupFileAddress, "lang", "-") '触发缓存更改，避免删除后重新下载残留缓存
-                WriteIni(SetupFileAddress, "lang", RequiredLang)
-                McLaunchLog($"已将语言从 {CurrentLang} 修改为 {RequiredLang}")
+                McLaunchLog($"需要的语言为 {OptionsResult.RequiredLanguage}，当前语言为 {OptionsResult.CurrentLanguage}，无需修改")
             End If
-            ''如果是初次设置，一并修改 forceUnicodeFont
-            'If Settings.Get(Of Boolean)("ToolHelpChinese") AndAlso (CurrentLang = "none" OrElse Not DirectoryUtils.Exists(McInstanceSelected.PathIndie & "saves")) Then
-            '    WriteIni(SetupFileAddress, "forceUnicodeFont", "true")
-            '    McLaunchLog("已开启 forceUnicodeFont")
-            'End If
-            '窗口
-            Select Case Settings.Get(Of Integer)("LaunchArgumentWindowType")
-                Case 0 '全屏
-                    WriteIni(SetupFileAddress, "fullscreen", "true")
-                Case 1 '默认
-                Case Else '其他
-                    WriteIni(SetupFileAddress, "fullscreen", "false")
-            End Select
         Catch ex As Exception
             Logger.Error(ex, "更新 options.txt 失败", LogBehavior.Toast)
         End Try

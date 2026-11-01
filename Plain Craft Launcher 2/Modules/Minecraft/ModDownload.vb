@@ -687,50 +687,6 @@ Public Module ModDownload
         End Using
     End Sub
 
-    ''' <summary>
-    ''' NeoForge 版本列表，官方源。
-    ''' </summary>
-    Public DlNeoForgeListOfficialLoader As New LoaderTask(Of Integer, DlNeoForgeListResult)("DlNeoForgeList Official", AddressOf DlNeoForgeListOfficialMain)
-    Private Sub DlNeoForgeListOfficialMain(Loader As LoaderTask(Of Integer, DlNeoForgeListResult))
-        '获取版本列表 JSON
-        Dim ResultLatest As String = NetRequestByClientRetry("https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge", RequireJson:=True)
-        Dim ResultLegacy As String = NetRequestByClientRetry("https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge", RequireJson:=True)
-        If ResultLatest.Length < 100 OrElse ResultLegacy.Length < 100 Then Throw New Exception("获取到的版本列表长度不足（" & ResultLatest & "）")
-        '解析
-        Try
-            Loader.Output = New DlNeoForgeListResult With {.IsOfficial = True, .SourceName = "NeoForge 官方源",
-                .Value = GetNeoForgeEntries(ResultLatest, ResultLegacy)}
-        Catch ex As Exception
-            Throw New Exception("NeoForge 官方源版本列表解析失败（" & ResultLatest & vbCrLf & vbCrLf & ResultLegacy & "）", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' NeoForge 版本列表，BMCLAPI。
-    ''' </summary>
-    Public DlNeoForgeListBmclapiLoader As New LoaderTask(Of Integer, DlNeoForgeListResult)("DlNeoForgeList Bmclapi", AddressOf DlNeoForgeListBmclapiMain)
-    Public Sub DlNeoForgeListBmclapiMain(Loader As LoaderTask(Of Integer, DlNeoForgeListResult))
-        '获取版本列表 JSON
-        Dim ResultLatest As String = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/neoforge/meta/api/maven/details/releases/net/neoforged/neoforge", RequireJson:=True)
-        Dim ResultLegacy As String = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/neoforge/meta/api/maven/details/releases/net/neoforged/forge", RequireJson:=True)
-        If ResultLatest.Length < 100 OrElse ResultLegacy.Length < 100 Then Throw New Exception("获取到的版本列表长度不足（" & ResultLatest & "）")
-        '解析
-        Try
-            Loader.Output = New DlNeoForgeListResult With {.IsOfficial = True, .SourceName = "BMCLAPI",
-                .Value = GetNeoForgeEntries(ResultLatest, ResultLegacy)}
-        Catch ex As Exception
-            Throw New Exception("NeoForge BMCLAPI 版本列表解析失败（" & ResultLatest & vbCrLf & vbCrLf & ResultLegacy & "）", ex)
-        End Try
-    End Sub
-
-    Private Function GetNeoForgeEntries(LatestJson As String, LatestLegacyJson As String) As List(Of DlNeoForgeListEntry)
-        Dim Versions = NeoForgeVersionParser.Parse(LatestJson, LatestLegacyJson).
-            Select(Function(name) New DlNeoForgeListEntry(name)).
-            OrderByDescending(Function(a) a).ToList
-        If Not Versions.Any() Then Throw New Exception("无")
-        Return Versions
-    End Function
-
 #End Region
 
 #Region "DlLiteLoaderList | LiteLoader 版本列表"
@@ -809,52 +765,6 @@ Public Module ModDownload
         End Using
     End Sub
 
-    ''' <summary>
-    ''' LiteLoader 版本列表，官方源。
-    ''' </summary>
-    Public DlLiteLoaderListOfficialLoader As New LoaderTask(Of Integer, DlLiteLoaderListResult)("DlLiteLoaderList Official", AddressOf DlLiteLoaderListOfficialMain)
-    Private Sub DlLiteLoaderListOfficialMain(Loader As LoaderTask(Of Integer, DlLiteLoaderListResult))
-        Dim Result As JObject = NetRequestByClientRetry("https://dl.liteloader.com/versions/versions.json", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Versions = LiteLoaderVersionParser.Parse(Result).
-                Select(Function(Item) New DlLiteLoaderListEntry With {
-                    .Inherit = Item.Inherit,
-                    .IsLegacy = Item.IsLegacy,
-                    .IsPreview = Item.IsPreview,
-                    .FileName = Item.FileName,
-                    .MD5 = Item.Md5,
-                    .ReleaseTime = Item.ReleaseTime,
-                    .JsonToken = Item.JsonToken
-                }).ToList()
-            Loader.Output = New DlLiteLoaderListResult With {.IsOfficial = True, .SourceName = "LiteLoader 官方源", .Value = Versions}
-        Catch ex As Exception
-            Throw New Exception("LiteLoader 官方源版本列表解析失败（" & Result.ToString & "）", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' LiteLoader 版本列表，BMCLAPI。
-    ''' </summary>
-    Public DlLiteLoaderListBmclapiLoader As New LoaderTask(Of Integer, DlLiteLoaderListResult)("DlLiteLoaderList Bmclapi", AddressOf DlLiteLoaderListBmclapiMain)
-    Private Sub DlLiteLoaderListBmclapiMain(Loader As LoaderTask(Of Integer, DlLiteLoaderListResult))
-        Dim Result As JObject = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/maven/com/mumfrey/liteloader/versions.json", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Versions = LiteLoaderVersionParser.Parse(Result).
-                Select(Function(Item) New DlLiteLoaderListEntry With {
-                    .Inherit = Item.Inherit,
-                    .IsLegacy = Item.IsLegacy,
-                    .IsPreview = Item.IsPreview,
-                    .FileName = Item.FileName,
-                    .MD5 = Item.Md5,
-                    .ReleaseTime = Item.ReleaseTime,
-                    .JsonToken = Item.JsonToken
-                }).ToList()
-            Loader.Output = New DlLiteLoaderListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Versions}
-        Catch ex As Exception
-            Throw New Exception("LiteLoader BMCLAPI 版本列表解析失败（" & Result.ToString & "）", ex)
-        End Try
-    End Sub
-
 #End Region
 
 #Region "DlFabricList | Fabric 列表"
@@ -888,36 +798,6 @@ Public Module ModDownload
                 .Value = Result.Value
             }
         End Using
-    End Sub
-
-    ''' <summary>
-    ''' Fabric 列表，官方源。
-    ''' </summary>
-    Public DlFabricListOfficialLoader As New LoaderTask(Of Integer, DlFabricListResult)("DlFabricList Official", AddressOf DlFabricListOfficialMain)
-    Private Sub DlFabricListOfficialMain(Loader As LoaderTask(Of Integer, DlFabricListResult))
-        Dim Result As JObject = NetRequestByClientRetry("https://meta.fabricmc.net/v2/versions", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Output = New DlFabricListResult With {.IsOfficial = True, .SourceName = "Fabric 官方源", .Value = Result}
-            If Output.Value("game") Is Nothing OrElse Output.Value("loader") Is Nothing OrElse Output.Value("installer") Is Nothing Then Throw New Exception("获取到的列表缺乏必要项")
-            Loader.Output = Output
-        Catch ex As Exception
-            Throw New Exception("Fabric 官方源版本列表解析失败（" & Result.ToString & "）", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Fabric 列表，BMCLAPI。
-    ''' </summary>
-    Public DlFabricListBmclapiLoader As New LoaderTask(Of Integer, DlFabricListResult)("DlFabricList Bmclapi", AddressOf DlFabricListBmclapiMain)
-    Private Sub DlFabricListBmclapiMain(Loader As LoaderTask(Of Integer, DlFabricListResult))
-        Dim Result As JObject = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/fabric-meta/v2/versions", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Output = New DlFabricListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Result}
-            If Output.Value("game") Is Nothing OrElse Output.Value("loader") Is Nothing OrElse Output.Value("installer") Is Nothing Then Throw New Exception("获取到的列表缺乏必要项")
-            Loader.Output = Output
-        Catch ex As Exception
-            Throw New Exception("Fabric BMCLAPI 版本列表解析失败（" & Result.ToString & "）", ex)
-        End Try
     End Sub
 
     ''' <summary>
@@ -1022,6 +902,9 @@ Public Module ModDownload
 #End Region
 
 End Module
+
+
+
 
 
 

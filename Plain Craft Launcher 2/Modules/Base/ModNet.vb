@@ -1392,21 +1392,8 @@ FinishExCatch:
         ''' 刷新公开属性。由 NetManager 每 0.1 秒调用一次。
         ''' </summary>
         Public Sub RefreshStat()
-            '计算进度
-            Dim NewProgress As Double = 0
-            Dim TotalProgress As Double = 0
-            For Each File In Files
-                If File.IsCopy Then
-                    NewProgress += File.Progress * 0.2
-                    TotalProgress += 0.2
-                Else
-                    NewProgress += File.Progress
-                    TotalProgress += 1
-                End If
-            Next
-            If TotalProgress > 0 AndAlso Not Double.IsNaN(TotalProgress) Then NewProgress /= TotalProgress
-            '刷新进度
-            _Progress = NewProgress
+            _Progress = DownloadProgressCalculator.Calculate(
+                Files.Select(Function(file) (file.Progress, file.IsCopy)))
         End Sub
 
         Public Sub New(Name As String, FileTasks As IEnumerable(Of NetFile))

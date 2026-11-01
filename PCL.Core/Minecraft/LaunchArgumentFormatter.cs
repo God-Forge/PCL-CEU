@@ -7,6 +7,14 @@ public static class LaunchArgumentFormatter {
 
     private static readonly char[] SpecialCharacters = ['&', '|', '<', '>', '^', ' '];
 
+    public static string FormatSingle(string argument) {
+        if (argument.IndexOfAny(SpecialCharacters) >= 0
+            && !(argument.StartsWith("\"", StringComparison.Ordinal) && argument.EndsWith("\"", StringComparison.Ordinal))) {
+            return "\"" + argument.Replace("\"", "\\\"") + "\"";
+        }
+        return argument;
+    }
+
     public static List<string> Format(
         IEnumerable<string> arguments,
         IEnumerable<(string Key, string Value)> replacements) {
@@ -17,11 +25,7 @@ public static class LaunchArgumentFormatter {
             foreach (var (key, replacement) in replacementList) {
                 value = value.Replace(key, replacement);
             }
-            if (value.IndexOfAny(SpecialCharacters) >= 0
-                && !(value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))) {
-                value = "\"" + value.Replace("\"", "\\\"") + "\"";
-            }
-            result.Add(value);
+            result.Add(FormatSingle(value));
         }
         return result;
     }

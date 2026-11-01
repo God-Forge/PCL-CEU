@@ -30,4 +30,11 @@ public class LaunchArgumentFormatterTests {
         await Assert.That(result[0]).IsEqualTo("\"hello world\"");
     }
 
+    [Test]
+    public async Task 单个参数格式化() {
+        await Assert.That(LaunchArgumentFormatter.FormatSingle("hello world")).IsEqualTo("\"hello world\"");
+        await Assert.That(LaunchArgumentFormatter.FormatSingle("\"already\"")).IsEqualTo("\"already\"");
+        await Assert.That(LaunchArgumentFormatter.FormatSingle("plain")).IsEqualTo("plain");
+    }
+
 }

@@ -1340,7 +1340,7 @@ NextInstance:
         '新版 MC：从版本 JSON 获取参数
         If McInstanceSelected.JsonObject("arguments") IsNot Nothing AndAlso McInstanceSelected.JsonObject("arguments")("game") IsNot Nothing Then
             Dim CurrentInstance As McInstance = McInstanceSelected
-            Dim AppendArg = Sub(a As String) Arg &= " " & If(a.Contains(" ") AndAlso Not a.StartsWithF("""") AndAlso Not a.EndsWithF(""""), $"""{a.Replace("""", "\""")}""", a)
+            Dim AppendArg = Sub(a As String) Arg &= " " & LaunchArgumentFormatter.FormatSingle(a)
 NextInstance:
             McLaunchLog($"新版游戏参数：从版本 JSON 获取（{CurrentInstance.Name}）")
             If CurrentInstance.JsonObject("arguments") IsNot Nothing AndAlso CurrentInstance.JsonObject("arguments")("game") IsNot Nothing Then

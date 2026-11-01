@@ -276,7 +276,7 @@ Phase 3 已开始：
 - 新增 C# `JvmEncodingArgumentBuilder`，接管 Java stdout/stderr 编码与 `file.encoding=COMPAT` 参数。
 - 新增 C# `McFolderListParser`，接管自定义 Minecraft 文件夹设置的解析、格式化与无效项识别。
 - 新增 C# `LibraryDeduplicator`，接管支持库去重、同名不同版本保留与较新版本选择。
-- 新增 C# `LauncherProfilesService`，接管 `launcher_profiles.json` 的创建、登录信息合并与损坏重建。
+- 新增 C# `LauncherProfilesService`，接管 `launcher_profiles.json` 的创建、登录信息合并与损坏重建；`McFolderLauncherProfilesJsonCreate` 已委托给该服务。
 - 新增 C# `OptionsTxtUpdater`，接管 `options.txt` 的语言兼容与全屏设置。
 - 下一步：将完整启动参数构建与登录参数迁移到 C#。
 

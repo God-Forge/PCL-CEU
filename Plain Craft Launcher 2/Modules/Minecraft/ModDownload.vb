@@ -251,67 +251,21 @@ Public Module ModDownload
     ''' </summary>
     Public DlClientListMojangLoader As New LoaderTask(Of String, DlClientListResult)("DlClientList Mojang", AddressOf DlClientListMojangMain)
     Private Sub DlClientListMojangMain(Loader As LoaderTask(Of String, DlClientListResult))
-        Dim StartTime As Long = GetTimeMs()
-        Dim Json As JObject = NetRequestByClientRetry("https://launchermeta.mojang.com/mc/game/version_manifest.json", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Versions As JArray = Json("versions")
-            If Versions.Count < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Json.ToString & "）")
-            '确定官方源是否可用
-            If Not DlPreferMojang Then
-                Dim DeltaTime = GetTimeMs() - StartTime
-                DlPreferMojang = DeltaTime < 4000
-                Logger.Info($"Mojang 官方源加载耗时：{DeltaTime}ms，{If(DlPreferMojang, "可优先使用官方源", "不优先使用官方源")}")
-            End If
-            '返回
-            Loader.Output = New DlClientListResult With {.IsOfficial = True, .SourceName = "Mojang 官方源", .Value = Json}
-            'MC 更新提示
-            Static IsHinted As Boolean = False
-            Dim Version As String
-            '快照版
-            Version = Json("latest")("snapshot")
-            If Settings.Get(Of Boolean)("ToolUpdateSnapshot") AndAlso Not Settings.Get(Of String)("ToolUpdateSnapshotLast") = "" AndAlso
-               Settings.Get(Of String)("ToolUpdateSnapshotLast") <> Version AndAlso Not IsHinted Then
-                IsHinted = True
-                McDownloadClientUpdateHint(Version, Json)
-            End If
-            Settings.Set("ToolUpdateSnapshotLast", If(Version, "Nothing"))
-            '正式版
-            Version = Json("latest")("release")
-            If Settings.Get(Of Boolean)("ToolUpdateRelease") AndAlso Not Settings.Get(Of String)("ToolUpdateReleaseLast") = "" AndAlso
-               Settings.Get(Of String)("ToolUpdateReleaseLast") <> Version AndAlso Not IsHinted Then
-                IsHinted = True
-                McDownloadClientUpdateHint(Version, Json)
-            End If
-            Settings.Set("ToolUpdateReleaseLast", Version)
-        Catch ex As Exception
-            Throw New Exception("Minecraft 官方源版本列表解析失败", ex)
-        End Try
+        Using Fetcher As New HttpStringFetcher()
+            Dim Result = New ClientListService(Fetcher).GetAsync(2, Loader.Input, PathTemp & "Cache\download.json", Loader.CreateCancellationToken).Run()
+            Loader.Output = New DlClientListResult With {.IsOfficial = Result.IsOfficial, .SourceName = Result.SourceName, .Value = Result.Value}
+        End Using
     End Sub
     ''' <summary>
     ''' Minecraft 客户端 版本列表，BMCLAPI 源加载器。
     ''' </summary>
     Public DlClientListBmclapiLoader As New LoaderTask(Of String, DlClientListResult)("DlClientList Bmclapi", AddressOf DlClientListBmclapiMain)
     Private Sub DlClientListBmclapiMain(Loader As LoaderTask(Of String, DlClientListResult))
-        Dim Json As JObject = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/mc/game/version_manifest.json", RequireJson:=True).DeserializeJson()
-        Try
-            Dim Versions As JArray = Json("versions")
-            If Versions.Count < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Json.ToString & "）")
-            '添加 PCL 特供项
-            If FileUtils.Exists(PathTemp & "Cache\download.json") Then Versions.Merge(FileUtils.ReadAsJson(PathTemp & "Cache\download.json"))
-            '检查是否有要求的版本（#5195）
-            If Not String.IsNullOrEmpty(Loader.Input) Then
-                Dim Id = Loader.Input
-                If DlClientListLoader.Output.Value IsNot Nothing AndAlso Not DlClientListLoader.Output.Value("versions").Any(Function(v) v("id") = Id) Then
-                    Throw New Exception("BMCLAPI 源未包含目标版本 " & Id)
-                End If
-            End If
-            '返回
-            Loader.Output = New DlClientListResult With {.IsOfficial = False, .SourceName = "BMCLAPI", .Value = Json}
-        Catch ex As Exception
-            Throw New Exception("Minecraft BMCLAPI 版本列表解析失败（" & Json.ToString & "）", ex)
-        End Try
+        Using Fetcher As New HttpStringFetcher()
+            Dim Result = New ClientListService(Fetcher).GetAsync(0, Loader.Input, PathTemp & "Cache\download.json", Loader.CreateCancellationToken).Run()
+            Loader.Output = New DlClientListResult With {.IsOfficial = Result.IsOfficial, .SourceName = Result.SourceName, .Value = Result.Value}
+        End Using
     End Sub
-
     ''' <summary>
     ''' 获取某个版本的 Json 下载地址，若失败则返回 Nothing。必须在工作线程执行。
     ''' </summary>
@@ -902,6 +856,7 @@ Public Module ModDownload
 #End Region
 
 End Module
+
 
 
 

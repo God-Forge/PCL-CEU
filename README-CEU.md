@@ -239,7 +239,7 @@ Phase 3 已开始：
 - `ModNet.NetRequestByLoader` 已改为直接使用 C# `NetLoader`，移除 VB `LoaderDownload` 调用。
 - 新增 C# `MultiRequestCoordinator`，接管 ModNet 多请求错峰竞速，替代手写线程与 Interrupt。
 - 新增 C# `ClasspathBuilder`，接管启动 classpath 拼接与 OptiFine 插入规则。
-- 新增 C# `LaunchArgumentFormatter`，接管启动参数替换与特殊字符引号处理。
+- 新增 C# `LaunchArgumentFormatter`，接管启动参数替换、单个参数格式化与特殊字符引号处理。
 - 新增 C# `GameArgumentCollector`，接管版本 JSON `arguments.game` 的规则过滤与参数收集。
 - 新增 C# `LegacyGameArgumentBuilder`，接管旧版 `minecraftArguments` 的分辨率参数追加。
 - 新增 C# `ClientJarInfoResolver`，接管版本 JSON `downloads.client` 的 URL、SHA1 与大小解析。

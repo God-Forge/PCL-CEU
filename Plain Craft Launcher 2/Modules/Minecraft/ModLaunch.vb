@@ -1387,7 +1387,7 @@ NextInstance:
         Args.AddRange(CurrentLaunchOptions.ExtraGameArgs)
 
         '全屏
-        If Settings.Get(Of Integer)("LaunchArgumentWindowType") = 0 Then Args.Add("--fullscreen")
+        Args.AddRange(FullscreenArgumentBuilder.Build(Settings.Get(Of Integer)("LaunchArgumentWindowType")))
 
         '自动进入服务器
         Dim Server As String = If(String.IsNullOrEmpty(CurrentLaunchOptions.ServerIp), Settings.Get(Of String)("VersionServerEnter", McInstanceSelected), CurrentLaunchOptions.ServerIp)

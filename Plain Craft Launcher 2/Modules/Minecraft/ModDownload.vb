@@ -39,14 +39,13 @@ Public Module ModDownload
             Instance = New McInstance(Instance.InheritName)
         Loop
         '获取信息
-        Dim IndexInfo = McAssetsGetIndex(Instance, True, True)
-        Dim IndexAddress As String = McFolderSelected & "assets\indexes\" & IndexInfo("id").ToString & ".json"
-        Logger.Info($"版本 {Instance.Name} 对应的资源文件索引为 {IndexInfo("id")}")
-        Dim IndexUrl As String = If(IndexInfo("url"), "")
-        If IndexUrl = "" Then
+        Dim IndexInfo = AssetIndexInfoResolver.Resolve(McAssetsGetIndex(Instance, True, True))
+        Dim IndexAddress As String = McFolderSelected & "assets\indexes\" & IndexInfo.Id & ".json"
+        Logger.Info($"版本 {Instance.Name} 对应的资源文件索引为 {IndexInfo.Id}")
+        If IndexInfo.Url = "" Then
             Return Nothing
         Else
-            Return New NetFile(DlSourceLauncherOrMetaGet(IndexUrl), IndexAddress, New FileChecker With {.IsJson = True})
+            Return New NetFile(DlSourceLauncherOrMetaGet(IndexInfo.Url), IndexAddress, New FileChecker With {.IsJson = True})
         End If
     End Function
 

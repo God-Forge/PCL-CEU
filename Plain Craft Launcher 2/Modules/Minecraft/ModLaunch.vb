@@ -1316,11 +1316,7 @@ NextInstance:
         End Try
         McLaunchLog($"使用编码：{McLaunchEncoding.WebName}")
         Dim LaunchEncodingName = If(McLaunchEncoding.CodePage = 54936, "GBK", McLaunchEncoding.WebName)
-        Dim StdoutArgName = If(McLaunchJavaSelected.Version.Major < 19, "sun.stdout.encoding", "stdout.encoding") '老版本 Java 应该设置 sun.std
-        Dim StderrArgName = If(McLaunchJavaSelected.Version.Major < 19, "sun.stderr.encoding", "stderr.encoding")
-        If Not Args.Any(Function(a) a.StartsWithF($"-D{StdoutArgName}=")) Then Args.Add($"-D{StdoutArgName}={LaunchEncodingName}")
-        If Not Args.Any(Function(a) a.StartsWithF($"-D{StderrArgName}=")) Then Args.Add($"-D{StderrArgName}={LaunchEncodingName}")
-        If UseCompatEncoding AndAlso Not Args.Any(Function(a) a.StartsWithF("-Dfile.encoding=")) Then Args.Add("-Dfile.encoding=COMPAT") '防止老版本 MC 与部分 Mod 不兼容 UTF-8
+        JvmEncodingArgumentBuilder.Apply(Args, LaunchEncodingName, McLaunchJavaSelected.Version.Major, UseCompatEncoding)
 
         '为 JLW 添加 -jar，它必须放在最后
         If UseJLW Then

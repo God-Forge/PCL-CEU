@@ -1288,57 +1288,14 @@ NextInstance:
 
         McLaunchLog("当前剩余内存：" & Math.Round(My.Computer.Info.AvailablePhysicalMemory / 1024 / 1024 / 1024 * 10) / 10 & "G")
         Dim TargetRam As Integer = Math.Floor(PageInstanceSetup.GetRam(McInstanceSelected) * 1024)
-        Args.Add("-Xmx" & TargetRam & "m")
-
-        '获取设置的管理方式
-        '0：在 Java 21+ 使用分代 ZGC，20~15 使用非分代的 ZGC，14- 使用 G1GC
-        '1：在 Java 21+ 使用分代 ZGC，20- 使用 G1GC
-        '2：仅 G1GC
-        '3：不指定，玩家自定义
         Dim SetupType As Integer = Settings.Get(Of Integer)("LaunchAdvanceGC")
         If McInstanceSelected IsNot Nothing AndAlso Settings.Get(Of Integer)("VersionAdvanceGC", McInstanceSelected) > 0 Then SetupType = Settings.Get(Of Integer)("VersionAdvanceGC", McInstanceSelected) - 1 '去掉默认
+        Dim UseG1GC = JvmMemoryArgumentBuilder.Apply(
+            Args, TargetRam, SetupType, McLaunchJavaSelected.Version.Major,
+            Environment.OSVersion.Version, ModeDebug)
         If SetupType <> 3 Then
-            '确定是使用 G1GC 还是 ZGC
-            Dim UseG1GC As Boolean = False
-            If (SetupType = 0 AndAlso McLaunchJavaSelected.Version.Major < 15) OrElse
-               (SetupType = 1 AndAlso McLaunchJavaSelected.Version.Major < 21) OrElse
-               (SetupType = 2 OrElse SetupType = 4) Then UseG1GC = True '检查 Java 版本，ZGC 在 Java 15+ 可用，分代 ZGC 在 Java 21+ 可用
-            If Environment.OSVersion.Version.Major < 10 OrElse Environment.OSVersion.Version.Build < 17763 Then UseG1GC = True '检查系统兼容性，ZGC 需要 Windows 10 1809+
             McLaunchLog($"GC 设置：{SetupType}，选取 {If(UseG1GC, "G1GC", "ZGC")}，Java 版本：{McLaunchJavaSelected.Version.Major}")
-            '移除已有的 GC 参数
-            Args = Args.Where(Function(a) Not a.RegexCheck(
-                "( )*-XX:[+-]?(Use\w+GC|ZGenerational|UseCompactObjectHeaders|G1\w+Percent|G1\w+Size|(Max|Min)(GCPauseMillis|HeapFreeRatio))")).ToList
-            '添加 GC 参数
-            Args.Add("-XX:+UnlockExperimentalVMOptions")
-            If McLaunchJavaSelected.Version.Major >= 24 Then Args.Add("-XX:+UseCompactObjectHeaders")
-            If UseG1GC AndAlso SetupType = 4 Then
-                '优化的 G1GC
-                Args.Add("-XX:+UseG1GC")
-                Args.Add("-XX:G1NewSizePercent=20")
-                Args.Add("-XX:G1ReservePercent=20")
-                Args.Add("-XX:G1HeapRegionSize=32M")
-                Args.Add("-XX:MaxGCPauseMillis=50")
-                If Not ModeDebug Then Args.Add("-XX:+PerfDisableSharedMem")
-                If McLaunchJavaSelected.Version.Major <= 7 Then Args.Add("-XX:MaxPermSize=512m") '#8286
-                If McLaunchJavaSelected.Version.Major = 8 Then Args.Add("-XX:+ParallelRefProcEnabled")
-                If McLaunchJavaSelected.Version.Major >= 12 Then Args.Add("-XX:MinHeapFreeRatio=25") '需要比 G1NewSizePercent 大一点
-                If McLaunchJavaSelected.Version.Major >= 12 Then Args.Add("-XX:MaxHeapFreeRatio=40") '需要比 MinHeapFreeRatio 大一些
-            ElseIf UseG1GC Then
-                'Mojang G1GC
-                Args.Add("-XX:+UseG1GC")
-                Args.Add("-XX:G1NewSizePercent=20")
-                Args.Add("-XX:G1ReservePercent=20")
-                Args.Add("-XX:G1HeapRegionSize=32M")
-                Args.Add("-XX:MaxGCPauseMillis=50")
-                If McLaunchJavaSelected.Version.Major <= 7 Then Args.Add("-XX:MaxPermSize=512m") '#8286
-            Else
-                'ZGC
-                Args.Add("-XX:+UseZGC")
-                If McLaunchJavaSelected.Version.Major = 21 OrElse McLaunchJavaSelected.Version.Major = 22 Then Args.Add("-XX:+ZGenerational") 'Java 23 起默认启用分代 ZGC，不需要再添加参数
-            End If
         End If
-
-        Args.Remove("-XX:MaxDirectMemorySize=256M") '#3511 的清理
 
 #End Region
 

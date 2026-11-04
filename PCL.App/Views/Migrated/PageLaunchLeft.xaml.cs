@@ -195,6 +195,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             var ramMb = LaunchParameterService.ResolveRamMb(instance);
             var (windowWidth, windowHeight) = LaunchParameterService.ResolveWindowSize();
             var windowType = LaunchParameterService.ResolveWindowType();
+            var windowTitle = LaunchParameterService.ResolveWindowTitle();
+            var extraJvm = LaunchParameterService.ResolveExtraJvmArguments();
             var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,
@@ -205,7 +207,10 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
                 ramMb,
                 windowWidth,
                 windowHeight,
-                windowType), cts.Token);
+                windowType,
+                null,
+                windowTitle,
+                extraJvm), cts.Token);
             var process = session.Process;
             if (cts.IsCancellationRequested) {
                 TryKill(process);

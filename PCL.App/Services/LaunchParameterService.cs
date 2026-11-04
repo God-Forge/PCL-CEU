@@ -28,6 +28,25 @@ public static class LaunchParameterService {
     /// <summary>当前设置的窗口类型。</summary>
     public static int ResolveWindowType() => AppServices.Settings.Get<int>(WindowTypeKey);
 
+    /// <summary>设置键：游戏窗口标题模板，支持 {date} / {time}。</summary>
+    public const string WindowTitleKey = "VersionArgumentTitle";
+
+    /// <summary>设置键：用户自定义的 JVM 参数。</summary>
+    public const string ExtraJvmKey = "VersionAdvanceJvm";
+
+    /// <summary>窗口标题模板，未设置时返回 <c>null</c>。</summary>
+    public static string? ResolveWindowTitle() {
+        var title = AppServices.Settings.Get<string>(WindowTitleKey);
+        return string.IsNullOrWhiteSpace(title) ? null : title.Trim();
+    }
+
+    /// <summary>用户自定义的 JVM 参数，按空格切分。</summary>
+    public static IReadOnlyList<string> ResolveExtraJvmArguments() {
+        var raw = AppServices.Settings.Get<string>(ExtraJvmKey);
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+        return JavaArgumentParser.Split(raw);
+    }
+
     /// <summary>按设置与启动器当前尺寸算出游戏窗口尺寸。</summary>
     public static (int Width, int Height) ResolveWindowSize() {
         var settings = AppServices.Settings;

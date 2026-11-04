@@ -28,7 +28,8 @@ public static class LaunchPlanService {
         int width = 854,
         int height = 480,
         int ramMb = 4096,
-        int windowType = WindowSizeResolver.TypeDefault) {
+        int windowType = WindowSizeResolver.TypeDefault,
+        IReadOnlyList<string>? extraJvmArguments = null) {
         var mergedJson = ResolveVersionJson(mcFolder, versionName, versionJson);
         var libraries = LibraryResolver.Resolve(mergedJson, mcFolder).ToList();
         var classpathEntries = libraries.Select(library => new ClasspathEntry {
@@ -67,7 +68,7 @@ public static class LaunchPlanService {
 
         var arguments = new List<string>();
         JvmMemoryArgumentBuilder.Apply(arguments, ramMb, 0, Environment.Version.Major, Environment.OSVersion.Version, false);
-        arguments.AddRange(JvmArgumentCollector.Collect(mergedJson, Environment.OSVersion.Version.ToString()));
+        arguments.AddRange(JvmArgumentCollector.Collect(mergedJson, Environment.OSVersion.Version.ToString(), extraJvmArguments));
         if (!arguments.Any(argument => argument.StartsWith("-Djava.library.path=", StringComparison.OrdinalIgnoreCase))) {
             arguments.Add("-Djava.library.path=" + PathUtils.RemoveSlashSuffix(nativesFolder));
         }

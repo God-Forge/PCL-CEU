@@ -23,9 +23,11 @@ public static class LaunchService {
         int width = 854,
         int height = 480,
         int windowType = WindowSizeResolver.TypeDefault,
-        GameProcessWatcherOptions? watcherOptions = null) {
+        GameProcessWatcherOptions? watcherOptions = null,
+        string? windowTitle = null,
+        IReadOnlyList<string>? extraJvmArguments = null) {
         var json = JObject.Parse(File.ReadAllText(jsonPath));
-        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType);
+        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType, extraJvmArguments);
         var startInfo = JavaProcessLauncher.BuildStartInfo(
             javaExe,
             Path.GetDirectoryName(javaExe) ?? "",
@@ -37,7 +39,7 @@ public static class LaunchService {
         Logger.Info("[MC] classpath：" + plan.Classpath);
         var process = Process.Start(startInfo) ?? throw new InvalidOperationException("无法启动 Java 进程。");
         LaunchLogService.WriteLine($"[启动] 已创建游戏进程，PID {process.Id}");
-        var watcher = new GameProcessWatcher(process, watcherOptions ?? BuildWatcherOptions(json));
+        var watcher = new GameProcessWatcher(process, watcherOptions ?? BuildWatcherOptions(json, windowTitle));
         var session = new LaunchSession(process, watcher);
         process.Exited += (_, _) => {
             var message = $"[MC] 进程退出，退出码 {process.ExitCode}";
@@ -51,13 +53,16 @@ public static class LaunchService {
     /// <summary>
     /// 从版本 JSON 推断默认监视配置：用 releaseTime 的年份区分旧版退出码行为。
     /// </summary>
-    public static GameProcessWatcherOptions BuildWatcherOptions(JObject json) {
+    public static GameProcessWatcherOptions BuildWatcherOptions(JObject json, string? windowTitle = null) {
         int? releaseYear = null;
         if (json["releaseTime"]?.Value<string>() is { Length: > 0 } releaseText
             && DateTime.TryParse(releaseText, out var releaseTime)) {
             releaseYear = releaseTime.Year;
         }
-        return new GameProcessWatcherOptions { ReleaseYear = releaseYear };
+        return new GameProcessWatcherOptions {
+            ReleaseYear = releaseYear,
+            WindowTitle = string.IsNullOrWhiteSpace(windowTitle) ? null : windowTitle.Trim()
+        };
     }
 
 }

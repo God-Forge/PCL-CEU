@@ -120,8 +120,7 @@ public static class CliCommandService {
                     Console.WriteLine("未找到实例：" + args[1]);
                     return 1;
                 }
-                var java = JavaScanner.FindBest(JavaScanner.DefaultRoots(paths.Base,
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)), location.Version.JavaVersionMajor);
+                var java = JavaSelectionService.Resolve(location);
                 if (java is null) {
                     Console.WriteLine("未找到可用 Java。");
                     return 1;

@@ -41,6 +41,8 @@ public static class AppServices {
         Settings.Register("LaunchArgumentWindowHeight", 768);
         Settings.Register("VersionArgumentTitle", "");
         Settings.Register("VersionAdvanceJvm", "");
+        Settings.Register("LaunchArgumentVisible", 5);
+        Settings.Register("VersionArgumentJavaV2", 0);
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);
         Settings.Register("UiMusicVolume", 60);

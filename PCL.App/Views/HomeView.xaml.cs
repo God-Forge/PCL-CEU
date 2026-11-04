@@ -31,9 +31,7 @@ public partial class HomeView : System.Windows.Controls.UserControl {
             return;
         }
         var instance = _instances[InstanceList.SelectedIndex];
-        var java = JavaScanner.FindBest(JavaScanner.DefaultRoots(
-            AppServices.Paths.Base, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)),
-            instance.Version.JavaVersionMajor);
+        var java = JavaSelectionService.Resolve(instance);
         if (java is null) {
             System.Windows.MessageBox.Show("未找到可用的 Java，请先安装 Java 或在设置中配置。", "启动", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

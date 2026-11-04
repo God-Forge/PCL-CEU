@@ -204,9 +204,7 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         try {
             PrepareLaunchingUI(instance);
             var requiredMajor = instance.Version.JavaVersionMajor;
-            var java = await Task.Run(() => JavaScanner.FindBest(
-                JavaScanner.DefaultRoots(AppServices.Paths.Base, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)),
-                requiredMajor));
+            var java = await Task.Run(() => JavaSelectionService.Resolve(instance));
             if (cts.IsCancellationRequested) return;
             if (java is null) {
                 ShowLaunchFailed("未找到可用的 Java，请先安装 Java 或在设置中配置。");
@@ -313,6 +311,7 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         UpdateLaunchingStage("启动完成", 1);
         BtnCancel.Text = "返回";
         LaunchLogService.WriteLine($"[启动] 游戏进程已启动，PID {process.Id}");
+        WindowVisibilityService.ApplyAfterLaunch();
     }
 
     private void ShowLaunchFailed(string message) {
@@ -334,6 +333,7 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         _ = DispatcherService.InvokeAsync(() => {
             if (!ReferenceEquals(_process, process)) return;
             _process = null;
+            WindowVisibilityService.RestoreAfterExit();
             LabLaunchingTitle.Text = process.ExitCode == 0 ? "游戏已退出" : "游戏异常退出";
             LabLaunchingStage.Text = "退出码 " + process.ExitCode;
             LabLaunchingProgress.Text = "100.00 %";

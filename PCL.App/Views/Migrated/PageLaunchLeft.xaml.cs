@@ -38,6 +38,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         BtnLaunch.Click += BtnLaunch_Click;
         BtnVersion.Click += BtnVersion_Click;
         BtnCancel.Click += BtnCancel_Click;
+        PanLogin.Cursor = Cursors.Hand;
+        PanLogin.MouseLeftButtonUp += (_, _) => ShowAccountDialog();
         Loaded += (_, _) => {
             PageAnimationService.FadeIn(this);
             PCL.App.Controls.SettingService.BindAll(this);
@@ -133,6 +135,34 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
     private static string GetOfflineName() {
         var name = Environment.UserName;
         return string.IsNullOrWhiteSpace(name) ? "Player" : name;
+    }
+
+    /// <summary>点击登录栏时弹出账号选择。</summary>
+    private void ShowAccountDialog() {
+        if (_launching) return;
+        var index = DialogService.ShowSelect(
+            ["离线登录", "微软登录", "Authlib 登录", "Nide 登录"], "切换账号");
+        if (index is null) return;
+        if (index == 0) {
+            SwitchOfflineAccount();
+            return;
+        }
+        NotificationService.Info("该登录方式请在登录页完成。", "切换账号");
+    }
+
+    private void SwitchOfflineAccount() {
+        var current = AppServices.CurrentLogin?.Name ?? GetOfflineName();
+        var name = DialogService.ShowInput(
+            "离线登录",
+            "输入玩家名；取消则保持当前账号。",
+            current,
+            "玩家名",
+            validator: LoginNameValidator.Validate);
+        if (name is null) return;
+        var normalized = LoginNameValidator.Normalize(name);
+        AppServices.CurrentLogin = OfflineLoginService.Create(normalized);
+        Logger.Info($"已切换到离线账号：{normalized}");
+        RefreshPageState();
     }
 
     private static string GetDisplayName(MinecraftInstanceLocation instance) {

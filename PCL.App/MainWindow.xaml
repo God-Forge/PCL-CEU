@@ -42,6 +42,10 @@
         </Border>
 
         <ContentControl x:Name="ContentHost" Grid.Column="1" Margin="24" />
+
+        <StackPanel x:Name="PanHint" Grid.ColumnSpan="2" Panel.ZIndex="10"
+                    HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                    Margin="0,0,0,16" IsHitTestVisible="False" />
     </Grid>
 </Window>
 

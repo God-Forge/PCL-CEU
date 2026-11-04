@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Windows;
+using PCL.App.Services;
 using PCL.App.Views;
 using PCL.App.Views.Migrated;
 
@@ -9,6 +10,7 @@ public partial class MainWindow : Window {
 
     public MainWindow() {
         InitializeComponent();
+        HintService.Initialize(PanHint);
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
         VersionText.Text = $"版本 0.24.0\n程序集 {version}";
         ShowView(new LaunchPageView());

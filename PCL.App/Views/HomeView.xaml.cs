@@ -46,7 +46,8 @@ public partial class HomeView : System.Windows.Controls.UserControl {
                 instance.Version.Folder,
                 instance.Version.JsonPath,
                 login,
-                java.JavaExe);
+                java.JavaExe,
+                LaunchParameterService.ResolveRamMb(instance));
             var process = session.Process;
             StatusText.Text = $"已启动 {instance.Version.Id}，进程 {process.Id}，Java {java.Version}";
             session.Watcher.StateChanged += (_, state) => DispatcherService.Invoke(() => {

@@ -192,13 +192,15 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             LaunchLogService.WriteLine($"[启动] Java：{java.JavaExe}");
 
             UpdateLaunchingStage("构建启动参数", 0.2);
+            var ramMb = LaunchParameterService.ResolveRamMb(instance);
             var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,
                 instance.Version.Folder,
                 instance.Version.JsonPath,
                 login,
-                java.JavaExe), cts.Token);
+                java.JavaExe,
+                ramMb), cts.Token);
             var process = session.Process;
             if (cts.IsCancellationRequested) {
                 TryKill(process);

@@ -129,7 +129,8 @@ public static class CliCommandService {
                 var loginProfile = AppServices.CurrentLogin ?? OfflineLoginService.Create(Environment.UserName);
                 var session = LaunchService.Launch(location.Folder.Path,
                     Path.Combine(location.Folder.Versions, location.Version.Folder),
-                    location.Version.Folder, location.Version.JsonPath, loginProfile, java.JavaExe);
+                    location.Version.Folder, location.Version.JsonPath, loginProfile, java.JavaExe,
+                    LaunchParameterService.ResolveRamMb(location));
                 Console.WriteLine($"已启动 {location.Version.Id}，进程 {session.Process.Id}，Java {java.Version}");
                 return 0;
             case "--page-smoke":

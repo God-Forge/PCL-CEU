@@ -34,6 +34,8 @@ public static class AppServices {
         Settings.Register("VersionServerAuthServer", "");
         Settings.Register("VersionServerNide", "");
         Settings.Register("LaunchFolders", "");
+        Settings.Register("LaunchRamType", 0);
+        Settings.Register("LaunchRamCustom", 15);
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);
         Settings.Register("UiMusicVolume", 60);

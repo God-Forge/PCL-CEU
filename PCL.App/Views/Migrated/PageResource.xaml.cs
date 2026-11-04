@@ -1,5 +1,6 @@
 using PCL.App.Controls;
 using System.Windows;
+using MeloongCore;
 using PCL.App.Services;
 using PCL.Core.Resources;
 
@@ -28,6 +29,30 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
             };
             _ = RunSearchAsync(0);
         };
+    }
+
+    /// <summary>把资源安装到当前选中的实例。</summary>
+    private async Task InstallProjectAsync(ResourceProject project) {
+        var instancePath = AppServices.SelectedInstancePath;
+        if (string.IsNullOrEmpty(instancePath)) {
+            NotificationService.Warning("请先在实例页选择一个实例。", "安装资源");
+            return;
+        }
+        var choice = DialogService.ShowText(
+            $"将把《{project.Title}》安装到当前实例，是否继续？", "安装资源", "安装", "取消");
+        if (choice != 1) return;
+        try {
+            var result = await new ResourceInstallService().InstallAsync(project, instancePath);
+            if (result.Success) {
+                Logger.Info("已安装资源：" + result.FilePath);
+                NotificationService.Info(result.Message, "安装资源");
+            } else {
+                NotificationService.Error(result.Message, "安装资源");
+            }
+        } catch (Exception ex) {
+            Logger.Error(ex, "安装资源失败");
+            NotificationService.Error("安装失败：" + ex.Message, "安装资源");
+        }
     }
 
     private ResourceKind Kind => PageType switch {
@@ -80,6 +105,15 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
                     });
                 };
                 panel.Children.Add(open);
+                if (ResourceInstallPaths.CanInstallAsFile(project.Kind)) {
+                    var install = new PCL.App.Controls.MyButton {
+                        Text = "安装", Height = 28, Width = 90,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                        Margin = new Thickness(90, 8, 0, 0)
+                    };
+                    install.Click += async (_, _) => await InstallProjectAsync(project);
+                    panel.Children.Add(install);
+                }
                 PanProjects.Children.Add(new System.Windows.Controls.Border {
                     Background = System.Windows.Media.Brushes.White,
                     CornerRadius = new CornerRadius(4),

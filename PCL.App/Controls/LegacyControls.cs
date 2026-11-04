@@ -247,7 +247,33 @@ public class MySearchBox : System.Windows.Controls.TextBox {
 }
 
 public class MySkin : System.Windows.Controls.ContentControl {
+
     public bool HasCape { get; set; }
+
+    private readonly System.Windows.Controls.Image _avatar = new() {
+        Stretch = System.Windows.Media.Stretch.Uniform,
+        Width = 56,
+        Height = 56
+    };
+
+    public MySkin() {
+        Width = 64;
+        Height = 64;
+        Content = _avatar;
+    }
+
+    /// <summary>展示指定账号的皮肤头像；未登录或加载失败时保持空白。</summary>
+    public async void SetPlayer(PCL.Core.Login.LoginProfile? profile) {
+        var info = PCL.Core.Login.SkinDisplayInfo.From(profile);
+        ToolTip = info.HasSkin ? info.Name + "\n" + info.Uuid : info.StatusText + "\n登录后可显示皮肤";
+        if (!info.HasSkin) {
+            _avatar.Source = null;
+            return;
+        }
+        var image = await PCL.App.Services.SkinImageService.LoadAsync(info.AvatarUrl);
+        if (image is not null) _avatar.Source = image;
+    }
+
 }
 
 public class MySlider : System.Windows.Controls.Slider {

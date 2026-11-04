@@ -11,6 +11,7 @@ public partial class PageLoginNideSkin : System.Windows.Controls.Grid {
         Loaded += (_, _) => {
             PageAnimationService.FadeIn(this);
             PCL.App.Controls.SettingService.BindAll(this);
+            Skin.SetPlayer(AppServices.CurrentLogin);
         };
     }
 

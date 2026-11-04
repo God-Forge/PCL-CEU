@@ -12,6 +12,7 @@ public partial class PageLoginLegacy : System.Windows.Controls.Grid {
         Loaded += (_, _) => {
             PageAnimationService.FadeIn(this);
             PCL.App.Controls.SettingService.BindAll(this);
+            Skin.SetPlayer(AppServices.CurrentLogin);
             var saved = AppServices.Settings.Get<string>("LoginLegacyName") ?? "";
             ComboName.Text = saved.Split('¨').FirstOrDefault() ?? "";
             ComboName.LostFocus += (_, _) => AppServices.Settings.Set("LoginLegacyName", ComboName.Text);

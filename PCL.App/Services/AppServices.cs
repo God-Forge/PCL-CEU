@@ -34,6 +34,9 @@ public static class AppServices {
         Settings.Register("VersionServerAuthServer", "");
         Settings.Register("VersionServerNide", "");
         Settings.Register("LaunchFolders", "");
+        Settings.Register("UiMusicAuto", false);
+        Settings.Register("UiMusicRandom", false);
+        Settings.Register("UiMusicVolume", 60);
         MinecraftFolders = new PCL.Core.Minecraft.MinecraftFolderService(Paths, Settings);
         Localization = new LocalizationService();
         Localization.Language = Settings.Get<string>("UiLanguage") ?? "zh_CN";

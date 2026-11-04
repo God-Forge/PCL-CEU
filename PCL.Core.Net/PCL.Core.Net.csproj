@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <OutputType>Library</OutputType>
+        <LangVersion>13.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="PolySharp" Version="1.15.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="System.IO" />
+        <Using Include="System.Linq" />
+        <Using Include="System.Text" />
+        <Using Include="MeloongCore" />
+        <Using Include="MeloongCore.Extensions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\PCL.Core\Net\**\*.cs" Link="Net\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Download\**\*.cs" Link="Download\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Update\**\*.cs" Link="Update\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PCLCS\PCLCS.csproj" />
+        <ProjectReference Include="..\PCL.Core.Infrastructure\PCL.Core.Infrastructure.csproj" />
+        <ProjectReference Include="..\MeloongCore\Shared\MeloongCore.csproj" />
+    </ItemGroup>
+
+</Project>
+

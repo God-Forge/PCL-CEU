@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <OutputType>Library</OutputType>
+        <LangVersion>13.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="PolySharp" Version="1.15.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="System.IO" />
+        <Using Include="System.Linq" />
+        <Using Include="System.Text" />
+        <Using Include="System.Collections.ObjectModel" />
+        <Using Include="MeloongCore" />
+        <Using Include="MeloongCore.Extensions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\PCL.Core\Settings\**\*.cs" Link="Settings\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Paths\**\*.cs" Link="Paths\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\IO\**\*.cs" Link="IO\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Localization\**\*.cs" Link="Localization\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Native\**\*.cs" Link="Native\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Tasks\**\*.cs" Link="Tasks\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\PCL.Core\Validation\**\*.cs" Link="Validation\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MeloongCore\Shared\MeloongCore.csproj" />
+    </ItemGroup>
+
+</Project>
+
+

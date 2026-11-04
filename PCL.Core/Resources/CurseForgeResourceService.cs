@@ -45,6 +45,39 @@ public sealed class CurseForgeResourceService : IResourceSearchProvider {
         };
     }
 
+    /// <summary>
+    /// 查询项目的文件列表。
+    /// </summary>
+    public async Task<IReadOnlyList<ResourceVersionFile>> GetFilesAsync(
+        string modId,
+        ResourceKind kind,
+        string? minecraftVersion = null,
+        string? loader = null,
+        CancellationToken cancellationToken = default) {
+        if (!IsConfigured) throw new InvalidOperationException("未配置 CurseForge API Key");
+        var url = BuildFilesUrl(modId, minecraftVersion, loader);
+        var json = JObject.Parse(await _fetcher
+            .GetStringAsync(url, new Dictionary<string, string> { ["x-api-key"] = _apiKey }, cancellationToken)
+            .ConfigureAwait(false));
+        return (json["data"] as JArray ?? [])
+            .OfType<JObject>()
+            .Select(file => ResourceVersionParser.ParseCurseForge(file, kind))
+            .ToList();
+    }
+
+    /// <summary>构造文件列表地址，便于测试断言。</summary>
+    public static string BuildFilesUrl(string modId, string? minecraftVersion = null, string? loader = null) {
+        var url = $"https://api.curseforge.com/v1/mods/{Uri.EscapeDataString(modId)}/files";
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(minecraftVersion)) {
+            query.Add("gameVersion=" + Uri.EscapeDataString(minecraftVersion));
+        }
+        if (!string.IsNullOrWhiteSpace(loader) && ToModLoaderType(loader) is { } loaderType) {
+            query.Add("modLoaderType=" + loaderType);
+        }
+        return query.Count == 0 ? url : url + "?" + string.Join("&", query);
+    }
+
     /// <summary>构造搜索地址，便于测试断言。</summary>
     public static string BuildSearchUrl(ResourceSearchQuery query) {
         var url = SearchEndpoint

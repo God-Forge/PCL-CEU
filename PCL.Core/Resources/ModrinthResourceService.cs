@@ -31,6 +31,36 @@ public sealed class ModrinthResourceService : IResourceSearchProvider {
         };
     }
 
+    /// <summary>
+    /// 查询项目的版本列表。
+    /// </summary>
+    public async Task<IReadOnlyList<ResourceVersionFile>> GetVersionsAsync(
+        string projectId,
+        ResourceKind kind,
+        string? minecraftVersion = null,
+        string? loader = null,
+        CancellationToken cancellationToken = default) {
+        var url = BuildVersionsUrl(projectId, minecraftVersion, loader);
+        var array = JArray.Parse(await _fetcher.GetStringAsync(url, cancellationToken).ConfigureAwait(false));
+        return array
+            .OfType<JObject>()
+            .Select(version => ResourceVersionParser.ParseModrinth(version, kind))
+            .ToList();
+    }
+
+    /// <summary>构造版本列表地址，便于测试断言。</summary>
+    public static string BuildVersionsUrl(string projectId, string? minecraftVersion = null, string? loader = null) {
+        var url = $"https://api.modrinth.com/v2/project/{Uri.EscapeDataString(projectId)}/version";
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(minecraftVersion)) {
+            query.Add("game_versions=" + Uri.EscapeDataString($"[\"{minecraftVersion}\"]"));
+        }
+        if (!string.IsNullOrWhiteSpace(loader)) {
+            query.Add("loaders=" + Uri.EscapeDataString($"[\"{loader}\"]"));
+        }
+        return query.Count == 0 ? url : url + "?" + string.Join("&", query);
+    }
+
     /// <summary>构造搜索地址，便于测试断言。</summary>
     public static string BuildSearchUrl(ResourceSearchQuery query) {
         var facets = BuildFacets(query);

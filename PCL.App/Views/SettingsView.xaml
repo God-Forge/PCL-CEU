@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="PCL.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="设置" FontSize="26" FontWeight="Bold" />
+        <StackPanel Orientation="Horizontal" Margin="0,18,0,12">
+            <TextBlock Text="语言：" VerticalAlignment="Center" />
+            <ComboBox x:Name="LanguageBox" Width="160" Height="32" Margin="8,0,12,0">
+                <ComboBoxItem Content="zh_CN" />
+                <ComboBoxItem Content="en_US" />
+            </ComboBox>
+            <Button Content="应用" Width="80" Height="32" Click="Apply_Click" />
+        </StackPanel>
+        <TextBlock x:Name="PathText" Foreground="#667" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+            <Button Content="添加 Minecraft 文件夹" Width="180" Height="32" Click="AddFolder_Click" />
+        </StackPanel>
+        <TextBlock x:Name="FolderList" Margin="0,12,0,0" Foreground="#667" TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
+

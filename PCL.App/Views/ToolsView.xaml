@@ -1,0 +1,21 @@
+<UserControl x:Class="PCL.App.Views.ToolsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="百宝箱" FontSize="26" FontWeight="Bold" />
+        <WrapPanel Grid.Row="1" Margin="0,18,0,12">
+            <Button Content="今日人品" Width="110" Height="34" Margin="0,0,10,10" Click="Luck_Click" />
+            <Button Content="内存优化" Width="110" Height="34" Margin="0,0,10,10" Click="Memory_Click" />
+            <Button Content="下载源测速" Width="120" Height="34" Margin="0,0,10,10" Click="Speed_Click" />
+            <Button Content="环境诊断" Width="110" Height="34" Margin="0,0,10,10" Click="Environment_Click" />
+            <Button Content="打开数据目录" Width="120" Height="34" Margin="0,0,10,10" Click="OpenData_Click" />
+        </WrapPanel>
+        <TextBox x:Name="OutputBox" Grid.Row="2" IsReadOnly="True" AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" />
+    </Grid>
+</UserControl>

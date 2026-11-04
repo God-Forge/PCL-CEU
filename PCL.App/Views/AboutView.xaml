@@ -1,0 +1,29 @@
+<UserControl x:Class="PCL.App.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,16">
+            <TextBlock Text="关于" FontSize="26" FontWeight="Bold" />
+            <Border Background="White" CornerRadius="6" Margin="0,18,0,12" Padding="20">
+                <StackPanel>
+                    <TextBlock Text="关于 · PCL CEU 修改版（第三方）" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" LineHeight="20"
+                               Text="本软件为第三方基于 Plain Craft Launcher (PCL) 独立修改的版本（PCL CEU 修改版），并非 PCL 官方作品，与官方无关。原项目及其著作权归龙腾猫跃及贡献者所有；本改版遵循《PCL 存储库合理使用指南》的重度使用条款，并保留原许可、署名与赞助信息。" />
+                    <TextBlock x:Name="VersionLine" Margin="0,12,0,0" Foreground="#667" />
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Content="上游源代码" Width="120" Height="34" Margin="0,0,10,0" Click="OpenSource_Click" />
+                        <Button Content="赞助原作者" Width="120" Height="34" Margin="0,0,10,0" Click="Donate_Click" />
+                        <Button Content="检查更新" Width="110" Height="34" Click="Update_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <Border Background="White" CornerRadius="6" Padding="20">
+                <StackPanel>
+                    <TextBlock Text="特别鸣谢" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" LineHeight="20"
+                               Text="感谢龙腾猫跃、HerobrineXia、bangbang93、MC 百科、z0z0r4、EasyTier、重庆大学开源软件镜像站、00ll00、Patrick、Hao_Tian、Minecraft 中文论坛以及 PCL 内群的各位。" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -351,3 +351,6 @@ MaskFiles/
 /logs/
 /PCL2-*.exe
 /PCL-*.exe
+
+# C# 迁移发布配置
+!PCL.App/Properties/PublishProfiles/*.pubxml

@@ -120,10 +120,18 @@ public sealed class SingleInstanceService : IDisposable {
 public static class ThemeService {
 
     public static void Apply(System.Windows.Application application) {
-        application.Resources["PclAccentBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 120, 212));
-        application.Resources["PclAccentDarkBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 90, 158));
-        application.Resources["PclTextBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(32, 32, 32));
-        application.Resources["PclSubtleTextBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(102, 102, 102));
+        var palette = PCL.Core.Ui.ThemePalette.Create();
+        foreach (var (key, color) in palette.BrushColors) {
+            application.Resources[key] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(color.R, color.G, color.B));
+        }
+        foreach (var suffix in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "Bg0", "Bg1" }) {
+            var color = palette.BrushColors["ColorBrush" + suffix];
+            application.Resources["ColorObject" + suffix] = System.Windows.Media.Color.FromRgb(color.R, color.G, color.B);
+        }
+        application.Resources["PclAccentBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(palette.Color2.R, palette.Color2.G, palette.Color2.B));
+        application.Resources["PclAccentDarkBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(palette.Color1.R, palette.Color1.G, palette.Color1.B));
+        application.Resources["PclTextBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(palette.Gray1.R, palette.Gray1.G, palette.Gray1.B));
+        application.Resources["PclSubtleTextBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromRgb(palette.Gray2.R, palette.Gray2.G, palette.Gray2.B));
         application.Resources["PclFontFamily"] = new System.Windows.Media.FontFamily("Microsoft YaHei UI");
     }
 

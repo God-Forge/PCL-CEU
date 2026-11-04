@@ -22,9 +22,10 @@ public static class LaunchService {
         int ramMb = 4096,
         int width = 854,
         int height = 480,
+        int windowType = WindowSizeResolver.TypeDefault,
         GameProcessWatcherOptions? watcherOptions = null) {
         var json = JObject.Parse(File.ReadAllText(jsonPath));
-        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb);
+        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType);
         var startInfo = JavaProcessLauncher.BuildStartInfo(
             javaExe,
             Path.GetDirectoryName(javaExe) ?? "",

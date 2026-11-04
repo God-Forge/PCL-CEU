@@ -36,6 +36,9 @@ public static class AppServices {
         Settings.Register("LaunchFolders", "");
         Settings.Register("LaunchRamType", 0);
         Settings.Register("LaunchRamCustom", 15);
+        Settings.Register("LaunchArgumentWindowType", 1);
+        Settings.Register("LaunchArgumentWindowWidth", 1024);
+        Settings.Register("LaunchArgumentWindowHeight", 768);
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);
         Settings.Register("UiMusicVolume", 60);

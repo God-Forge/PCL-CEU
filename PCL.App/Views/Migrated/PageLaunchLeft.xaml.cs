@@ -193,6 +193,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
 
             UpdateLaunchingStage("构建启动参数", 0.2);
             var ramMb = LaunchParameterService.ResolveRamMb(instance);
+            var (windowWidth, windowHeight) = LaunchParameterService.ResolveWindowSize();
+            var windowType = LaunchParameterService.ResolveWindowType();
             var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,
@@ -200,7 +202,10 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
                 instance.Version.JsonPath,
                 login,
                 java.JavaExe,
-                ramMb), cts.Token);
+                ramMb,
+                windowWidth,
+                windowHeight,
+                windowType), cts.Token);
             var process = session.Process;
             if (cts.IsCancellationRequested) {
                 TryKill(process);

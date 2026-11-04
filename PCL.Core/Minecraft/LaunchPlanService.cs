@@ -27,7 +27,8 @@ public static class LaunchPlanService {
         LoginProfile login,
         int width = 854,
         int height = 480,
-        int ramMb = 4096) {
+        int ramMb = 4096,
+        int windowType = WindowSizeResolver.TypeDefault) {
         var mergedJson = ResolveVersionJson(mcFolder, versionName, versionJson);
         var libraries = LibraryResolver.Resolve(mergedJson, mcFolder).ToList();
         var classpathEntries = libraries.Select(library => new ClasspathEntry {
@@ -82,6 +83,7 @@ public static class LaunchPlanService {
         }
         arguments.Add(mergedJson["mainClass"]?.ToString() ?? "net.minecraft.client.main.Main");
         arguments.AddRange(gameArguments);
+        if (WindowSizeResolver.IsFullscreen(windowType)) arguments.Add("--fullscreen");
 
         var context = new LaunchTokenContext {
             NativesDirectory = PathUtils.RemoveSlashSuffix(nativesFolder),

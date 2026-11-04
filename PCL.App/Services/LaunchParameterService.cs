@@ -16,6 +16,41 @@ public static class LaunchParameterService {
     /// <summary>设置键：手动模式的滑杆值。</summary>
     public const string RamCustomKey = "LaunchRamCustom";
 
+    /// <summary>设置键：窗口类型（0 全屏 / 1 默认 / 2 跟随启动器 / 3 自定义 / 4 最大化）。</summary>
+    public const string WindowTypeKey = "LaunchArgumentWindowType";
+
+    /// <summary>设置键：自定义窗口宽度。</summary>
+    public const string WindowWidthKey = "LaunchArgumentWindowWidth";
+
+    /// <summary>设置键：自定义窗口高度。</summary>
+    public const string WindowHeightKey = "LaunchArgumentWindowHeight";
+
+    /// <summary>当前设置的窗口类型。</summary>
+    public static int ResolveWindowType() => AppServices.Settings.Get<int>(WindowTypeKey);
+
+    /// <summary>按设置与启动器当前尺寸算出游戏窗口尺寸。</summary>
+    public static (int Width, int Height) ResolveWindowSize() {
+        var settings = AppServices.Settings;
+        var type = settings.Get<int>(WindowTypeKey);
+        var customWidth = settings.Get<int>(WindowWidthKey);
+        var customHeight = settings.Get<int>(WindowHeightKey);
+        var (launcherWidth, launcherHeight, dpi) = LauncherWindowMetrics();
+        var size = WindowSizeResolver.Resolve(type, customWidth, customHeight, launcherWidth, launcherHeight, dpi);
+        return (size.Width, size.Height);
+    }
+
+    private static (int Width, int Height, double Dpi) LauncherWindowMetrics() {
+        try {
+            if (System.Windows.Application.Current?.MainWindow is { } window && window.ActualWidth > 0 && window.ActualHeight > 0) {
+                var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window).DpiScaleX;
+                return ((int)window.ActualWidth, (int)window.ActualHeight, dpi);
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "读取启动器窗口尺寸失败，按默认值计算");
+        }
+        return (WindowSizeResolver.DefaultWidth, WindowSizeResolver.DefaultHeight, 1);
+    }
+
     /// <summary>当前可用物理内存（GB）。</summary>
     public static double AvailableMemoryGigabytes() {
         try {

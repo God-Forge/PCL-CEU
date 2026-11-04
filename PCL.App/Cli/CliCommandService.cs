@@ -130,7 +130,10 @@ public static class CliCommandService {
                 var session = LaunchService.Launch(location.Folder.Path,
                     Path.Combine(location.Folder.Versions, location.Version.Folder),
                     location.Version.Folder, location.Version.JsonPath, loginProfile, java.JavaExe,
-                    LaunchParameterService.ResolveRamMb(location));
+                    LaunchParameterService.ResolveRamMb(location),
+                    LaunchParameterService.ResolveWindowSize().Width,
+                    LaunchParameterService.ResolveWindowSize().Height,
+                    LaunchParameterService.ResolveWindowType());
                 Console.WriteLine($"已启动 {location.Version.Id}，进程 {session.Process.Id}，Java {java.Version}");
                 return 0;
             case "--page-smoke":

@@ -18,12 +18,16 @@ public partial class PageLoginLegacy : System.Windows.Controls.Grid {
             BtnLogin.Click += (_, _) => {
                 var name = ComboName.Text.Trim();
                 if (string.IsNullOrWhiteSpace(name)) {
-                    System.Windows.MessageBox.Show("请输入游戏用户名。", "离线登录", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    NotificationService.Warning("请输入游戏用户名。", "离线登录");
                     return;
                 }
                 AppServices.Settings.Set("LoginLegacyName", name);
-                AppServices.CurrentLogin = OfflineLoginService.Create(name);
-                System.Windows.MessageBox.Show($"离线登录成功：{name}\r\nUUID：{AppServices.CurrentLogin.Uuid}", "离线登录", MessageBoxButton.OK, MessageBoxImage.Information);
+                try {
+                    LoginSessionService.SetOffline(name);
+                    NotificationService.Info($"离线登录成功：{name}（UUID：{AppServices.CurrentLogin?.Uuid}）", "离线登录");
+                } catch (Exception ex) {
+                    NotificationService.Error(LoginErrorTranslator.Translate(ex), "离线登录");
+                }
             };
         };
     }

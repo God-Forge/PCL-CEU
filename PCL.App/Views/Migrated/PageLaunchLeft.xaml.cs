@@ -40,6 +40,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         BtnCancel.Click += BtnCancel_Click;
         PanLogin.Cursor = Cursors.Hand;
         PanLogin.MouseLeftButtonUp += (_, _) => ShowAccountDialog();
+        LoginSessionService.Changed += OnLoginChanged;
+        Unloaded += (_, _) => LoginSessionService.Changed -= OnLoginChanged;
         Loaded += (_, _) => {
             PageAnimationService.FadeIn(this);
             PCL.App.Controls.SettingService.BindAll(this);
@@ -135,6 +137,13 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
     private static string GetOfflineName() {
         var name = Environment.UserName;
         return string.IsNullOrWhiteSpace(name) ? "Player" : name;
+    }
+
+    /// <summary>登录状态变化时刷新登录栏（可能来自其他登录页）。</summary>
+    private void OnLoginChanged(LoginProfile? profile) {
+        DispatcherService.Invoke(() => {
+            if (!_launching) RefreshPageState();
+        });
     }
 
     /// <summary>点击登录栏时弹出账号选择。</summary>

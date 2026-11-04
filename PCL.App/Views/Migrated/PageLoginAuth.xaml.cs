@@ -24,10 +24,10 @@ public partial class PageLoginAuth : System.Windows.Controls.Grid {
                     var server = AppServices.Settings.Get<string>("VersionServerAuthServer") ?? "";
                     if (string.IsNullOrWhiteSpace(server)) throw new InvalidOperationException("尚未配置登录服务器地址。");
                     var result = await new YggdrasilLoginService().LoginAsync(server, name, password);
-                    AppServices.CurrentLogin = new LoginProfile { Name = result.Name, Uuid = result.Uuid, AccessToken = result.AccessToken, UserType = "Auth" };
-                    System.Windows.MessageBox.Show("登录成功：" + result.Name, "登录", MessageBoxButton.OK, MessageBoxImage.Information);
+                    LoginSessionService.SetYggdrasil(result, "Auth");
+                    NotificationService.Info("登录成功：" + result.Name, "登录");
                 } catch (Exception ex) {
-                    System.Windows.MessageBox.Show("登录失败：" + ex.Message, "登录", MessageBoxButton.OK, MessageBoxImage.Error);
+                    NotificationService.Error(LoginErrorTranslator.Translate(ex), "登录");
                 } finally {
                     BtnLogin.IsEnabled = true;
                 }

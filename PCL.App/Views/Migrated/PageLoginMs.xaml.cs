@@ -1,4 +1,4 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 using System.Windows;
 using PCL.App.Services;
 using PCL.Core.Login;
@@ -19,7 +19,7 @@ public partial class PageLoginMs : System.Windows.Controls.StackPanel {
     private async Task LoginAsync() {
         var clientId = Environment.GetEnvironmentVariable("PCL_MS_CLIENT_ID") ?? "";
         if (string.IsNullOrWhiteSpace(clientId)) {
-            System.Windows.MessageBox.Show("未配置 PCL_MS_CLIENT_ID，无法使用微软登录。", "微软登录", MessageBoxButton.OK, MessageBoxImage.Warning);
+            NotificationService.Warning("未配置 PCL_MS_CLIENT_ID，无法使用微软登录。", "微软登录");
             return;
         }
         BtnLogin.IsEnabled = false;
@@ -45,18 +45,13 @@ public partial class PageLoginMs : System.Windows.Controls.StackPanel {
             var (xsts, uhs) = await service.AuthorizeXstsAsync(xbl);
             var minecraft = await service.LoginMinecraftAsync(xsts, uhs);
             var (uuid, name) = await service.GetProfileAsync(minecraft.AccessToken);
-            AppServices.CurrentLogin = new LoginProfile {
-                Name = name, Uuid = uuid, AccessToken = minecraft.AccessToken, UserType = "Microsoft"
-            };
-            System.Windows.MessageBox.Show("微软登录成功：" + name, "微软登录", MessageBoxButton.OK, MessageBoxImage.Information);
+            LoginSessionService.SetMicrosoft(name, uuid, minecraft.AccessToken);
+            NotificationService.Info("微软登录成功：" + name, "微软登录");
         } catch (Exception ex) {
-            System.Windows.MessageBox.Show("微软登录失败：" + ex.Message, "微软登录", MessageBoxButton.OK, MessageBoxImage.Error);
+            NotificationService.Error(LoginErrorTranslator.Translate(ex), "微软登录");
         } finally {
             BtnLogin.IsEnabled = true;
         }
     }
 
 }
-
-
-

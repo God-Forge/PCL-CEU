@@ -290,15 +290,15 @@ internal static class MinecraftInstancePageActions {
             LaunchLogService.WriteLine($"[启动] 版本：{GetDisplayName(instance)}");
             LaunchLogService.WriteLine($"[启动] 目录：{instanceFolder}");
             LaunchLogService.WriteLine($"[启动] Java：{java.JavaExe}");
-            var process = await Task.Run(() => LaunchService.Launch(
+            var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,
                 instance.Version.Folder,
                 instance.Version.JsonPath,
                 login,
                 java.JavaExe));
-            NotificationService.Info($"已启动 {GetDisplayName(instance)}（PID {process.Id}）。", "启动");
-            return process;
+            NotificationService.Info($"已启动 {GetDisplayName(instance)}（PID {session.Process.Id}）。", "启动");
+            return session.Process;
         } catch (Exception ex) {
             Logger.Error(ex, "启动 Minecraft 实例失败", LogBehavior.Toast);
             LaunchLogService.WriteLine("[启动] 失败：" + ex.Message);

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using PCL.App.Services;
@@ -40,14 +40,24 @@ public partial class HomeView : System.Windows.Controls.UserControl {
         }
         try {
             var login = AppServices.CurrentLogin ?? OfflineLoginService.Create(Environment.UserName);
-            var process = LaunchService.Launch(
+            var session = LaunchService.Launch(
                 instance.Folder.Path,
                 Path.Combine(instance.Folder.Versions, instance.Version.Folder),
                 instance.Version.Folder,
                 instance.Version.JsonPath,
                 login,
                 java.JavaExe);
+            var process = session.Process;
             StatusText.Text = $"已启动 {instance.Version.Id}，进程 {process.Id}，Java {java.Version}";
+            session.Watcher.StateChanged += (_, state) => DispatcherService.Invoke(() => {
+                StatusText.Text = state switch {
+                    MinecraftGameState.Loading => $"正在启动 {instance.Version.Id}……",
+                    MinecraftGameState.Running => $"{instance.Version.Id} 正在运行（PID {process.Id}）",
+                    MinecraftGameState.Crashed => $"{instance.Version.Id} 已崩溃，请查看日志",
+                    MinecraftGameState.Canceled => $"已取消启动 {instance.Version.Id}",
+                    _ => $"游戏已退出，退出码 {SafeExitCode(process)}"
+                };
+            });
             await Task.Delay(1500);
             if (process.HasExited) {
                 System.Windows.MessageBox.Show($"游戏进程已退出，退出码 {process.ExitCode}。请查看日志以获取详细原因。", "启动", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -62,6 +72,14 @@ public partial class HomeView : System.Windows.Controls.UserControl {
             FileName = AppServices.Paths.Base,
             UseShellExecute = true
         });
+    }
+
+    private static object SafeExitCode(System.Diagnostics.Process process) {
+        try {
+            return process.HasExited ? process.ExitCode : "未知";
+        } catch (InvalidOperationException) {
+            return "未知";
+        }
     }
 
     private void Refresh() {

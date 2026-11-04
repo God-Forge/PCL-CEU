@@ -15,6 +15,10 @@ public sealed class LauncherProfilesResult {
 /// </summary>
 public static class LauncherProfilesService {
 
+    static LauncherProfilesService() {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     public static void EnsureCreated(string mcFolder) {
         var path = Path.Combine(mcFolder, "launcher_profiles.json");
         if (File.Exists(path)) return;
@@ -85,3 +89,4 @@ public static class LauncherProfilesService {
     }
 
 }
+

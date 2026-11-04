@@ -48,4 +48,52 @@ public sealed class VanillaInstallService {
         return versionFolder;
     }
 
+    public async Task<string> RepairAsync(
+        string mcFolder,
+        string instanceFolder,
+        string versionId,
+        IProgress<NetLoaderProgress>? progress = null,
+        CancellationToken cancellationToken = default) {
+        var jsonPath = System.IO.Path.Combine(instanceFolder, versionId + ".json");
+        if (!File.Exists(jsonPath)) {
+            jsonPath = Directory.EnumerateFiles(instanceFolder, "*.json", SearchOption.TopDirectoryOnly).FirstOrDefault()
+                       ?? throw new FileNotFoundException("实例缺少版本 JSON。", jsonPath);
+        }
+
+        var versionJson = JObject.Parse(File.ReadAllText(jsonPath));
+        var assetIndexJson = "{}";
+        var assetIndex = versionJson["assetIndex"];
+        var assetIndexId = assetIndex?["id"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(assetIndexId)) {
+            var localIndex = System.IO.Path.Combine(mcFolder, "assets", "indexes", assetIndexId + ".json");
+            if (File.Exists(localIndex)) {
+                assetIndexJson = File.ReadAllText(localIndex);
+            } else {
+                var assetIndexUrl = assetIndex?["url"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(assetIndexUrl)) {
+                    assetIndexJson = await _fetcher.GetStringAsync(assetIndexUrl!, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
+        var planned = VanillaInstallPlanner.Plan(versionJson, mcFolder, assetIndexJson);
+        var missing = planned.Where(task => !IsSatisfied(task)).ToList();
+        if (missing.Count == 0) return "基础文件完整，无需修复。";
+
+        var result = await _loader.DownloadAsync(missing, progress, maxConcurrency: 8, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        if (!result.Success) {
+            var error = result.Files.FirstOrDefault(file => file.State == NetFileState.Failed)?.Error;
+            throw new InvalidOperationException($"修复下载失败，仍有 {result.Files.Count(file => file.State != NetFileState.Finished)} 个文件未完成。", error);
+        }
+
+        return $"修复完成：检查 {planned.Count} 个文件，补全 {missing.Count} 个。";
+    }
+
+    private static bool IsSatisfied(NetFileTask task) {
+        if (!File.Exists(task.TargetPath)) return false;
+        if (task.MinSize is > 0 && new FileInfo(task.TargetPath).Length < task.MinSize.Value) return false;
+        return true;
+    }
+
 }

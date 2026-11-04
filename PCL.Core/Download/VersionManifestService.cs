@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PCL.Core.Net;
 
 namespace PCL.Core.Download;
@@ -17,6 +17,25 @@ public sealed class VersionManifestService {
 
     public VersionManifestService(IStringFetcher fetcher) {
         _fetcher = fetcher;
+    }
+
+    public async Task<IReadOnlyList<(string Id, string Type, string Url)>> GetVersionsAsync(CancellationToken cancellationToken = default) {
+        Exception? lastError = null;
+        foreach (var manifestUrl in ManifestUrls) {
+            try {
+                var manifest = JObject.Parse(await _fetcher.GetStringAsync(manifestUrl, cancellationToken).ConfigureAwait(false));
+                var versions = manifest["versions"]?.OfType<JObject>()
+                    .Select(item => (Id: item["id"]?.ToString() ?? "", Type: item["type"]?.ToString() ?? "", Url: item["url"]?.ToString() ?? ""))
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Id))
+                    .ToList();
+                if (versions is { Count: > 0 }) return versions!;
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception ex) {
+                lastError = ex;
+            }
+        }
+        throw new InvalidOperationException("未能获取 Minecraft 版本列表。", lastError);
     }
 
     public async Task<string> GetVersionJsonAsync(string versionId, CancellationToken cancellationToken = default) {
@@ -52,3 +71,4 @@ public sealed class VersionManifestService {
     }
 
 }
+

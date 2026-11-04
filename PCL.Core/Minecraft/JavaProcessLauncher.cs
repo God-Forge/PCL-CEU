@@ -13,7 +13,7 @@ public static class JavaProcessLauncher {
         string javaFolder,
         string mcFolder,
         string workingDirectory,
-        string arguments,
+        IEnumerable<string> arguments,
         Encoding encoding) {
         var startInfo = new ProcessStartInfo(javaExePath);
         var path = startInfo.EnvironmentVariables["Path"] ?? "";
@@ -28,7 +28,9 @@ public static class JavaProcessLauncher {
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
         startInfo.CreateNoWindow = true;
-        startInfo.Arguments = arguments;
+        foreach (var argument in arguments) {
+            startInfo.ArgumentList.Add(argument);
+        }
         return startInfo;
     }
 

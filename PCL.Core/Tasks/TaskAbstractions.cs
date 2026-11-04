@@ -149,6 +149,10 @@ public abstract class TaskBase : ITaskControl, IDisposable {
 /// </summary>
 public sealed class ProgressTask : TaskBase {
 
+    private sealed class DirectProgress(Action<double> report) : IProgress<double> {
+        public void Report(double value) => report(value);
+    }
+
     private readonly Func<CancellationToken, IProgress<double>, Task>? _action;
 
     public ProgressTask() { }
@@ -164,7 +168,7 @@ public sealed class ProgressTask : TaskBase {
     public void MarkCanceled() => SetState(TaskState.Canceled);
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken) {
-        return _action is null ? Task.CompletedTask : _action(cancellationToken, new Progress<double>(Report));
+        return _action is null ? Task.CompletedTask : _action(cancellationToken, new DirectProgress(Report));
     }
 
 }

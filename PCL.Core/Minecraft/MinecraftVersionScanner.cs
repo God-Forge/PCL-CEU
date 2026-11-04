@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 
 namespace PCL.Core.Minecraft;
 
@@ -14,6 +14,7 @@ public sealed class MinecraftVersionInfo {
     public string Jar { get; init; } = "";
     public string AssetIndex { get; init; } = "";
     public int LibrariesCount { get; init; }
+    public int JavaVersionMajor { get; init; }
     public string? Error { get; init; }
 
 }
@@ -45,19 +46,21 @@ public static class MinecraftVersionScanner {
 
         try {
             var json = JObject.Parse(File.ReadAllText(jsonPath));
+            var releaseTime = DateTime.TryParse(json["releaseTime"]?.ToString(), null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsedRelease)
+                ? parsedRelease.ToLocalTime()
+                : (DateTime?)null;
             return new MinecraftVersionInfo {
                 Folder = folder,
                 JsonPath = jsonPath,
                 Id = json["id"]?.ToString() ?? folder,
                 InheritsFrom = json["inheritsFrom"]?.ToString() ?? "",
                 Type = json["type"]?.ToString() ?? "",
-                ReleaseTime = DateTime.TryParse(json["releaseTime"]?.ToString(), null, System.Globalization.DateTimeStyles.RoundtripKind, out var time)
-                    ? time.ToLocalTime()
-                    : null,
+                ReleaseTime = releaseTime,
                 MainClass = json["mainClass"]?.ToString() ?? "",
                 Jar = json["jar"]?.ToString() ?? "",
                 AssetIndex = json["assetIndex"]?["id"]?.ToString() ?? "",
-                LibrariesCount = (json["libraries"] as JArray)?.Count ?? 0
+                LibrariesCount = (json["libraries"] as JArray)?.Count ?? 0,
+                JavaVersionMajor = ResolveJavaMajor(versionFolder, json)
             };
         } catch (Exception ex) {
             return new MinecraftVersionInfo {
@@ -68,4 +71,26 @@ public static class MinecraftVersionScanner {
         }
     }
 
+    private static int ResolveJavaMajor(string versionFolder, JObject json) {
+        var major = json["javaVersion"]?["majorVersion"]?.ToObject<int>() ?? 0;
+        if (major > 0) return major;
+        var parent = json["inheritsFrom"]?.ToString();
+        var guard = 0;
+        while (!string.IsNullOrWhiteSpace(parent) && guard++ < 16) {
+            var parentJsonPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(versionFolder)!, parent!, parent! + ".json");
+            if (!File.Exists(parentJsonPath)) break;
+            var parentJson = JObject.Parse(File.ReadAllText(parentJsonPath));
+            major = parentJson["javaVersion"]?["majorVersion"]?.ToObject<int>() ?? 0;
+            if (major > 0) return major;
+            parent = parentJson["inheritsFrom"]?.ToString();
+        }
+        var releaseTime = DateTime.TryParse(json["releaseTime"]?.ToString(), null, System.Globalization.DateTimeStyles.RoundtripKind, out var time)
+            ? time.ToLocalTime()
+            : (DateTime?)null;
+        return releaseTime is not null && releaseTime < new DateTime(2021, 6, 1) ? 8 : 17;
+    }
+
 }
+
+
+

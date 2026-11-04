@@ -15,7 +15,7 @@ public static class LaunchArgumentFormatter {
         return argument;
     }
 
-    public static List<string> Format(
+    public static List<string> Replace(
         IEnumerable<string> arguments,
         IEnumerable<(string Key, string Value)> replacements) {
         var replacementList = replacements.ToList();
@@ -25,9 +25,19 @@ public static class LaunchArgumentFormatter {
             foreach (var (key, replacement) in replacementList) {
                 value = value.Replace(key, replacement);
             }
-            result.Add(FormatSingle(value));
+            result.Add(value);
         }
         return result;
+    }
+
+    public static List<string> Format(
+        IEnumerable<string> arguments,
+        IEnumerable<(string Key, string Value)> replacements) {
+        return Replace(arguments, replacements).Select(FormatSingle).ToList();
+    }
+
+    public static string JoinForDisplay(IEnumerable<string> arguments) {
+        return string.Join(" ", arguments.Select(FormatSingle));
     }
 
 }

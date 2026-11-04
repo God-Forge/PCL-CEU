@@ -12,6 +12,9 @@ public sealed class LaunchTokenContext {
     public string AuthPlayerName { get; init; } = "";
     public string AuthUuid { get; init; } = "";
     public string AccessToken { get; init; } = "";
+    public string ClientId { get; init; } = "";
+    public string Xuid { get; init; } = "";
+    public string UserType { get; init; } = "";
     public string PrimaryJar { get; init; } = "";
     public string GameAssets { get; init; } = "";
     public string AssetsIndexName { get; init; } = "";
@@ -45,7 +48,9 @@ public static class LaunchTokenBuilder {
             ("${auth_access_token}", context.AccessToken),
             ("${access_token}", context.AccessToken),
             ("${auth_session}", context.AccessToken),
-            ("${user_type}", "msa"),
+            ("${clientid}", context.ClientId),
+            ("${auth_xuid}", context.Xuid),
+            ("${user_type}", string.IsNullOrEmpty(context.UserType) ? "msa" : context.UserType),
             ("${primary_jar}", context.PrimaryJar),
             ("${game_assets}", context.GameAssets),
             ("${assets_index_name}", context.AssetsIndexName)

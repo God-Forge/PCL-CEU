@@ -12,11 +12,14 @@ public class JavaProcessLauncherTests {
             @"C:\java\bin",
             @"C:\mc",
             @"C:\mc\versions\1.20.1",
-            "-cp a.jar Main",
+            ["-cp", "a.jar", "Main"],
             Encoding.UTF8);
 
         await Assert.That(info.FileName).IsEqualTo(@"C:\java\bin\java.exe");
-        await Assert.That(info.Arguments).IsEqualTo("-cp a.jar Main");
+        await Assert.That(info.ArgumentList.Count).IsEqualTo(3);
+        await Assert.That(info.ArgumentList[0]).IsEqualTo("-cp");
+        await Assert.That(info.ArgumentList[1]).IsEqualTo("a.jar");
+        await Assert.That(info.ArgumentList[2]).IsEqualTo("Main");
         await Assert.That(info.WorkingDirectory).IsEqualTo(@"C:\mc\versions\1.20.1");
         await Assert.That(info.UseShellExecute).IsFalse();
         await Assert.That(info.RedirectStandardOutput).IsTrue();

@@ -1,6 +1,6 @@
-﻿using PCL.App.Controls;
+using PCL.App.Controls;
 using PCL.App.Services;
-using PCL.Core.Net;
+using PCL.Core.Resources;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -47,25 +47,38 @@ public partial class PageDownloadCompDetail : PCL.App.Controls.MyPageRight {
         if (string.IsNullOrWhiteSpace(query)) return false;
         try {
             var type = string.IsNullOrWhiteSpace(projectType) ? "mod" : projectType!.Trim();
-            var projects = await new ModrinthSearchService().SearchAsync(query!.Trim(), type, 0, 1);
-            if (projects.Count == 0) {
+            var kind = ParseKind(type);
+            var result = await new ModrinthResourceService().SearchAsync(new ResourceSearchQuery {
+                Text = query!.Trim(),
+                Kind = kind,
+                Limit = 1
+            });
+            if (result.Projects.Count == 0) {
                 NotificationService.Info("没有找到匹配的项目。", "项目详情");
                 return false;
             }
-            var project = projects[0];
+            var project = result.Projects[0];
             SetProject(
                 project.Title,
                 project.Description,
-                "https://modrinth.com/" + project.ProjectType + "/" + project.Slug,
+                project.ProjectUrl,
                 null,
                 project.Slug,
-                project.ProjectType);
+                type);
             return true;
         } catch (Exception ex) {
             NotificationService.Warning("加载项目详情失败：" + ex.Message, "项目详情");
             return false;
         }
     }
+
+    private static ResourceKind ParseKind(string type) => type.ToLowerInvariant() switch {
+        "resourcepack" => ResourceKind.ResourcePack,
+        "shader" => ResourceKind.ShaderPack,
+        "datapack" => ResourceKind.DataPack,
+        "modpack" => ResourceKind.Modpack,
+        _ => ResourceKind.Mod
+    };
 
     public void RefreshDisplay() {
         if (!Dispatcher.CheckAccess()) {

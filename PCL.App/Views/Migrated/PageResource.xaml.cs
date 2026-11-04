@@ -1,7 +1,7 @@
-﻿using PCL.App.Controls;
+using PCL.App.Controls;
 using System.Windows;
 using PCL.App.Services;
-using PCL.Core.Net;
+using PCL.Core.Resources;
 
 namespace PCL.App.Views.Migrated;
 
@@ -13,6 +13,7 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
 
     private int _offset;
     private int _lastCount;
+    private readonly ResourceSearchService _search = ResourceSearchService.CreateDefault();
 
     public PageResource() {
         InitializeComponent();
@@ -29,12 +30,12 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
         };
     }
 
-    private string ProjectType => PageType switch {
-        "ResourcePack" => "resourcepack",
-        "Shader" => "shader",
-        "DataPack" => "datapack",
-        "ModPack" => "modpack",
-        _ => "mod"
+    private ResourceKind Kind => PageType switch {
+        "ResourcePack" => ResourceKind.ResourcePack,
+        "Shader" => ResourceKind.ShaderPack,
+        "DataPack" => ResourceKind.DataPack,
+        "ModPack" => ResourceKind.Modpack,
+        _ => ResourceKind.Mod
     };
 
     private async Task RunSearchAsync(int offset) {
@@ -43,7 +44,13 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
         PanContent.Visibility = Visibility.Collapsed;
         HintError.Visibility = Visibility.Collapsed;
         try {
-            var projects = await new ModrinthSearchService().SearchAsync(TextSearchName.Text.Trim(), ProjectType, _offset);
+            var result = await _search.SearchAsync(new ResourceSearchQuery {
+                Text = TextSearchName.Text.Trim(),
+                Kind = Kind,
+                Offset = _offset,
+                Limit = 20
+            });
+            var projects = result.Projects;
             _lastCount = projects.Count;
             PanProjects.Children.Clear();
             foreach (var project in projects) {
@@ -56,7 +63,7 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
                     TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 4)
                 });
                 panel.Children.Add(new System.Windows.Controls.TextBlock {
-                    Text = $"{project.Author} · {project.Downloads:N0} 次下载",
+                    Text = $"{project.Author} · {project.Downloads:N0} 次下载 · {project.Source}",
                     FontSize = 11, Foreground = System.Windows.Media.Brushes.Gray
                 });
                 var open = new PCL.App.Controls.MyButton {
@@ -64,10 +71,14 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
                     Margin = new Thickness(0, 8, 0, 0)
                 };
-                open.Click += (_, _) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
-                    FileName = $"https://modrinth.com/{ProjectType}/{project.Slug}",
-                    UseShellExecute = true
-                });
+                var projectUrl = project.ProjectUrl;
+                open.Click += (_, _) => {
+                    if (string.IsNullOrEmpty(projectUrl)) return;
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+                        FileName = projectUrl,
+                        UseShellExecute = true
+                    });
+                };
                 panel.Children.Add(open);
                 PanProjects.Children.Add(new System.Windows.Controls.Border {
                     Background = System.Windows.Media.Brushes.White,
@@ -83,7 +94,12 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
             PanLoad.Visibility = Visibility.Collapsed;
             PanContent.Visibility = Visibility.Visible;
             if (projects.Count == 0) {
-                HintError.Text = "没有找到匹配的项目。";
+                HintError.Text = "没有找到匹配的项目。"
+                                 + (result.HasFailure ? Environment.NewLine + "部分来源不可用：" + string.Join("；", result.Failures) : "");
+                HintError.Theme = "Yellow";
+                HintError.Visibility = Visibility.Visible;
+            } else if (result.HasFailure) {
+                HintError.Text = "部分来源不可用：" + string.Join("；", result.Failures);
                 HintError.Theme = "Yellow";
                 HintError.Visibility = Visibility.Visible;
             }

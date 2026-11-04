@@ -8,6 +8,12 @@ namespace PCL.Core.Net;
 /// </summary>
 public interface IStringFetcher {
     Task<string> GetStringAsync(string url, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 带请求头的取字符串。默认实现忽略请求头，仅实现单参数版本即可。
+    /// </summary>
+    Task<string> GetStringAsync(string url, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+        => GetStringAsync(url, cancellationToken);
 }
 
 /// <summary>
@@ -29,6 +35,16 @@ public sealed class HttpStringFetcher : IStringFetcher, IDisposable {
 
     public async Task<string> GetStringAsync(string url, CancellationToken cancellationToken = default) {
         using var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+    }
+
+    public async Task<string> GetStringAsync(string url, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        foreach (var (key, value) in headers) {
+            request.Headers.TryAddWithoutValidation(key, value);
+        }
+        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
     }

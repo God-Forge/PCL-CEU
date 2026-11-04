@@ -47,6 +47,7 @@ public partial class PageLoginMs : System.Windows.Controls.StackPanel {
             var (uuid, name) = await service.GetProfileAsync(minecraft.AccessToken);
             LoginSessionService.SetMicrosoft(name, uuid, minecraft.AccessToken);
             NotificationService.Info("微软登录成功：" + name, "微软登录");
+            NavigationService.NavigateHome();
         } catch (Exception ex) {
             NotificationService.Error(LoginErrorTranslator.Translate(ex), "微软登录");
         } finally {

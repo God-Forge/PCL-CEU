@@ -26,6 +26,7 @@ public partial class PageLoginAuth : System.Windows.Controls.Grid {
                     var result = await new YggdrasilLoginService().LoginAsync(server, name, password);
                     LoginSessionService.SetYggdrasil(result, "Auth");
                     NotificationService.Info("登录成功：" + result.Name, "登录");
+                    NavigationService.NavigateHome();
                 } catch (Exception ex) {
                     NotificationService.Error(LoginErrorTranslator.Translate(ex), "登录");
                 } finally {

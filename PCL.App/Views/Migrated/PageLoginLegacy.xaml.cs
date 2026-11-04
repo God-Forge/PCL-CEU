@@ -25,6 +25,7 @@ public partial class PageLoginLegacy : System.Windows.Controls.Grid {
                 try {
                     LoginSessionService.SetOffline(name);
                     NotificationService.Info($"离线登录成功：{name}（UUID：{AppServices.CurrentLogin?.Uuid}）", "离线登录");
+                    NavigationService.NavigateHome();
                 } catch (Exception ex) {
                     NotificationService.Error(LoginErrorTranslator.Translate(ex), "离线登录");
                 }

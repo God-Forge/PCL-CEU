@@ -19,6 +19,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- 仅托盘需要 WinForms；移除以避免与 WPF 的 Panel/Button/Application 等类型二义 -->
+        <Using Remove="System.Windows.Forms" />
+        <Using Remove="System.Drawing" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
     </ItemGroup>
 

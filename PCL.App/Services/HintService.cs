@@ -16,10 +16,10 @@ public static class HintService {
     private static readonly Dictionary<HintEntry, Border> Controls = new();
     private static readonly Dictionary<HintEntry, CancellationTokenSource> Lifetimes = new();
 
-    private static System.Windows.Controls.Panel? _panel;
+    private static Panel? _panel;
 
     /// <summary>绑定提示面板，通常在主窗口构造时调用。</summary>
-    public static void Initialize(System.Windows.Controls.Panel panel) {
+    public static void Initialize(Panel panel) {
         _panel = panel ?? throw new ArgumentNullException(nameof(panel));
     }
 
@@ -46,8 +46,8 @@ public static class HintService {
 
     private static Border CreateBorder(HintEntry entry) {
         var brush = new LinearGradientBrush {
-            StartPoint = new System.Windows.Point(0, 0),
-            EndPoint = new System.Windows.Point(1, 0),
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(1, 0),
             GradientStops = {
                 new GradientStop(KindColor(entry.Kind), 0),
                 new GradientStop(KindColor(entry.Kind, 0.15), 1)
@@ -61,7 +61,7 @@ public static class HintService {
             Opacity = 0,
             Child = new TextBlock {
                 Text = entry.Text,
-                Foreground = System.Windows.Media.Brushes.White,
+                Foreground = Brushes.White,
                 FontSize = 13,
                 Margin = new Thickness(16, 5, 12, 5),
                 TextTrimming = TextTrimming.CharacterEllipsis
@@ -93,14 +93,14 @@ public static class HintService {
         Queue.Remove(entry);
     }
 
-    private static System.Windows.Media.Color KindColor(HintKind kind, double lighten = 0) {
+    private static Color KindColor(HintKind kind, double lighten = 0) {
         var color = kind switch {
-            HintKind.Green => System.Windows.Media.Color.FromRgb(29, 160, 29),
-            HintKind.Red => System.Windows.Media.Color.FromRgb(255, 43, 0),
-            _ => System.Windows.Media.Color.FromRgb(10, 142, 252)
+            HintKind.Green => Color.FromRgb(29, 160, 29),
+            HintKind.Red => Color.FromRgb(255, 43, 0),
+            _ => Color.FromRgb(10, 142, 252)
         };
         if (lighten <= 0) return color;
-        return System.Windows.Media.Color.FromRgb(
+        return Color.FromRgb(
             (byte)Math.Min(255, color.R + (255 - color.R) * lighten),
             (byte)Math.Min(255, color.G + (255 - color.G) * lighten),
             (byte)Math.Min(255, color.B + (255 - color.B) * lighten));

@@ -20,8 +20,8 @@ public sealed class DialogWindow : Window {
         Visibility = Visibility.Collapsed
     };
 
-    private System.Windows.Controls.TextBox? _input;
-    private System.Windows.Controls.ListBox? _selection;
+    private TextBox? _input;
+    private ListBox? _selection;
 
     public DialogWindow(DialogRequest request) {
         _request = request ?? throw new ArgumentNullException(nameof(request));
@@ -38,7 +38,7 @@ public sealed class DialogWindow : Window {
     }
 
     /// <summary>对话框结果，关闭前为默认值。</summary>
-    public PCL.Core.Ui.DialogResult Result { get; private set; } = new();
+    public DialogResult Result { get; private set; } = new();
 
     private UIElement BuildContent() {
         var panel = new StackPanel { Margin = new Thickness(20) };
@@ -75,7 +75,7 @@ public sealed class DialogWindow : Window {
                 Margin = new Thickness(0, 10, 0, 4)
             });
         }
-        _input = new System.Windows.Controls.TextBox {
+        _input = new TextBox {
             Text = _request.DefaultInput,
             Height = 30,
             Margin = new Thickness(0, 10, 0, 0),
@@ -89,7 +89,7 @@ public sealed class DialogWindow : Window {
     }
 
     private void BuildSelection(StackPanel panel) {
-        _selection = new System.Windows.Controls.ListBox { Margin = new Thickness(0, 10, 0, 0), MaxHeight = 260 };
+        _selection = new ListBox { Margin = new Thickness(0, 10, 0, 0), MaxHeight = 260 };
         foreach (var option in _request.Options) {
             _selection.Items.Add(option);
         }
@@ -100,13 +100,13 @@ public sealed class DialogWindow : Window {
     private UIElement BuildButtons() {
         var buttons = _request.Buttons;
         var row = new StackPanel {
-            Orientation = System.Windows.Controls.Orientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 18, 0, 0)
         };
         for (var i = 0; i < buttons.Count; i++) {
             var index = i + 1;
-            var button = new System.Windows.Controls.Button {
+            var button = new Button {
                 Content = buttons[i],
                 Width = 96,
                 Height = 32,
@@ -129,7 +129,7 @@ public sealed class DialogWindow : Window {
                 _errorText.Visibility = Visibility.Visible;
                 return;
             }
-            Result = new PCL.Core.Ui.DialogResult { ButtonIndex = 1, Input = text };
+            Result = new DialogResult { ButtonIndex = 1, Input = text };
         } else if (buttonIndex == 1 && _request.Kind == DialogKind.Select) {
             var index = _selection?.SelectedIndex ?? -1;
             if (index < 0) {
@@ -137,7 +137,7 @@ public sealed class DialogWindow : Window {
                 _errorText.Visibility = Visibility.Visible;
                 return;
             }
-            Result = new PCL.Core.Ui.DialogResult { ButtonIndex = 1, Selection = index };
+            Result = new DialogResult { ButtonIndex = 1, Selection = index };
         } else {
             Result = PCL.Core.Ui.DialogResult.Cancel(buttonIndex);
         }

@@ -15,9 +15,9 @@ public static class DialogService {
     public static bool IsBusy => Queue.IsBusy;
 
     /// <summary>显示一个对话框并等待结果。</summary>
-    public static PCL.Core.Ui.DialogResult Show(DialogRequest request) {
+    public static DialogResult Show(DialogRequest request) {
         ArgumentNullException.ThrowIfNull(request);
-        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher is null || dispatcher.CheckAccess()) return ShowCore(request);
         return dispatcher.Invoke(() => ShowCore(request));
     }
@@ -87,11 +87,11 @@ public static class DialogService {
         return result.IsPrimaryButton ? result.Selection : null;
     }
 
-    private static PCL.Core.Ui.DialogResult ShowCore(DialogRequest request) {
+    private static DialogResult ShowCore(DialogRequest request) {
         Queue.Enqueue(request);
         var current = Queue.Dequeue() ?? request;
         var window = new Dialogs.DialogWindow(current);
-        if (System.Windows.Application.Current?.MainWindow is { IsLoaded: true } owner) {
+        if (Application.Current?.MainWindow is { IsLoaded: true } owner) {
             window.Owner = owner;
         }
         try {

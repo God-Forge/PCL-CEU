@@ -317,11 +317,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
 
     private void CheckInstance() {
         var result = InstanceCheckService.Check(InstancePath, MinecraftPath);
-        var lines = result.Issues.Select(issue => $"[{issue.Severity}] {issue.Message}")
-            .Concat(result.ModIssues.Select(issue => $"[{issue.Severity}] {issue.FileName}: {issue.Message}"))
-            .ToList();
-        if (lines.Count == 0) lines.Add("未发现明显问题。");
-        System.Windows.MessageBox.Show(string.Join("\r\n", lines), "实例体检", MessageBoxButton.OK,
+        System.Windows.MessageBox.Show(InstanceReportFormatter.FormatCheck(result), "实例体检", MessageBoxButton.OK,
             result.HasErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
     }
 
@@ -336,10 +332,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
 
     private void CheckMods() {
         var result = ModScanner.Scan(Path.Combine(InstancePath, "mods"));
-        var lines = new List<string> { $"Mod：{result.Mods.Count} 个" };
-        lines.AddRange(result.Issues.Select(issue => $"[{issue.Severity}] {issue.FileName}: {issue.Message}"));
-        if (result.Issues.Count == 0) lines.Add("未发现 Mod 问题。");
-        System.Windows.MessageBox.Show(string.Join("\r\n", lines), "Mod 检查", MessageBoxButton.OK,
+        System.Windows.MessageBox.Show(InstanceReportFormatter.FormatModScan(result), "Mod 检查", MessageBoxButton.OK,
             result.HasErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
     }
 

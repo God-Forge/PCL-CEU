@@ -32,6 +32,13 @@ public sealed class ModpackManifest {
     public string Name { get; init; } = "";
     public string Version { get; init; } = "";
     public string? MinecraftVersion { get; init; }
+
+    /// <summary>清单声明的加载器（Fabric / Forge / NeoForge / Quilt），未知为 <c>null</c>。</summary>
+    public string? Loader { get; init; }
+
+    /// <summary>清单声明的加载器版本。</summary>
+    public string? LoaderVersion { get; init; }
+
     public string OverridesFolder { get; init; } = "overrides";
     public IReadOnlyList<ModpackFileEntry> Files { get; init; } = [];
 
@@ -57,22 +64,28 @@ public static class ModpackManifestParser {
         if (json["files"] is not JArray files) return null;
         // Modrinth：带 formatVersion 且 game 为 minecraft
         if (json["formatVersion"] is not null && json["game"]?.ToString() == "minecraft") {
+            var (loader, loaderVersion) = ParseModrinthLoader(json["dependencies"] as JObject);
             return new ModpackManifest {
                 Format = ModpackFormat.Modrinth,
                 Name = json["name"]?.ToString() ?? "",
                 Version = json["versionId"]?.ToString() ?? "",
                 MinecraftVersion = json["dependencies"]?["minecraft"]?.ToString(),
+                Loader = loader,
+                LoaderVersion = loaderVersion,
                 OverridesFolder = "overrides",
                 Files = files.OfType<JObject>().Select(ParseModrinthFile).Where(file => file is not null).ToList()!
             };
         }
         // CurseForge：带 manifestType
         if (json["manifestType"]?.ToString() == "minecraftModpack") {
+            var (loader, loaderVersion) = ParseCurseForgeLoader(json["minecraft"]?["modLoaders"] as JArray);
             return new ModpackManifest {
                 Format = ModpackFormat.CurseForge,
                 Name = json["name"]?.ToString() ?? "",
                 Version = json["version"]?.ToString() ?? "",
                 MinecraftVersion = json["minecraft"]?["version"]?.ToString(),
+                Loader = loader,
+                LoaderVersion = loaderVersion,
                 OverridesFolder = json["overrides"]?.ToString() ?? "overrides",
                 Files = files.OfType<JObject>().Select(file => new ModpackFileEntry {
                     Path = "",
@@ -81,6 +94,39 @@ public static class ModpackManifestParser {
             };
         }
         return null;
+    }
+
+    /// <summary>解析 Modrinth 清单里的加载器依赖。</summary>
+    private static (string? Loader, string? Version) ParseModrinthLoader(JObject? dependencies) {
+        if (dependencies is null) return (null, null);
+        foreach (var (key, name) in new[] {
+                     ("fabric-loader", "Fabric"), ("forge", "Forge"),
+                     ("neoforge", "NeoForge"), ("quilt-loader", "Quilt")
+                 }) {
+            if (dependencies[key] is { } value) return (name, value.ToString());
+        }
+        return (null, null);
+    }
+
+    /// <summary>解析 CurseForge 清单里的主加载器（取 primary 项）。</summary>
+    private static (string? Loader, string? Version) ParseCurseForgeLoader(JArray? loaders) {
+        if (loaders is null) return (null, null);
+        foreach (var loader in loaders.OfType<JObject>()) {
+            if (loader["primary"]?.ToObject<bool>() != true) continue;
+            var id = loader["id"]?.ToString() ?? "";
+            // 形如 forge-47.2.0 / fabric-0.15.0 / neoforge-20.4.1
+            var dash = id.IndexOf('-');
+            if (dash <= 0) return (null, null);
+            var name = id[..dash].ToLowerInvariant() switch {
+                "forge" => "Forge",
+                "fabric" => "Fabric",
+                "neoforge" => "NeoForge",
+                "quilt" => "Quilt",
+                _ => null
+            };
+            return (name, id[(dash + 1)..]);
+        }
+        return (null, null);
     }
 
     /// <summary>从整合包 zip 中读取清单，优先 Modrinth 格式。</summary>

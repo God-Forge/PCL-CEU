@@ -373,6 +373,17 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         if (files.Count == 0) return;
         var zip = files[0];
         var name = System.IO.Path.GetFileNameWithoutExtension(zip);
+        // 先预检：告诉用户会装什么、会不会覆盖已有实例
+        var preview = PCL.Core.Modpack.ModpackPreviewService.Preview(zip, AppServices.Paths.Versions, name);
+        if (!preview.Valid) {
+            NotificationService.Error(preview.Error ?? "整合包无效。", "导入整合包失败");
+            return;
+        }
+        var confirm = System.Windows.MessageBox.Show(
+            PCL.Core.Modpack.ModpackPreviewService.Format(preview) + "\r\n\r\n是否继续导入？",
+            "导入整合包", MessageBoxButton.YesNo,
+            preview.TargetExists ? MessageBoxImage.Warning : MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes) return;
         NotificationService.Info($"正在导入《{name}》，完成后会提示结果。", "导入整合包");
         try {
             var result = await new PCL.Core.Modpack.ModpackImportService()

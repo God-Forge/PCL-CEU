@@ -102,6 +102,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         BtnDiagnosticShare.Click += (_, _) => CopyDiagnostic();
         BtnCrashHistory.Click += (_, _) => ShowCrashHistory();
         BtnCrashAnalyze.Click += (_, _) => AnalyzeCrashLogs();
+        BtnCrashFixUndo.Click += (_, _) => UndoLastAutoFix();
         BtnImportModpack.Click += (_, _) => ImportModpack();
         BtnLogViewer.Click += (_, _) => ShowLatestLog();
         BtnCrashCompare.Click += (_, _) => CompareCrashReports();
@@ -403,6 +404,26 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         } catch (Exception ex) when (ex is not OutOfMemoryException) {
             Logger.Error(ex, "导入整合包失败");
             NotificationService.Error("导入失败：" + ex.Message, "导入整合包失败");
+        }
+    }
+
+    /// <summary>撤销上次启动失败时应用的一键修复（恢复实例 JVM 参数）。</summary>
+    private void UndoLastAutoFix() {
+        var record = PCL.Core.Minecraft.CrashFixUndoStore.Load(AppServices.Paths.Pcl);
+        if (record is null) {
+            NotificationService.Info("没有可撤销的修复记录。", "撤销修复");
+            return;
+        }
+        var (instancePath, previous) = record.Value;
+        try {
+            AppServices.Settings.Set(PCL.Core.Settings.InstanceSettingKeys.JvmArguments, previous, instancePath);
+            PCL.Core.Minecraft.CrashFixUndoStore.Clear(AppServices.Paths.Pcl);
+            var display = string.IsNullOrWhiteSpace(previous) ? "（空）" : previous;
+            Logger.Info($"[一键修复] 已撤销，{instancePath} 的 JVM 参数恢复为：{display}");
+            NotificationService.Info($"已恢复 JVM 参数为：{display}", "撤销修复");
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "撤销一键修复失败");
+            NotificationService.Error("撤销失败：" + ex.Message, "撤销修复");
         }
     }
 

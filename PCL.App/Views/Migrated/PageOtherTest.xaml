@@ -104,6 +104,7 @@
                         <local:MyButton x:Name="BtnResourceOpen" Text="打开资源包/光影目录" MinWidth="190" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnSpeedTest" Text="测试下载源" MinWidth="150" Height="35" Margin="0,0,10,10" />                        <local:MyButton x:Name="BtnCrashHistory" Text="崩溃历史" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnCrashAnalyze" Text="分析崩溃日志" MinWidth="150" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnCrashFixUndo" Text="撤销上次修复" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnImportModpack" Text="导入整合包" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnLogViewer" Text="查看最新日志" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnDiagnosticShare" Text="复制诊断摘要" MinWidth="170" Height="35" Margin="0,0,10,10" />

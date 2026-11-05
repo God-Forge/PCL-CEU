@@ -354,7 +354,39 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             LabLaunchingStage.Text = hint;
             LaunchLogService.WriteLine("[启动] 分析结果：" + hint);
         }
+        TryOfferAutoFix(instancePath);
         NotificationService.Error("启动失败：" + message, "启动");
+    }
+
+    /// <summary>启动失败后：分析日志，遇到可自动修复的问题时询问是否应用。</summary>
+    private void TryOfferAutoFix(string? instancePath) {
+        if (string.IsNullOrWhiteSpace(instancePath)) return;
+        try {
+            var report = PCL.Core.Minecraft.CrashAnalysisService.AnalyzeFiles(
+                PCL.Core.Minecraft.CrashAnalysisService.LocateCrashLogs(instancePath));
+            var actions = PCL.Core.Minecraft.CrashAutoFixPlanner.Plan(report);
+            if (!PCL.Core.Minecraft.CrashAutoFixPlanner.HasAutoApplicable(actions)) return;
+            var detail = string.Join("\r\n", actions
+                .Where(action => action.Kind == PCL.Core.Minecraft.CrashFixKind.AutoApplicable)
+                .Select(action => "· " + action.Description));
+            var confirm = System.Windows.MessageBox.Show(
+                $"检测到可以自动修复的问题：\r\n{detail}\r\n\r\n是否立即应用到当前实例？（可在百宝箱中撤销）",
+                "一键修复", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes) return;
+            var existing = AppServices.Settings.Get<string>(
+                PCL.Core.Settings.InstanceSettingKeys.JvmArguments, instancePath);
+            var merged = PCL.Core.Minecraft.CrashAutoFixPlanner.MergeArguments(existing, actions);
+            if (string.Equals(existing, merged, StringComparison.Ordinal)) {
+                NotificationService.Info("当前参数已包含所需修复，无需修改。", "一键修复");
+                return;
+            }
+            AppServices.Settings.Set(PCL.Core.Settings.InstanceSettingKeys.JvmArguments, merged, instancePath);
+            PCL.Core.Minecraft.CrashFixUndoStore.Save(instancePath, existing ?? "", AppServices.Paths.Pcl);
+            LaunchLogService.WriteLine($"[启动] 已应用一键修复：{merged}");
+            NotificationService.Info($"已应用修复，实例 JVM 参数已更新：{merged}", "一键修复");
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "应用一键修复失败");
+        }
     }
 
     private void OnProcessExited(Process process) {

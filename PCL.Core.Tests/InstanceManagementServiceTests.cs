@@ -1,3 +1,4 @@
+using System.Threading;
 using Newtonsoft.Json.Linq;
 using PCL.Core.Minecraft;
 
@@ -28,7 +29,7 @@ public class InstanceManagementServiceTests {
         var root = CreateInstance("Old");
         var versions = Path.GetDirectoryName(root)!;
         try {
-            var renamed = InstanceManagementService.Rename(root, "New");
+            var renamed = RenameWithRetry(root, "New");
 
             await Assert.That(Path.GetFileName(renamed)).IsEqualTo("New");
             await Assert.That(Directory.Exists(renamed)).IsTrue();
@@ -65,6 +66,21 @@ public class InstanceManagementServiceTests {
             await Assert.That(Directory.Exists(root)).IsTrue();
         } finally {
             if (Directory.Exists(versions)) Directory.Delete(versions, true);
+        }
+    }
+
+    /// <summary>
+    /// 重命名并对环境性的目录占用做重试。
+    /// Windows 上刚写入的文件可能被索引或扫描短暂持有，跟重命名逻辑本身无关，
+    /// 这里只对 <see cref="IOException"/> 重试；逻辑错误会一直失败而暴露。
+    /// </summary>
+    private static string RenameWithRetry(string source, string newName, int attempts = 4) {
+        for (var attempt = 1; ; attempt++) {
+            try {
+                return InstanceManagementService.Rename(source, newName);
+            } catch (IOException) when (attempt < attempts) {
+                Thread.Sleep(120 * attempt);
+            }
         }
     }
 

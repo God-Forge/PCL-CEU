@@ -17,6 +17,8 @@ public static class Program {
         AppServices.Initialize();
         var logPath = Path.Combine(AppServices.Paths.Logs, "PCL-CSharp.log");
         Logger.Instance = new FileLogger(logPath);
+        // 日志就绪后再跑设置键自检，确保结果能被记录下来
+        AppServices.VerifySettingKeys();
         Logger.Instance.MinLevel = LogLevel.Info;
         // 恢复上次的登录状态（需在日志初始化之后）
         LoginSessionService.Restore();

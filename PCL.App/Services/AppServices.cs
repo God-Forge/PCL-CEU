@@ -27,6 +27,21 @@ public static class AppServices {
         ? null
         : System.IO.Path.Combine(SelectedMinecraftFolder.Versions, SelectedInstanceName);
 
+    /// <summary>
+    /// 启动自检：确认所有实例级设置键没有被同名的全局注册覆盖。
+    /// 这类冲突会让读取时报「缺少实例路径」，必须在日志里留下痕迹。
+    /// 返回有问题的键名（为空表示通过）。
+    /// </summary>
+    public static IReadOnlyList<string> VerifySettingKeys() {
+        var problems = Settings.FindKeysNotInstanceScoped(PCL.Core.Settings.InstanceSettingKeys.All);
+        if (problems.Count > 0) {
+            Logger.Error("实例级设置键被注册成了全局：" + string.Join(", ", problems));
+        } else {
+            Logger.Info($"设置键自检通过：{PCL.Core.Settings.InstanceSettingKeys.All.Count} 个实例级键注册正常");
+        }
+        return problems;
+    }
+
     public static void Initialize() {
         Paths = new PclPathService(AppContext.BaseDirectory);
         Paths.EnsureDirectories();
@@ -57,10 +72,7 @@ public static class AppServices {
             Settings.Register(key, defaultValue, PCL.Core.Settings.SettingSource.Instance);
         }
         // 自检：实例键若被同名的全局注册覆盖，启动后读它会报「缺少实例路径」
-        var misregistered = Settings.FindKeysNotInstanceScoped(PCL.Core.Settings.InstanceSettingKeys.All);
-        if (misregistered.Count > 0) {
-            Logger.Error("实例级设置键被注册成了全局：" + string.Join(", ", misregistered));
-        }
+        // 自检改到 Logger 就绪后执行，见 Program.VerifySettingKeys
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);
         Settings.Register("UiMusicVolume", 60);

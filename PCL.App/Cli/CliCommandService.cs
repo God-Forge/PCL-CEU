@@ -135,7 +135,8 @@ public static class CliCommandService {
                     LaunchParameterService.ResolveWindowType(),
                     null,
                     LaunchParameterService.ResolveWindowTitle(location),
-                    LaunchParameterService.ResolveExtraJvmArguments(location));
+                    LaunchParameterService.ResolveExtraJvmArguments(location),
+                    LaunchParameterService.ResolveExtraGameArguments(location));
                 Console.WriteLine($"已启动 {location.Version.Id}，进程 {session.Process.Id}，Java {java.Version}");
                 return 0;
             case "--page-smoke":

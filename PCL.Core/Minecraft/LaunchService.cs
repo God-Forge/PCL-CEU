@@ -25,9 +25,10 @@ public static class LaunchService {
         int windowType = WindowSizeResolver.TypeDefault,
         GameProcessWatcherOptions? watcherOptions = null,
         string? windowTitle = null,
-        IReadOnlyList<string>? extraJvmArguments = null) {
+        IReadOnlyList<string>? extraJvmArguments = null,
+        IReadOnlyList<string>? extraGameArguments = null) {
         var json = JObject.Parse(File.ReadAllText(jsonPath));
-        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType, extraJvmArguments);
+        var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType, extraJvmArguments, extraGameArguments);
         var startInfo = JavaProcessLauncher.BuildStartInfo(
             javaExe,
             Path.GetDirectoryName(javaExe) ?? "",

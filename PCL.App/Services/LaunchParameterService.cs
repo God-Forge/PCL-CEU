@@ -54,6 +54,14 @@ public static class LaunchParameterService {
         return JavaArgumentParser.Split(raw);
     }
 
+    /// <summary>实例自定义游戏参数（VersionAdvanceGame），按空格切分。</summary>
+    public static IReadOnlyList<string> ResolveExtraGameArguments(MinecraftInstanceLocation? instance = null) {
+        if (instance is null) return [];
+        var raw = ResolveInstanceSetting(instance, InstanceSettingKeys.GameArguments, () => "");
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+        return JavaArgumentParser.Split(raw);
+    }
+
     /// <summary>实例的版本目录（实例级设置的存放位置）。</summary>
     public static string InstancePath(MinecraftInstanceLocation instance) =>
         Path.Combine(instance.Folder.Versions, instance.Version.Folder);

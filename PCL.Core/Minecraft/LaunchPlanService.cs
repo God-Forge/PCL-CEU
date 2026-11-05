@@ -29,7 +29,8 @@ public static class LaunchPlanService {
         int height = 480,
         int ramMb = 4096,
         int windowType = WindowSizeResolver.TypeDefault,
-        IReadOnlyList<string>? extraJvmArguments = null) {
+        IReadOnlyList<string>? extraJvmArguments = null,
+        IReadOnlyList<string>? extraGameArguments = null) {
         var mergedJson = ResolveVersionJson(mcFolder, versionName, versionJson);
         var libraries = LibraryResolver.Resolve(mergedJson, mcFolder).ToList();
         var classpathEntries = libraries.Select(library => new ClasspathEntry {
@@ -85,6 +86,10 @@ public static class LaunchPlanService {
         arguments.Add(mergedJson["mainClass"]?.ToString() ?? "net.minecraft.client.main.Main");
         arguments.AddRange(gameArguments);
         if (WindowSizeResolver.IsFullscreen(windowType)) arguments.Add("--fullscreen");
+        // 实例级自定义游戏参数（VB 的 VersionAdvanceGame），追加在游戏参数之后
+        if (extraGameArguments is not null) {
+            arguments.AddRange(extraGameArguments.Where(argument => !string.IsNullOrWhiteSpace(argument)));
+        }
 
         var context = new LaunchTokenContext {
             NativesDirectory = PathUtils.RemoveSlashSuffix(nativesFolder),

@@ -234,6 +234,7 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             var windowType = LaunchParameterService.ResolveWindowType();
             var windowTitle = LaunchParameterService.ResolveWindowTitle(instance);
             var extraJvm = LaunchParameterService.ResolveExtraJvmArguments(instance);
+            var extraGame = LaunchParameterService.ResolveExtraGameArguments(instance);
             var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,
@@ -247,7 +248,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
                 windowType,
                 null,
                 windowTitle,
-                extraJvm), cts.Token);
+                extraJvm,
+                extraGame), cts.Token);
             var process = session.Process;
             if (cts.IsCancellationRequested) {
                 TryKill(process);

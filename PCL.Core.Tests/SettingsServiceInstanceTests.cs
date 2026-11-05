@@ -113,7 +113,10 @@ public class SettingsServiceInstanceTests {
             InstanceSettingKeys.JavaSelect,
             "VersionRamType",
             "VersionArgumentIndieV2",
-            "VersionServerLogin"
+            "VersionServerLogin",
+            // 启动链路会读取的两项
+            InstanceSettingKeys.JvmArguments,
+            InstanceSettingKeys.GameArguments
         };
         foreach (var key in required) {
             await Assert.That(InstanceSettingKeys.IsInstanceLevel(key)).IsTrue();

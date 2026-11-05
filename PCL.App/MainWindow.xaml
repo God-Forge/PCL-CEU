@@ -38,6 +38,17 @@
                 <Button x:Name="NavHelp" Style="{StaticResource NavButton}" Content="帮助" Height="40" Margin="0,0,0,8" Click="NavHelp_Click" />
                 <Button x:Name="NavAbout" Style="{StaticResource NavButton}" Content="关于" Height="40" Margin="0,0,0,8" Click="NavAbout_Click" />
                 <TextBlock x:Name="VersionText" Foreground="#8FA3B8" FontSize="12" Margin="0,24,0,0" TextWrapping="Wrap" />
+                <Border x:Name="PanMusic" Margin="0,14,0,0" Padding="8,6" CornerRadius="6"
+                        Background="#2A3A50" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="MusicTitle" Foreground="#D6E4F5" FontSize="11"
+                                   TextTrimming="CharacterEllipsis" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button x:Name="BtnMusicToggle" Content="播放" FontSize="11" Padding="8,2" Width="56" />
+                            <Button x:Name="BtnMusicNext" Content="下一首" FontSize="11" Padding="8,2" Width="60" Margin="6,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Border>
 

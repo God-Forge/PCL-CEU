@@ -58,6 +58,7 @@ public static class Program {
         tray.Initialize(window);
         app.Exit += (_, _) => tray.Dispose();
         var music = CreateMusicPlayer();
+        AppServices.Music = music;
         app.Exit += (_, _) => music.Dispose();
         Logger.Info("进入消息循环");
         app.Run(window);
@@ -82,8 +83,7 @@ public static class Program {
                 return player;
             }
             player.Load(playlist);
-            Logger.Info($"已开始播放背景音乐，共 {playlist.AllFiles.Count} 首");
-        } catch (Exception ex) {
+            Logger.Info($"已开始播放背景音乐，共 {playlist.AllFiles.Count} 首");        } catch (Exception ex) {
             Logger.Warn(ex, "初始化背景音乐失败");
         }
         return player;

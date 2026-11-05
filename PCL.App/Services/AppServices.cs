@@ -19,6 +19,9 @@ public static class AppServices {
         MinecraftFolders.GetFolders().FirstOrDefault(folder => string.Equals(folder.Path, SelectedMinecraftPath, StringComparison.OrdinalIgnoreCase))
         ?? MinecraftFolders.Default;
     public static PCL.Core.Login.LoginProfile? CurrentLogin { get; set; }
+
+    /// <summary>背景音乐播放器，启动时创建，供界面控制。</summary>
+    public static PCL.App.Audio.MusicPlayerService? Music { get; set; }
     public static string? SelectedInstancePath => SelectedInstanceName is null
         ? null
         : System.IO.Path.Combine(SelectedMinecraftFolder.Versions, SelectedInstanceName);

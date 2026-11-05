@@ -5,6 +5,7 @@ using PCL.App.Services;
 using PCL.App.Views;
 using PCL.App.Views.Migrated;
 using PCL.Core.Import;
+using PCL.Core.Audio;
 
 namespace PCL.App;
 
@@ -19,9 +20,32 @@ public partial class MainWindow : Window {
         ShowView(new LaunchPageView());
         AllowDrop = true;
         Drop += OnFileDrop;
+        Loaded += (_, _) => InitializeMusic();
     }
 
     private void ShowView(UIElement view) => ContentHost.Content = view;
+
+    /// <summary>把背景音乐控制器接到侧栏（播放器由 Program 创建）。</summary>
+    private void InitializeMusic() {
+        var music = AppServices.Music;
+        if (music is null || !music.HasMusic) return;
+        PanMusic.Visibility = Visibility.Visible;
+        music.StateChanged += _ => Dispatcher.Invoke(UpdateMusicDisplay);
+        music.TrackChanged += _ => Dispatcher.Invoke(UpdateMusicDisplay);
+        BtnMusicToggle.Click += (_, _) => {
+            music.Toggle();
+            UpdateMusicDisplay();
+        };
+        BtnMusicNext.Click += (_, _) => music.Next();
+        UpdateMusicDisplay();
+    }
+
+    private void UpdateMusicDisplay() {
+        var music = AppServices.Music;
+        if (music is null) return;
+        MusicTitle.Text = MusicDisplayFormatter.FormatSummary(music.State, music.Current, music.HasMusic);
+        BtnMusicToggle.Content = MusicDisplayFormatter.FormatToggleText(music.State);
+    }
 
     /// <summary>处理从资源管理器拖入的文件：识别类型后引导或直接导入。</summary>
     private void OnFileDrop(object sender, DragEventArgs e) {

@@ -45,6 +45,8 @@ public static class AppServices {
         Settings.Register("VersionAdvanceJvm", "");
         Settings.Register("LaunchArgumentVisible", 5);
         Settings.Register("VersionArgumentJavaV2", 0);
+        // 下载源测速后自动记录的最优源
+        Settings.Register("DownloadSourcePreference", "");
         // 实例级设置（对应 VB 的 Sources.Instance），按实例目录读写 <实例>\PCL\Setup.ini
         foreach (var (key, defaultValue) in PCL.Core.Settings.InstanceSettingKeys.Definitions) {
             Settings.Register(key, defaultValue, PCL.Core.Settings.SettingSource.Instance);

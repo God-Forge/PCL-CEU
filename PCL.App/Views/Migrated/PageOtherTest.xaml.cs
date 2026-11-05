@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using PCL.App.Controls;
 using PCL.App.Services;
 using PCL.Core.Download;
+using MeloongCore;
 using PCL.Core.Java;
 using PCL.Core.Login;
 using PCL.Core.Memory;
@@ -18,6 +19,9 @@ using PCL.Core.Worlds;
 namespace PCL.App.Views.Migrated;
 
 public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
+
+    /// <summary>设置键：测速后自动选中的下载源名称。</summary>
+    private const string SourcePreferenceKey = "DownloadSourcePreference";
 
     private readonly DispatcherTimer _liveLogTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private long _liveLogLength;
@@ -546,7 +550,14 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             var tester = new DownloadSourceSpeedTester();
             var results = await tester.TestAllAsync(DownloadSourceSpeedTester.DefaultTargets());
             AdvancedDiagnosticsService.RecordSourceSpeed(Path.Combine(AppServices.Paths.Pcl, "SourceSpeed.json"), results);
-            System.Windows.MessageBox.Show(DownloadSourceSpeedTester.Format(results), "下载源测速", MessageBoxButton.OK, MessageBoxImage.Information);
+            var best = DownloadSourceSelector.PickBest(results);
+            if (best is not null) {
+                AppServices.Settings.Set(SourcePreferenceKey, best.Name);
+                Logger.Info($"已选择最优下载源：{best.Name}（{best.ElapsedMilliseconds} ms）");
+            }
+            var message = DownloadSourceSpeedTester.Format(results)
+                          + (best is null ? "\r\n\r\n没有可用源。" : $"\r\n\r\n已自动选择：{best.Name}（{best.ElapsedMilliseconds} ms）");
+            System.Windows.MessageBox.Show(message, "下载源测速", MessageBoxButton.OK, MessageBoxImage.Information);
         } catch (Exception ex) {
             NotificationService.Error("测速失败：" + ex.Message);
         }

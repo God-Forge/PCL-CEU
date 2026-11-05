@@ -44,6 +44,13 @@ public static class CliCommandService {
                 if (args.Length < 2) return MissingArgument("--mods <实例名>");
                 PrintMods(paths, args[1]);
                 return 0;
+            case "--crash-analyze":
+                if (args.Length < 2) return MissingArgument("--crash-analyze <实例名>");
+                var crashInstance = Path.Combine(paths.Versions, args[1]);
+                var crashReport = PCL.Core.Minecraft.CrashAnalysisService.AnalyzeFiles(
+                    PCL.Core.Minecraft.CrashAnalysisService.LocateCrashLogs(crashInstance));
+                Console.WriteLine(PCL.Core.Minecraft.CrashAnalysisService.Format(crashReport));
+                return crashReport.HasFindings ? 1 : 0;
             case "--health":
                 if (args.Length < 2) return MissingArgument("--health <实例名>");
                 Console.WriteLine(AdvancedAuditService.FormatReport(
@@ -202,6 +209,7 @@ public static class CliCommandService {
         Console.WriteLine("  --list                           列出实例");
         Console.WriteLine("  --mods <实例名>                  扫描 Mod");
         Console.WriteLine("  --health <实例名>                实例体检");
+        Console.WriteLine("  --crash-analyze <实例名>          分析实例崩溃日志");
         Console.WriteLine("  --diagnostics <实例名> [输出]    导出诊断包");
         Console.WriteLine("  --luck                           今日人品");
         Console.WriteLine("  --memory                         清理当前进程工作集");

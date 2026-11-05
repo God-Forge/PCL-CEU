@@ -33,6 +33,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
     }
 
     private readonly List<ModInfo> _mods = new();
+    private readonly List<ModIssue> _issues = new();
     private readonly HashSet<string> _selected = new(StringComparer.OrdinalIgnoreCase);
     private ModFilter _filter = ModFilter.All;
     private string _search = "";
@@ -104,6 +105,11 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
 
             _mods.Clear();
             _mods.AddRange(result.Mods);
+            _issues.Clear();
+            _issues.AddRange(result.Issues);
+            foreach (var issue in _issues) {
+                Logger.Info($"[Mod 问题] {issue.Severity} {issue.FileName}：{issue.Message}");
+            }
             var names = new HashSet<string>(_mods.Select(mod => mod.FileName), StringComparer.OrdinalIgnoreCase);
             _selected.RemoveWhere(name => !names.Contains(name));
         } catch (Exception ex) {
@@ -183,6 +189,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
                 Foreground = System.Windows.Media.Brushes.Gray
             });
         } else {
+            if (_issues.Count > 0) PanList.Children.Add(BuildIssuePanel());
             foreach (var mod in visible) PanList.Children.Add(BuildModRow(mod));
         }
         RefreshSelectionBar();
@@ -193,6 +200,44 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         BtnFilterAll.Text = $"全部 ({_mods.Count})";
         BtnFilterEnabled.Text = $"已启用 ({enabled})";
         BtnFilterDisabled.Text = $"已禁用 ({_mods.Count - enabled})";
+    }
+
+    /// <summary>展示扫描发现的问题（重复文件、缺失依赖、加载器冲突）。</summary>
+    private UIElement BuildIssuePanel() {
+        var summary = ModIssueSummarizer.Summarize(_issues);
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
+        panel.Children.Add(new TextBlock {
+            Text = $"发现 {summary.Total} 个问题（错误 {summary.Errors}）",
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = summary.HasErrors
+                ? new SolidColorBrush(Color.FromRgb(200, 40, 40))
+                : new SolidColorBrush(Color.FromRgb(180, 130, 20))
+        });
+        foreach (var issue in summary.Highlights) {
+            panel.Children.Add(new TextBlock {
+                Text = $"· {issue.FileName}：{issue.Message}",
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(6, 2, 0, 0),
+                Foreground = System.Windows.Media.Brushes.Gray
+            });
+        }
+        if (summary.Remaining > 0) {
+            panel.Children.Add(new TextBlock {
+                Text = $"…其余 {summary.Remaining} 条见日志",
+                FontSize = 11,
+                Margin = new Thickness(6, 2, 0, 0),
+                Foreground = System.Windows.Media.Brushes.Gray
+            });
+        }
+        return new Border {
+            Background = new SolidColorBrush(Color.FromRgb(252, 248, 238)),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(12, 8, 12, 8),
+            Margin = new Thickness(0, 0, 0, 10),
+            Child = panel
+        };
     }
 
     private UIElement BuildModRow(ModInfo mod) {

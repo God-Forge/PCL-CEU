@@ -42,9 +42,13 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
             $"将把《{project.Title}》安装到当前实例，是否继续？", "安装资源", "安装", "取消");
         if (choice != 1) return;
         try {
-            var result = await new ResourceInstallService().InstallAsync(project, instancePath);
+            var instance = string.IsNullOrWhiteSpace(AppServices.SelectedInstanceName)
+                ? null
+                : AppServices.MinecraftFolders.FindInstance(AppServices.SelectedInstanceName);
+            var result = await new ResourceInstaller().InstallProjectAsync(
+                project, instancePath, instance?.Version.Id);
             if (result.Success) {
-                Logger.Info("已安装资源：" + result.FilePath);
+                Logger.Info("已安装资源：" + string.Join(", ", result.Installed));
                 NotificationService.Info(result.Message, "安装资源");
             } else {
                 NotificationService.Error(result.Message, "安装资源");

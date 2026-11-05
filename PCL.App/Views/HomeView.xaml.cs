@@ -50,8 +50,8 @@ public partial class HomeView : System.Windows.Controls.UserControl {
                 LaunchParameterService.ResolveWindowSize().Height,
                 LaunchParameterService.ResolveWindowType(),
                 null,
-                LaunchParameterService.ResolveWindowTitle(),
-                LaunchParameterService.ResolveExtraJvmArguments());
+                LaunchParameterService.ResolveWindowTitle(instance),
+                LaunchParameterService.ResolveExtraJvmArguments(instance));
             var process = session.Process;
             StatusText.Text = $"已启动 {instance.Version.Id}，进程 {process.Id}，Java {java.Version}";
             session.Watcher.StateChanged += (_, state) => DispatcherService.Invoke(() => {

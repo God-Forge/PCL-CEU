@@ -2,6 +2,7 @@ using System.IO;
 using MeloongCore;
 using PCL.Core.Java;
 using PCL.Core.Minecraft;
+using PCL.Core.Settings;
 
 namespace PCL.App.Services;
 
@@ -13,16 +14,21 @@ public static class JavaSelectionService {
     /// <summary>设置键：Java 选择模式。</summary>
     public const string ModeKey = "VersionArgumentJavaV2";
 
-    /// <summary>当前设置的选择模式。</summary>
-    public static JavaSelectionMode ResolveMode() =>
-        JavaSelectionModeResolver.Resolve(AppServices.Settings.Get<int>(ModeKey));
+    /// <summary>选择模式：实例设置优先，其次全局。</summary>
+    public static JavaSelectionMode ResolveMode(MinecraftInstanceLocation? instance = null) {
+        var raw = instance is null
+            ? AppServices.Settings.Get<int>(ModeKey)
+            : LaunchParameterService.SettingsFor(instance).GetWithFallback(InstanceSettingKeys.JavaSelection,
+                () => AppServices.Settings.Get<int>(ModeKey));
+        return JavaSelectionModeResolver.Resolve(raw);
+    }
 
     /// <summary>
     /// 为实例挑选 Java。返回 <c>null</c> 表示没找到可用的 Java。
     /// 强制指定模式尚未支持，会回退到自动选择。
     /// </summary>
     public static JavaInstallation? Resolve(MinecraftInstanceLocation instance) {
-        var mode = ResolveMode();
+        var mode = ResolveMode(instance);
         if (JavaSelectionModeResolver.RequiresVersionFolderScan(mode)) {
             var versionFolder = Path.Combine(instance.Folder.Versions, instance.Version.Folder);
             var local = JavaScanner.Scan([versionFolder]).FirstOrDefault();

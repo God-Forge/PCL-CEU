@@ -232,8 +232,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             var ramMb = LaunchParameterService.ResolveRamMb(instance);
             var (windowWidth, windowHeight) = LaunchParameterService.ResolveWindowSize();
             var windowType = LaunchParameterService.ResolveWindowType();
-            var windowTitle = LaunchParameterService.ResolveWindowTitle();
-            var extraJvm = LaunchParameterService.ResolveExtraJvmArguments();
+            var windowTitle = LaunchParameterService.ResolveWindowTitle(instance);
+            var extraJvm = LaunchParameterService.ResolveExtraJvmArguments(instance);
             var session = await Task.Run(() => LaunchService.Launch(
                 instance.Folder.Path,
                 instanceFolder,

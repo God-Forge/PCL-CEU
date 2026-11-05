@@ -2,6 +2,7 @@ using System.IO;
 using MeloongCore;
 using PCL.Core.Minecraft;
 using PCL.Core.Native;
+using PCL.Core.Settings;
 
 namespace PCL.App.Services;
 
@@ -34,18 +35,28 @@ public static class LaunchParameterService {
     /// <summary>设置键：用户自定义的 JVM 参数。</summary>
     public const string ExtraJvmKey = "VersionAdvanceJvm";
 
-    /// <summary>窗口标题模板，未设置时返回 <c>null</c>。</summary>
-    public static string? ResolveWindowTitle() {
-        var title = AppServices.Settings.Get<string>(WindowTitleKey);
+    /// <summary>窗口标题模板，未设置时返回 <c>null</c>。实例设置优先，其次全局。</summary>
+    public static string? ResolveWindowTitle(MinecraftInstanceLocation? instance = null) {
+        var title = instance is null
+            ? AppServices.Settings.Get<string>(WindowTitleKey)
+            : SettingsFor(instance).GetWithFallback(InstanceSettingKeys.WindowTitle,
+                () => AppServices.Settings.Get<string>(WindowTitleKey));
         return string.IsNullOrWhiteSpace(title) ? null : title.Trim();
     }
 
-    /// <summary>用户自定义的 JVM 参数，按空格切分。</summary>
-    public static IReadOnlyList<string> ResolveExtraJvmArguments() {
-        var raw = AppServices.Settings.Get<string>(ExtraJvmKey);
+    /// <summary>用户自定义的 JVM 参数，按空格切分。实例设置优先，其次全局。</summary>
+    public static IReadOnlyList<string> ResolveExtraJvmArguments(MinecraftInstanceLocation? instance = null) {
+        var raw = instance is null
+            ? AppServices.Settings.Get<string>(ExtraJvmKey)
+            : SettingsFor(instance).GetWithFallback(InstanceSettingKeys.JvmArguments,
+                () => AppServices.Settings.Get<string>(ExtraJvmKey));
         if (string.IsNullOrWhiteSpace(raw)) return [];
         return JavaArgumentParser.Split(raw);
     }
+
+    /// <summary>实例目录（版本文件夹）对应的设置对象。</summary>
+    public static InstanceSettings SettingsFor(MinecraftInstanceLocation instance) =>
+        InstanceSettingsProvider.For(Path.Combine(instance.Folder.Versions, instance.Version.Folder));
 
     /// <summary>按设置与启动器当前尺寸算出游戏窗口尺寸。</summary>
     public static (int Width, int Height) ResolveWindowSize() {
@@ -100,11 +111,13 @@ public static class LaunchParameterService {
         }
     }
 
-    /// <summary>按当前设置与实例算出分配给游戏的内存（MB）。</summary>
+    /// <summary>按当前设置与实例算出分配给游戏的内存（MB）。实例设置优先，其次全局。</summary>
     public static int ResolveRamMb(MinecraftInstanceLocation instance) {
-        var settings = AppServices.Settings;
-        var ramType = settings.Get<int>(RamTypeKey);
-        var customValue = settings.Get<int>(RamCustomKey);
+        var instanceSettings = SettingsFor(instance);
+        var ramType = instanceSettings.GetWithFallback(InstanceSettingKeys.RamType,
+            () => AppServices.Settings.Get<int>(RamTypeKey));
+        var customValue = instanceSettings.GetWithFallback(InstanceSettingKeys.RamCustom,
+            () => AppServices.Settings.Get<int>(RamCustomKey));
         var instanceFolder = Path.Combine(instance.Folder.Versions, instance.Version.Folder);
         var modCount = CountMods(instanceFolder);
         return MemoryAllocator.ResolveRamMb(

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using MeloongCore;
 
 namespace PCL.App.Controls;
 
@@ -260,10 +261,28 @@ public class MySkin : System.Windows.Controls.ContentControl {
         Width = 64;
         Height = 64;
         Content = _avatar;
+        Cursor = System.Windows.Input.Cursors.Hand;
+        MouseLeftButtonUp += (_, _) => OpenPreview();
+    }
+
+    private PCL.Core.Login.LoginProfile? _profile;
+
+    /// <summary>双击头像打开全身预览。没有皮肤时不做任何事。</summary>
+    private void OpenPreview() {
+        if (!PCL.Core.Login.SkinDisplayInfo.From(_profile).HasSkin) return;
+        try {
+            var window = new PCL.App.Dialogs.SkinPreviewWindow(_profile) {
+                Owner = System.Windows.Window.GetWindow(this)
+            };
+            window.ShowDialog();
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "打开皮肤预览失败");
+        }
     }
 
     /// <summary>展示指定账号的皮肤头像；未登录或加载失败时保持空白。</summary>
     public async void SetPlayer(PCL.Core.Login.LoginProfile? profile) {
+        _profile = profile;
         var info = PCL.Core.Login.SkinDisplayInfo.From(profile);
         ToolTip = info.HasSkin ? info.Name + "\n" + info.Uuid : info.StatusText + "\n登录后可显示皮肤";
         if (!info.HasSkin) {

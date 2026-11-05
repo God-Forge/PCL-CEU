@@ -37,9 +37,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\McASelector.zip" LogicalName="PCL.Resources.McASelector.zip" />
-        <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\Payload\encode.exe" LogicalName="PCL.Resources.Payload.encode.exe" />
-        <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\Payload\decode.exe" LogicalName="PCL.Resources.Payload.decode.exe" />
+        <!-- 原先引用 ..\Plain Craft Launcher 2\Resources\，使 C# 构建依赖 VB 工程目录；
+             现改为项目内自带资源，VB 工程可独立移除。 -->
+        <EmbeddedResource Include="Assets\McASelector.zip" LogicalName="PCL.Resources.McASelector.zip" />
+        <EmbeddedResource Include="Assets\Payload\encode.exe" LogicalName="PCL.Resources.Payload.encode.exe" />
+        <EmbeddedResource Include="Assets\Payload\decode.exe" LogicalName="PCL.Resources.Payload.decode.exe" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\MeloongCore\Shared\MeloongCore.csproj" />

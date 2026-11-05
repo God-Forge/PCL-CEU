@@ -379,12 +379,16 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             NotificationService.Error(preview.Error ?? "整合包无效。", "导入整合包失败");
             return;
         }
-        var confirm = System.Windows.MessageBox.Show(
-            PCL.Core.Modpack.ModpackPreviewService.Format(preview) + "\r\n\r\n是否继续导入？",
-            "导入整合包", MessageBoxButton.YesNo,
-            preview.TargetExists ? MessageBoxImage.Warning : MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes) return;
-        NotificationService.Info($"正在导入《{name}》，完成后会提示结果。", "导入整合包");
+        // 目标确认与编辑：可直接修改各组件版本，或恢复为整合包声明的值
+        var dialog = new PCL.App.Dialogs.InstallTargetDialog(preview) {
+            Owner = System.Windows.Window.GetWindow(this)
+        };
+        if (dialog.ShowDialog() != true || dialog.Result is null) return;
+        var chosen = dialog.Result;
+        if (PCL.Core.Minecraft.InstallTargetComparer.HasChanges(preview.Target, chosen)) {
+            Logger.Info($"[整合包] 用户调整目标：{PCL.Core.Minecraft.InstallTargetComparer.Describe(preview.Target)}"
+                        + $" → {PCL.Core.Minecraft.InstallTargetComparer.Describe(chosen)}");
+        }        NotificationService.Info($"正在导入《{name}》，完成后会提示结果。", "导入整合包");
         try {
             var result = await new PCL.Core.Modpack.ModpackImportService()
                 .ImportAsync(zip, AppServices.Paths.Versions, name);

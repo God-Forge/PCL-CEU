@@ -89,10 +89,10 @@ public static class InstallTargetComparer {
     public static InstallTarget Restore(InstallTarget current, InstallTarget initial, InstallTargetComponent component) =>
         current.With(component, initial.Get(component));
 
-    /// <summary>把所有变更恢复为初始值。</summary>
+    /// <summary>把所有变更恢复为初始值（包括清空初始不存在的组件）。</summary>
     public static InstallTarget RestoreAll(InstallTarget current, InstallTarget initial) {
         var result = current;
-        foreach (var comparison in Compare(initial, current).Where(item => item.CanRestore)) {
+        foreach (var comparison in Compare(initial, current).Where(item => item.Changed)) {
             result = result.With(comparison.Component, comparison.Initial);
         }
         return result;

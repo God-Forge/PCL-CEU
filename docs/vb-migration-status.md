@@ -48,15 +48,31 @@ C# 页面与 VB 页面并非一一对应，部分 VB 页面逻辑被拆进了 Co
 
 已实现的页面功能包括：启动、下载、实例管理、设置、百宝箱、登录、皮肤预览等。设置页的背景图、Logo、音乐目录功能在 `PageSetupUI.xaml.cs` 中已完整实现。
 
+## 后续补齐的功能
+
+以下功能在核对后确认缺失，已在本轮迁移中补齐：
+
+| 功能 | 实现位置 |
+|---|---|
+| 崩溃日志分析界面 | `CrashAnalysisService` + 百宝箱「分析崩溃日志」；启动失败时自动分析并展示原因 |
+| 崩溃分析的命令行入口 | `--crash-analyze <实例名>` |
+| 整合包导入界面 | 百宝箱「导入整合包」，与 CLI `--modpack-import` 共用 `ModpackImportService` |
+| 导入前预检 | `ModpackPreviewService`：解析清单、列出目标版本与加载器、文件数、是否覆盖已有实例 |
+| 清单加载器解析 | `ModpackManifest` 补上 `Loader` / `LoaderVersion`（Modrinth 与 CurseForge 两种格式） |
+| 安装目标模型与对比 | `InstallTarget` / `InstallTargetComparer`：逐组件对比与恢复 |
+| 启动状态机 | `LaunchStateMachine`：等待/加载/失败/完成四态，拒绝非法回退 |
+| Payload 与 Java 包命令 | `--payload-encode/decode`、`--javapkg-encode/info` |
+| CLI 异常保护 | 参数错误或文件损坏只输出一行提示，不再抛堆栈 |
+| 设置键冲突自检 | `SettingsService.FindKeysNotInstanceScoped`，实例键被注册成全局时启动即报 |
+
 ## 仍未对齐的细节
 
 1. **下载运行时动态限速**：C# 支持请求级限速，但不支持下载过程中调整。
-2. **CLI 命令集合**：`CliCommandService` 的命令与 VB `ModCommandLine` 不完全一致。
-3. **VB 的 `PageDownloadModify`（安装目标编辑器）**：C# 有 `InstallTarget` / `InstallTargetComparer` 模型，但还没有对应的编辑界面。
-4. **皮肤渲染**：C# 使用外部渲染服务（crafatar），离线时降级为「加载失败」。
+2. **皮肤渲染**：C# 使用外部渲染服务（crafatar），离线时降级为「加载失败」。
+3. **`InstallTarget` 尚无独立编辑器界面**：导入整合包前的预检已展示目标组成，但还没有「逐组件切换并恢复」的完整编辑页。
 
 ## 验证方式
 
 - 全量构建：`dotnet build PCL.CSharp.sln -c Release`
-- 全量测试：`PCL.Core.Tests.exe`（当前 637 个用例）
+- 全量测试：`PCL.Core.Tests.exe`（当前 647 个用例）
 - 无 VB 依赖：临时移走 `Plain Craft Launcher 2` 目录后构建仍然成功（资源已移入 `PCL.Core/Assets`）

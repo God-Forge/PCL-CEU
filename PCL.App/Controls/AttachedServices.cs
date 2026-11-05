@@ -1,7 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Media;
+using MeloongCore;
 using PCL.App.Services;
 using PCL.Core.Settings;
+using PCL.Core.Ui;
 
 namespace PCL.App.Controls;
 
@@ -107,27 +109,54 @@ public static class CustomEventService {
     public static void SetEventData(DependencyObject element, string value) => element.SetValue(EventDataProperty, value);
 
     public static void Raise(string? type, string? data) {
-        if (string.IsNullOrWhiteSpace(type)) return;
-        switch (type) {
-            case "打开网页":
-            case "OpenWebsite":
-                if (!string.IsNullOrWhiteSpace(data)) {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = data, UseShellExecute = true });
-                }
-                break;
-            case "复制":
-            case "Copy":
-                if (!string.IsNullOrWhiteSpace(data)) System.Windows.Clipboard.SetText(data);
-                break;
-            case "打开文件夹":
-            case "OpenFolder":
-                if (!string.IsNullOrWhiteSpace(data) && System.IO.Directory.Exists(data)) {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = data, UseShellExecute = true });
-                }
-                break;
-            case "提示":
-                if (!string.IsNullOrWhiteSpace(data)) System.Windows.MessageBox.Show(data, "PCL CEU");
-                break;
+        var eventType = CustomEventParser.ParseType(type);
+        if (eventType == CustomEventType.None) return;
+        if (CustomEventParser.IsRestricted(eventType)) {
+            Logger.Warn($"自定义事件「{type}」出于安全考虑未执行");
+            return;
+        }
+        var arguments = CustomEventParser.SplitArguments(data);
+        var target = arguments.FirstOrDefault() ?? "";
+        try {
+            switch (eventType) {
+                case CustomEventType.OpenWebsite:
+                    if (!CustomEventParser.IsValidUrl(target, out var urlError)) {
+                        NotificationService.Warning(urlError ?? "网址无效。", "自定义事件");
+                        break;
+                    }
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+                        FileName = target.Replace('\\', '/'),
+                        UseShellExecute = true
+                    });
+                    break;
+                case CustomEventType.OpenFile:
+                    if (System.IO.File.Exists(target) || System.IO.Directory.Exists(target)) {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = target, UseShellExecute = true });
+                    } else {
+                        NotificationService.Warning("目标不存在：" + target, "自定义事件");
+                    }
+                    break;
+                case CustomEventType.OpenHelp:
+                    NavigationService.Navigate(new Views.Migrated.PageOtherHelp(), "help");
+                    break;
+                case CustomEventType.CopyText:
+                    if (!string.IsNullOrWhiteSpace(target)) ClipboardService.SetText(target);
+                    break;
+                case CustomEventType.ShowHint:
+                    if (!string.IsNullOrWhiteSpace(target)) HintService.Show(target);
+                    break;
+                case CustomEventType.ShowWindow:
+                    if (!string.IsNullOrWhiteSpace(target)) DialogService.ShowText(target, "PCL CEU");
+                    break;
+                case CustomEventType.SwitchPage:
+                    NavigationService.NavigateTo(target);
+                    break;
+                default:
+                    Logger.Info($"自定义事件「{type}」暂未实现，已忽略。");
+                    break;
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "执行自定义事件失败：" + type);
         }
     }
 

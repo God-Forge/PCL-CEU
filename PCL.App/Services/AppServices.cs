@@ -43,6 +43,10 @@ public static class AppServices {
         Settings.Register("VersionAdvanceJvm", "");
         Settings.Register("LaunchArgumentVisible", 5);
         Settings.Register("VersionArgumentJavaV2", 0);
+        // 实例级设置（对应 VB 的 Sources.Instance），按实例目录读写 <实例>\PCL\Setup.ini
+        foreach (var (key, defaultValue) in PCL.Core.Settings.InstanceSettingKeys.Definitions) {
+            Settings.Register(key, defaultValue, PCL.Core.Settings.SettingSource.Instance);
+        }
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);
         Settings.Register("UiMusicVolume", 60);

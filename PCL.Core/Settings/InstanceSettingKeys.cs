@@ -21,6 +21,9 @@ public static class InstanceSettingKeys {
     /// <summary>强制指定模式下使用的 Java 路径。</summary>
     public const string JavaSelect = "VersionArgumentJavaSelect";
 
+    /// <summary>「跟随全局设置」的哨兵值，与 VB 保持一致。</summary>
+    public const string JavaSelectGlobal = "使用全局设置";
+
     /// <summary>内存分配方式（0 自动、其他手动）。</summary>
     public const string RamType = "VersionRamType";
 
@@ -51,5 +54,21 @@ public static class InstanceSettingKeys {
     };
 
     public static bool IsInstanceLevel(string key) => !string.IsNullOrEmpty(key) && All.Contains(key);
+
+    /// <summary>
+    /// 注册所需的键与默认值，默认值取自 VB 版 Settings 的定义。
+    /// </summary>
+    public static IReadOnlyList<(string Key, object DefaultValue)> Definitions { get; } = [
+        (JvmArguments, ""),
+        (GameArguments, ""),
+        (WindowTitle, ""),
+        (JavaSelection, 0),
+        (JavaSelect, "使用全局设置"),
+        (RamType, 2),
+        (RamCustom, 15),
+        (RunCommand, ""),
+        (Gc, 0),
+        (DisableJwjgl, false)
+    ];
 
 }

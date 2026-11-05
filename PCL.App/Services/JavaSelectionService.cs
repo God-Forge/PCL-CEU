@@ -18,7 +18,7 @@ public static class JavaSelectionService {
     public static JavaSelectionMode ResolveMode(MinecraftInstanceLocation? instance = null) {
         var raw = instance is null
             ? AppServices.Settings.Get<int>(ModeKey)
-            : LaunchParameterService.SettingsFor(instance).GetWithFallback(InstanceSettingKeys.JavaSelection,
+            : LaunchParameterService.ResolveInstanceSetting(instance, InstanceSettingKeys.JavaSelection,
                 () => AppServices.Settings.Get<int>(ModeKey));
         return JavaSelectionModeResolver.Resolve(raw);
     }
@@ -29,11 +29,10 @@ public static class JavaSelectionService {
     /// </summary>
     public static JavaInstallation? Resolve(MinecraftInstanceLocation instance) {
         var mode = ResolveMode(instance);
-        var instanceSettings = LaunchParameterService.SettingsFor(instance);
         if (mode == JavaSelectionMode.Forced) {
-            var configured = instanceSettings.GetString(InstanceSettingKeys.JavaSelect);
-            if (string.IsNullOrWhiteSpace(configured)) {
-                Logger.Warn($"实例 {instance.Version.Folder} 设置了强制指定 Java，但未配置路径，回退到自动选择");
+            var configured = LaunchParameterService.ResolveInstanceSetting(instance, InstanceSettingKeys.JavaSelect, () => "");
+            if (string.IsNullOrWhiteSpace(configured) || configured == InstanceSettingKeys.JavaSelectGlobal) {
+                Logger.Warn($"实例 {instance.Version.Folder} 设置了强制指定 Java，但未选择具体路径，回退到自动选择");
             } else {
                 var forced = JavaScanner.Inspect(configured);
                 if (forced is not null) return forced;

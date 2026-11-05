@@ -39,7 +39,7 @@ public static class LaunchParameterService {
     public static string? ResolveWindowTitle(MinecraftInstanceLocation? instance = null) {
         var title = instance is null
             ? AppServices.Settings.Get<string>(WindowTitleKey)
-            : SettingsFor(instance).GetWithFallback(InstanceSettingKeys.WindowTitle,
+            : ResolveInstanceSetting(instance, InstanceSettingKeys.WindowTitle,
                 () => AppServices.Settings.Get<string>(WindowTitleKey));
         return string.IsNullOrWhiteSpace(title) ? null : title.Trim();
     }
@@ -48,15 +48,26 @@ public static class LaunchParameterService {
     public static IReadOnlyList<string> ResolveExtraJvmArguments(MinecraftInstanceLocation? instance = null) {
         var raw = instance is null
             ? AppServices.Settings.Get<string>(ExtraJvmKey)
-            : SettingsFor(instance).GetWithFallback(InstanceSettingKeys.JvmArguments,
+            : ResolveInstanceSetting(instance, InstanceSettingKeys.JvmArguments,
                 () => AppServices.Settings.Get<string>(ExtraJvmKey));
         if (string.IsNullOrWhiteSpace(raw)) return [];
         return JavaArgumentParser.Split(raw);
     }
 
-    /// <summary>实例目录（版本文件夹）对应的设置对象。</summary>
-    public static InstanceSettings SettingsFor(MinecraftInstanceLocation instance) =>
-        InstanceSettingsProvider.For(Path.Combine(instance.Folder.Versions, instance.Version.Folder));
+    /// <summary>实例的版本目录（实例级设置的存放位置）。</summary>
+    public static string InstancePath(MinecraftInstanceLocation instance) =>
+        Path.Combine(instance.Folder.Versions, instance.Version.Folder);
+
+    /// <summary>
+    /// 读取实例级设置：实例没有显式保存过时回退到全局值。
+    /// 底层由 SettingsService 的 SettingSource.Instance 支持，写入 &lt;实例&gt;\PCL\Setup.ini。
+    /// </summary>
+    public static T ResolveInstanceSetting<T>(MinecraftInstanceLocation instance, string key, Func<T> globalFallback) {
+        var path = InstancePath(instance);
+        if (!AppServices.Settings.HasSaved(key, path)) return globalFallback();
+        var value = AppServices.Settings.Get<T>(key, path);
+        return value is null ? globalFallback() : value;
+    }
 
     /// <summary>按设置与启动器当前尺寸算出游戏窗口尺寸。</summary>
     public static (int Width, int Height) ResolveWindowSize() {
@@ -113,12 +124,11 @@ public static class LaunchParameterService {
 
     /// <summary>按当前设置与实例算出分配给游戏的内存（MB）。实例设置优先，其次全局。</summary>
     public static int ResolveRamMb(MinecraftInstanceLocation instance) {
-        var instanceSettings = SettingsFor(instance);
-        var ramType = instanceSettings.GetWithFallback(InstanceSettingKeys.RamType,
+        var ramType = ResolveInstanceSetting(instance, InstanceSettingKeys.RamType,
             () => AppServices.Settings.Get<int>(RamTypeKey));
-        var customValue = instanceSettings.GetWithFallback(InstanceSettingKeys.RamCustom,
+        var customValue = ResolveInstanceSetting(instance, InstanceSettingKeys.RamCustom,
             () => AppServices.Settings.Get<int>(RamCustomKey));
-        var instanceFolder = Path.Combine(instance.Folder.Versions, instance.Version.Folder);
+        var instanceFolder = InstancePath(instance);
         var modCount = CountMods(instanceFolder);
         return MemoryAllocator.ResolveRamMb(
             ramType,

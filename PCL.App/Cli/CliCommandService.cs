@@ -146,6 +146,23 @@ public static class CliCommandService {
                 var folder = new VanillaInstallService().InstallAsync(paths.Base, args[1]).GetAwaiter().GetResult();
                 Console.WriteLine("安装完成：" + folder);
                 return 0;
+            case "--modpack-import":
+                if (args.Length < 2) return MissingArgument("--modpack-import <整合包.zip> [实例名]");
+                var zipPath = Path.GetFullPath(args[1]);
+                var instanceName = args.Length > 2 ? args[2] : null;
+                var error = ModpackInstallPlanner.Validate(paths.Versions, zipPath, instanceName);
+                if (error is not null) {
+                    Console.WriteLine(error);
+                    return 1;
+                }
+                var targetFolder = ModpackInstallPlanner.ResolveTargetFolder(paths.Versions, zipPath, instanceName);
+                Console.WriteLine($"正在导入整合包到：{targetFolder}");
+                var modpackResult = new ModpackInstaller()
+                    .InstallAsync(zipPath, targetFolder)
+                    .GetAwaiter()
+                    .GetResult();
+                Console.WriteLine(modpackResult.Message);
+                return modpackResult.Success ? 0 : 1;
             default:
                 Console.WriteLine("未知命令：" + args[0]);
                 PrintHelp();
@@ -197,6 +214,7 @@ public static class CliCommandService {
         Console.WriteLine("  --launch <实例名>                启动实例");
         Console.WriteLine("  --login <用户名>                 离线登录信息");
         Console.WriteLine("  --modpack <zip> <实例名>         导入整合包 overrides");
+        Console.WriteLine("  --modpack-import <zip> [实例名]  完整导入整合包（含文件下载）");
         Console.WriteLine("  --update-check                   检查 GitHub 更新");
         Console.WriteLine("  --elevated <任务>                提权 helper 白名单任务");
     }

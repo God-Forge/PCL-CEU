@@ -156,6 +156,19 @@ public sealed class SettingsService {
         }
     }
 
+    /// <summary>
+    /// 自检：找出给定键中「没有注册为实例级」的项。
+    /// 这些键在之后的注册中可能被另一来源覆盖，导致读取时报「缺少实例路径」。
+    /// </summary>
+    public IReadOnlyList<string> FindKeysNotInstanceScoped(IEnumerable<string> expectedInstanceKeys) {
+        var result = new List<string>();
+        foreach (var key in expectedInstanceKeys) {
+            var definition = _definitions.GetValueOrDefault(key);
+            if (definition is null || definition.Source != SettingSource.Instance) result.Add(key);
+        }
+        return result;
+    }
+
     private static string NormalizeInstancePath(string path) =>
         path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 

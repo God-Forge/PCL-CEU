@@ -16,10 +16,11 @@ public static class JavaSelectionService {
 
     /// <summary>选择模式：实例设置优先，其次全局。</summary>
     public static JavaSelectionMode ResolveMode(MinecraftInstanceLocation? instance = null) {
-        var raw = instance is null
-            ? AppServices.Settings.Get<int>(ModeKey)
-            : LaunchParameterService.ResolveInstanceSetting(instance, InstanceSettingKeys.JavaSelection,
-                () => AppServices.Settings.Get<int>(ModeKey));
+        // Java 选择模式在 VB 里只有实例级设置，没有全局对应项：
+        // 没有实例时直接用自动选择，不能去读实例键（会因缺实例路径而报错）。
+        if (instance is null) return JavaSelectionMode.Automatic;
+        var raw = LaunchParameterService.ResolveInstanceSetting(
+            instance, InstanceSettingKeys.JavaSelection, () => 0);
         return JavaSelectionModeResolver.Resolve(raw);
     }
 

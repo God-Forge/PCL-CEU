@@ -30,10 +30,10 @@ public static class LaunchParameterService {
     public static int ResolveWindowType() => AppServices.Settings.Get<int>(WindowTypeKey);
 
     /// <summary>设置键：游戏窗口标题模板，支持 {date} / {time}。</summary>
-    public const string WindowTitleKey = "VersionArgumentTitle";
+    public const string WindowTitleKey = "LaunchArgumentTitle";
 
     /// <summary>设置键：用户自定义的 JVM 参数。</summary>
-    public const string ExtraJvmKey = "VersionAdvanceJvm";
+    public const string ExtraJvmKey = "LaunchAdvanceJvm";
 
     /// <summary>窗口标题模板，未设置时返回 <c>null</c>。实例设置优先，其次全局。</summary>
     public static string? ResolveWindowTitle(MinecraftInstanceLocation? instance = null) {

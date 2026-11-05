@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using MeloongCore;
 using PCL.Core.Localization;
 using PCL.Core.Paths;
 using PCL.Core.Settings;
@@ -44,15 +45,21 @@ public static class AppServices {
         Settings.Register("LaunchArgumentWindowType", 1);
         Settings.Register("LaunchArgumentWindowWidth", 1024);
         Settings.Register("LaunchArgumentWindowHeight", 768);
-        Settings.Register("VersionArgumentTitle", "");
-        Settings.Register("VersionAdvanceJvm", "");
+        // 全局设置页的对应项（VB 里叫 LaunchArgumentTitle / LaunchAdvanceJvm），
+        // 不要与实例级键 VersionArgumentTitle / VersionAdvanceJvm 混淆
+        Settings.Register("LaunchArgumentTitle", "");
+        Settings.Register("LaunchAdvanceJvm", "");
         Settings.Register("LaunchArgumentVisible", 5);
-        Settings.Register("VersionArgumentJavaV2", 0);
         // 下载源测速后自动记录的最优源
         Settings.Register("DownloadSourcePreference", "");
         // 实例级设置（对应 VB 的 Sources.Instance），按实例目录读写 <实例>\PCL\Setup.ini
         foreach (var (key, defaultValue) in PCL.Core.Settings.InstanceSettingKeys.Definitions) {
             Settings.Register(key, defaultValue, PCL.Core.Settings.SettingSource.Instance);
+        }
+        // 自检：实例键若被同名的全局注册覆盖，启动后读它会报「缺少实例路径」
+        var misregistered = Settings.FindKeysNotInstanceScoped(PCL.Core.Settings.InstanceSettingKeys.All);
+        if (misregistered.Count > 0) {
+            Logger.Error("实例级设置键被注册成了全局：" + string.Join(", ", misregistered));
         }
         Settings.Register("UiMusicAuto", false);
         Settings.Register("UiMusicRandom", false);

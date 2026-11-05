@@ -1,3 +1,4 @@
+using PCL.Core.Download;
 using PCL.Core.Net;
 
 namespace PCL.Core.Resources;
@@ -30,9 +31,11 @@ public sealed class ResourceBatchDownloadResult {
 public sealed class ResourceBatchDownloader {
 
     private readonly IDownloadService _download;
+    private readonly DownloadCacheService? _cache;
 
-    public ResourceBatchDownloader(IDownloadService? download = null) {
+    public ResourceBatchDownloader(IDownloadService? download = null, DownloadCacheService? cache = null) {
         _download = download ?? new HttpDownloadService();
+        _cache = cache;
     }
 
     /// <summary>
@@ -68,6 +71,18 @@ public sealed class ResourceBatchDownloader {
                     lock (gate) failed.Add(new ResourceBatchFailure(version.FileName, "无法生成下载任务（缺少地址或文件名）"));
                     return;
                 }
+                // 缓存命中时直接复用，不再请求网络
+                if (_cache is not null && _cache.TryGet(request.Url, out var cached)) {
+                    try {
+                        var parent = Path.GetDirectoryName(Path.GetFullPath(request.TargetPath));
+                        if (parent is not null) Directory.CreateDirectory(parent);
+                        File.Copy(cached, request.TargetPath, true);
+                        lock (gate) succeeded.Add(version.FileName);
+                        return;
+                    } catch (Exception ex) when (ex is not OutOfMemoryException) {
+                        Logger.Warn(ex, "使用下载缓存失败，改为重新下载：" + request.Url);
+                    }
+                }
                 DownloadResult result;
                 try {
                     result = await _download.DownloadAsync(request, null, cancellationToken).ConfigureAwait(false);
@@ -78,8 +93,18 @@ public sealed class ResourceBatchDownloader {
                     return;
                 }
                 lock (gate) {
-                    if (result.Success) succeeded.Add(version.FileName);
-                    else failed.Add(new ResourceBatchFailure(version.FileName, "下载失败：" + request.Url));
+                    if (result.Success) {
+                        succeeded.Add(version.FileName);
+                        if (_cache is not null && File.Exists(request.TargetPath)) {
+                            try {
+                                _cache.Store(request.Url, request.TargetPath);
+                            } catch (Exception ex) when (ex is not OutOfMemoryException) {
+                                Logger.Warn(ex, "写入下载缓存失败：" + request.Url);
+                            }
+                        }
+                    } else {
+                        failed.Add(new ResourceBatchFailure(version.FileName, "下载失败：" + request.Url));
+                    }
                 }
             } finally {
                 var current = Interlocked.Increment(ref completed);

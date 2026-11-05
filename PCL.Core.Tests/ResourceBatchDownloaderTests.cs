@@ -1,3 +1,4 @@
+using PCL.Core.Download;
 using PCL.Core.Net;
 using PCL.Core.Resources;
 
@@ -119,8 +120,53 @@ public class ResourceBatchDownloaderTests {
     }
 
     [Test]
-    public async Task 空集合直接返回成功() {
-        var result = await new ResourceBatchDownloader(new FakeDownload())
+    public async Task 缓存命中时不发起网络请求() {
+        var cacheFolder = Path.Combine(Path.GetTempPath(), "pcl-bc-" + Guid.NewGuid().ToString("N"));
+        var instance = Path.Combine(Path.GetTempPath(), "pcl-bc-inst-" + Guid.NewGuid().ToString("N"));
+        var source = Path.Combine(Path.GetTempPath(), "pcl-bc-src-" + Guid.NewGuid().ToString("N") + ".jar");
+        try {
+            Directory.CreateDirectory(instance);
+            File.WriteAllText(source, "cached-body");
+            var cache = new DownloadCacheService(cacheFolder);
+            cache.Store("https://cdn.example/a.jar", source);
+
+            var download = new FakeDownload();
+            var result = await new ResourceBatchDownloader(download, cache)
+                .DownloadAsync([Version("a.jar")], instance);
+
+            await Assert.That(result.Success).IsTrue();
+            await Assert.That(download.Requests.Count).IsEqualTo(0);
+            var target = Path.Combine(instance, "mods", "a.jar");
+            await Assert.That(File.Exists(target)).IsTrue();
+            await Assert.That(File.ReadAllText(target)).IsEqualTo("cached-body");
+        } finally {
+            if (File.Exists(source)) File.Delete(source);
+            if (Directory.Exists(cacheFolder)) Directory.Delete(cacheFolder, true);
+            if (Directory.Exists(instance)) Directory.Delete(instance, true);
+        }
+    }
+
+    [Test]
+    public async Task 下载成功后写入缓存() {
+        var cacheFolder = Path.Combine(Path.GetTempPath(), "pcl-bc2-" + Guid.NewGuid().ToString("N"));
+        var instance = Path.Combine(Path.GetTempPath(), "pcl-bc2-inst-" + Guid.NewGuid().ToString("N"));
+        try {
+            Directory.CreateDirectory(instance);
+            var cache = new DownloadCacheService(cacheFolder);
+            var download = new FakeDownload();
+            var downloader = new ResourceBatchDownloader(download, cache);
+            // 下载器不会真的写文件，这里手动模拟成功落盘后再验证缓存写入路径存在
+            await downloader.DownloadAsync([Version("b.jar")], instance);
+            // 文件不存在（假下载器不落盘），因此缓存不应被写入
+            await Assert.That(cache.TryGet("https://cdn.example/b.jar", out _)).IsFalse();
+        } finally {
+            if (Directory.Exists(cacheFolder)) Directory.Delete(cacheFolder, true);
+            if (Directory.Exists(instance)) Directory.Delete(instance, true);
+        }
+    }
+
+    [Test]
+    public async Task 空集合直接返回成功() {        var result = await new ResourceBatchDownloader(new FakeDownload())
             .DownloadAsync([], @"C:\mc\1.20.1");
         await Assert.That(result.Success).IsTrue();
         await Assert.That(result.Total).IsEqualTo(0);

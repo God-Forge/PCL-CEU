@@ -141,6 +141,24 @@ public sealed class SettingsService {
         };
     }
 
+    /// <summary>
+    /// 丢弃某个实例的设置缓存。实例重命名或删除后必须调用，
+    /// 否则会一直读到旧路径的缓存值。
+    /// </summary>
+    public void InvalidateInstanceCache(string? instancePath) {
+        if (string.IsNullOrWhiteSpace(instancePath)) return;
+        var normalized = NormalizeInstancePath(instancePath);
+        foreach (var definition in _definitions.Values) {
+            var staleKeys = definition.Cache.Keys
+                .Where(cached => string.Equals(NormalizeInstancePath(cached), normalized, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var stale in staleKeys) definition.Cache.Remove(stale);
+        }
+    }
+
+    private static string NormalizeInstancePath(string path) =>
+        path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
     private SettingDefinition GetDefinition(string key) {
         return _definitions.TryGetValue(key, out var definition)
             ? definition

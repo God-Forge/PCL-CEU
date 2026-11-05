@@ -139,6 +139,8 @@ public partial class PageInstanceOverall : PCL.App.Controls.MyPageRight {
         if (string.IsNullOrWhiteSpace(newName) || string.Equals(newName.Trim(), oldName, StringComparison.Ordinal)) return;
         try {
             var newPath = InstanceManagementService.Rename(InstancePath, newName);
+            AppServices.Settings.InvalidateInstanceCache(InstancePath);
+            AppServices.Settings.InvalidateInstanceCache(newPath);
             AppServices.SelectedInstanceName = Path.GetFileName(newPath);
             Refresh();
             NotificationService.Info("重命名成功。");
@@ -193,6 +195,7 @@ public partial class PageInstanceOverall : PCL.App.Controls.MyPageRight {
         if (answer != MessageBoxResult.Yes) return;
         try {
             InstanceManagementService.Delete(InstancePath);
+            AppServices.Settings.InvalidateInstanceCache(InstancePath);
             AppServices.SelectedInstanceName = null;
             Refresh();
             NotificationService.Info("已删除版本。");

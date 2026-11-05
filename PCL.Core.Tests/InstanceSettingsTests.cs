@@ -126,8 +126,9 @@ public class InstanceSettingsTests {
     public async Task 实例级键注册表() {
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionAdvanceJvm")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentTitle")).IsTrue();
+        await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentJavaSelect")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("UiLanguage")).IsFalse();
-        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(9);
+        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(10);
     }
 
 }

@@ -57,6 +57,33 @@ public static class JavaScanner {
                ?? all.FirstOrDefault();
     }
 
+    /// <summary>
+    /// 检查指定的 Java 路径（可以是 java.exe、bin 目录或 Java 主目录）。
+    /// 路径无效或无法识别时返回 <c>null</c>。
+    /// </summary>
+    public static JavaInstallation? Inspect(string? pathOrHome) {
+        if (string.IsNullOrWhiteSpace(pathOrHome)) return null;
+        var path = pathOrHome.Trim();
+        string? javaExe = null;
+        if (File.Exists(path) && path.EndsWith("java.exe", StringComparison.OrdinalIgnoreCase)) {
+            javaExe = path;
+        } else if (Directory.Exists(path)) {
+            javaExe = FindJavaExe(path, 0).FirstOrDefault();
+        }
+        if (javaExe is null) return null;
+        try {
+            var info = JavaPackageService.Detect(javaExe);
+            return new JavaInstallation {
+                JavaHome = info.JavaHome,
+                Version = info.JavaVersion,
+                Major = ParseMajor(info.JavaVersion)
+            };
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "无法识别指定的 Java：" + path);
+            return null;
+        }
+    }
+
     private static IEnumerable<string> FindJavaExe(string root, int depth) {
         var candidate = System.IO.Path.Combine(root, "bin", "java.exe");
         if (File.Exists(candidate)) yield return candidate;

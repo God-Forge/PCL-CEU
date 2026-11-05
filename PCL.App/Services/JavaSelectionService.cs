@@ -29,6 +29,17 @@ public static class JavaSelectionService {
     /// </summary>
     public static JavaInstallation? Resolve(MinecraftInstanceLocation instance) {
         var mode = ResolveMode(instance);
+        var instanceSettings = LaunchParameterService.SettingsFor(instance);
+        if (mode == JavaSelectionMode.Forced) {
+            var configured = instanceSettings.GetString(InstanceSettingKeys.JavaSelect);
+            if (string.IsNullOrWhiteSpace(configured)) {
+                Logger.Warn($"实例 {instance.Version.Folder} 设置了强制指定 Java，但未配置路径，回退到自动选择");
+            } else {
+                var forced = JavaScanner.Inspect(configured);
+                if (forced is not null) return forced;
+                Logger.Warn($"实例 {instance.Version.Folder} 强制指定的 Java 不可用（{configured}），回退到自动选择");
+            }
+        }
         if (JavaSelectionModeResolver.RequiresVersionFolderScan(mode)) {
             var versionFolder = Path.Combine(instance.Folder.Versions, instance.Version.Folder);
             var local = JavaScanner.Scan([versionFolder]).FirstOrDefault();

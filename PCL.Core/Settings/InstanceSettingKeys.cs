@@ -18,6 +18,9 @@ public static class InstanceSettingKeys {
     /// <summary>Java 选择模式（0/1 自动、2 版本文件夹、3 强制指定）。</summary>
     public const string JavaSelection = "VersionArgumentJavaV2";
 
+    /// <summary>强制指定模式下使用的 Java 路径。</summary>
+    public const string JavaSelect = "VersionArgumentJavaSelect";
+
     /// <summary>内存分配方式（0 自动、其他手动）。</summary>
     public const string RamType = "VersionRamType";
 
@@ -39,6 +42,7 @@ public static class InstanceSettingKeys {
         GameArguments,
         WindowTitle,
         JavaSelection,
+        JavaSelect,
         RamType,
         RamCustom,
         RunCommand,

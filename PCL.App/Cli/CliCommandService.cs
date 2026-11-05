@@ -1,4 +1,5 @@
 using System.IO;
+using MeloongCore;
 using PCL.App.Services;
 using PCL.Core.Download;
 using PCL.Core.Java;
@@ -21,6 +22,18 @@ namespace PCL.App.Cli;
 public static class CliCommandService {
 
     public static int? Run(string[] args) {
+        if (args.Length == 0) return null;
+        try {
+            return RunCore(args);
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            // 参数错误、文件损坏等不应把堆栈喷给用户
+            Console.Error.WriteLine("命令执行失败：" + ex.Message);
+            Logger.Error(ex, "CLI 命令失败：" + string.Join(" ", args));
+            return 1;
+        }
+    }
+
+    private static int? RunCore(string[] args) {
         var command = args[0].ToLowerInvariant();
         var paths = AppServices.Paths;
         switch (command) {
@@ -43,6 +56,29 @@ public static class CliCommandService {
             case "--mods":
                 if (args.Length < 2) return MissingArgument("--mods <实例名>");
                 PrintMods(paths, args[1]);
+                return 0;
+            case "--payload-encode":
+                if (args.Length < 3) return MissingArgument("--payload-encode <文件夹> <输出.payload> [名称]");
+                Console.WriteLine("已打包：" + PCL.Core.Tools.PayloadService.Encode(
+                    paths.Base, args[1], args[2], args.Length > 3 ? args[3] : null));
+                return 0;
+            case "--payload-decode":
+                if (args.Length < 3) return MissingArgument("--payload-decode <文件.payload> <输出文件夹>");
+                Console.WriteLine("已解包到：" + PCL.Core.Tools.PayloadService.Decode(paths.Base, args[1], args[2]));
+                return 0;
+            case "--javapkg-encode":
+                if (args.Length < 3) return MissingArgument("--javapkg-encode <Java 目录> <输出.javapkg>");
+                var packageInfo = PCL.Core.Java.JavaPackageService.CreatePackage(args[1], args[2]);
+                Console.WriteLine($"已打包：{args[2]}（Java {packageInfo.JavaVersion}，{packageInfo.Arch}）");
+                return 0;
+            case "--javapkg-info":
+                if (args.Length < 2) return MissingArgument("--javapkg-info <文件.javapkg>");
+                var info = PCL.Core.Java.JavaPackageService.ReadInfo(args[1]);
+                Console.WriteLine($"Java 版本：{info.JavaVersion}");
+                Console.WriteLine($"类型：{info.Type}");
+                Console.WriteLine($"架构：{info.Arch}（{info.Os}）");
+                Console.WriteLine($"厂商：{info.Vendor}");
+                Console.WriteLine($"大小：{info.Size / 1024 / 1024} MB");
                 return 0;
             case "--crash-analyze":
                 if (args.Length < 2) return MissingArgument("--crash-analyze <实例名>");
@@ -210,6 +246,10 @@ public static class CliCommandService {
         Console.WriteLine("  --mods <实例名>                  扫描 Mod");
         Console.WriteLine("  --health <实例名>                实例体检");
         Console.WriteLine("  --crash-analyze <实例名>          分析实例崩溃日志");
+        Console.WriteLine("  --payload-encode <文件夹> <输出>   打包为 .payload");
+        Console.WriteLine("  --payload-decode <文件> <文件夹>   解开 .payload");
+        Console.WriteLine("  --javapkg-encode <Java 目录> <输出> 打包 Java");
+        Console.WriteLine("  --javapkg-info <文件>             查看 Java 包信息");
         Console.WriteLine("  --diagnostics <实例名> [输出]    导出诊断包");
         Console.WriteLine("  --luck                           今日人品");
         Console.WriteLine("  --memory                         清理当前进程工作集");

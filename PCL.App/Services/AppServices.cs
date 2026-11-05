@@ -31,6 +31,8 @@ public static class AppServices {
         Settings.Register("SystemSystemCache", "");
         Settings.Register("UiLanguage", "zh_CN");
         Settings.Register("LoginLegacyName", "");
+        // 登录状态持久化：存储当前账号（加密），对应 VB 的 CacheMs* 系列缓存
+        Settings.Register("LoginCacheJson", "", encrypted: true);
         Settings.Register("VersionServerAuthServer", "");
         Settings.Register("VersionServerNide", "");
         Settings.Register("LaunchFolders", "");

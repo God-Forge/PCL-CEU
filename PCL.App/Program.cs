@@ -18,6 +18,8 @@ public static class Program {
         var logPath = Path.Combine(AppServices.Paths.Logs, "PCL-CSharp.log");
         Logger.Instance = new FileLogger(logPath);
         Logger.Instance.MinLevel = LogLevel.Info;
+        // 恢复上次的登录状态（需在日志初始化之后）
+        LoginSessionService.Restore();
         Logger.Info("C# / .NET 8 主程序启动");
         Logger.Info("PCL 数据目录：" + AppServices.Paths.Pcl);
 

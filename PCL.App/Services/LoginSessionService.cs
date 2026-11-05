@@ -14,6 +14,23 @@ public static class LoginSessionService {
 
     public static LoginProfile? Current => AppServices.CurrentLogin;
 
+    /// <summary>持久化登录状态的设置键。</summary>
+    public const string CacheKey = "LoginCacheJson";
+
+    /// <summary>从设置中恢复上次的登录状态。启动时调用。</summary>
+    public static void Restore() {
+        try {
+            var cached = AppServices.Settings.Get<string>(CacheKey);
+            var profile = LoginCache.Deserialize(cached);
+            if (profile is null) return;
+            AppServices.CurrentLogin = profile;
+            Logger.Info($"已恢复登录状态：{profile.Name}（{profile.UserType}）");
+            Changed?.Invoke(profile);
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "恢复登录状态失败");
+        }
+    }
+
     /// <summary>切换到离线登录。</summary>
     public static void SetOffline(string? name) {
         var normalized = LoginNameValidator.Normalize(name);
@@ -49,6 +66,11 @@ public static class LoginSessionService {
 
     private static void Update(LoginProfile? profile) {
         AppServices.CurrentLogin = profile;
+        try {
+            AppServices.Settings.Set(CacheKey, LoginCache.Serialize(profile));
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "保存登录状态失败");
+        }
         Logger.Info(profile is null ? "已退出登录" : $"当前账号：{profile.Name}（{profile.UserType}）");
         try {
             Changed?.Invoke(profile);

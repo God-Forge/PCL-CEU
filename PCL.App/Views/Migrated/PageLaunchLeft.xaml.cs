@@ -281,7 +281,11 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         }
     }
 
+    private readonly PCL.Core.Launch.LaunchStateMachine _state = new();
+
     private void PrepareLaunchingUI(MinecraftInstanceLocation instance) {
+        _state.Reset();
+        _state.TryTransition(PCL.Core.Launch.LaunchPhase.Loading, "初始化");
         LabLaunchingTitle.Text = "正在启动游戏";
         LabLaunchingName.Text = GetDisplayName(instance);
         LabLaunchingMethod.Text = BuildLoginText();
@@ -309,14 +313,17 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
     }
 
     private void UpdateLaunchingStage(string stage, double progress) {
-        progress = Math.Clamp(progress, 0, 1);
+        // 进度由状态机统一钳制与记录，避免异常值或失败后的回退更新
+        _state.ReportProgress(progress, stage);
+        var value = _state.Progress;
         LabLaunchingStage.Text = stage;
-        LabLaunchingProgress.Text = (progress * 100).ToString("0.00") + " %";
-        ProgressLaunchingFinished.Width = new GridLength(progress, GridUnitType.Star);
-        ProgressLaunchingUnfinished.Width = new GridLength(1 - progress, GridUnitType.Star);
+        LabLaunchingProgress.Text = (value * 100).ToString("0.00") + " %";
+        ProgressLaunchingFinished.Width = new GridLength(value, GridUnitType.Star);
+        ProgressLaunchingUnfinished.Width = new GridLength(1 - value, GridUnitType.Star);
     }
 
     private void ShowLaunchSucceeded(Process process) {
+        _state.Finish();
         LabLaunchingTitle.Text = "已启动游戏";
         LabLaunchingStage.Text = "启动完成";
         UpdateLaunchingStage("启动完成", 1);
@@ -327,6 +334,7 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
 
     private void ShowLaunchFailed(string message) {
         _process = null;
+        _state.Fail(message);
         LabLaunchingTitle.Text = "启动失败";
         LabLaunchingStage.Text = "启动失败";
         LabLaunchingProgress.Text = "—";

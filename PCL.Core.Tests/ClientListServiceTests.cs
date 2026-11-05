@@ -49,8 +49,7 @@ public class ClientListServiceTests {
     [Test]
     public async Task 两个源都失败时抛出聚合异常() {
         var fetcher = new FakeFetcher(new Dictionary<string, string>());
-        await Assert.That(() => new ClientListService(fetcher).GetAsync(0))
-            .Throws<AggregateException>();
+        await Assert.ThrowsAsync<AggregateException>(() => new ClientListService(fetcher).GetAsync(0));
     }
 
 }

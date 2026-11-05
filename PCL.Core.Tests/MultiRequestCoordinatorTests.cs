@@ -22,14 +22,12 @@ public class MultiRequestCoordinatorTests {
             _ => Task.FromException<string>(new HttpRequestException("one")),
             _ => Task.FromException<string>(new HttpRequestException("two"))
         };
-        await Assert.That(() => MultiRequestCoordinator.FetchFirstAsync(requests, 1))
-            .Throws<HttpRequestException>();
+        await Assert.ThrowsAsync<HttpRequestException>(() => MultiRequestCoordinator.FetchFirstAsync(requests, 1));
     }
 
     [Test]
     public async Task 请求列表为空时抛出参数异常() {
-        await Assert.That(() => MultiRequestCoordinator.FetchFirstAsync([]))
-            .Throws<ArgumentException>();
+        await Assert.ThrowsAsync<ArgumentException>(() => MultiRequestCoordinator.FetchFirstAsync([]));
     }
 
 }

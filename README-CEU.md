@@ -2,6 +2,9 @@
 
 本仓库是第三方基于 **Plain Craft Launcher (PCL)** 独立修改的版本，**并非 PCL 官方作品，与官方无关**。
 
+> 本文档主要描述 VB.NET/WPF 稳定版 `0.9.2-ceu`。
+> C#/.NET 8 迁移版当前为 `0.24.0-ceu`，其构建、测试、已迁移功能与仍待迁移项见 [MIGRATION-CS.md](MIGRATION-CS.md)。
+
 ## 署名与许可
 
 - 原作者：**龙腾猫跃（LTCat）**

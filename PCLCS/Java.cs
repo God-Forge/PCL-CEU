@@ -201,8 +201,9 @@ public static class JavaUtils {
                         cancellationToken.ThrowIfCancellationRequested();
                         string targetFolder = PathUtils.AddSlashSuffix(PathUtils.ForCompare(PathUtils.RemoveLastPart(file)));
                         // 判断文件夹是否包含重解析点（例如符号链接）
-                        static bool HasReparsePoint(FileSystemInfo info) {
-                            if (PathUtils.IsParentOf(Paths.AppData + @".minecraft\runtime\", info.FullName)) return false; // 不筛查 PCL 的下载路径（#8928）
+                        static bool HasReparsePoint(FileSystemInfo start) {
+                            if (PathUtils.IsParentOf(Paths.AppData + @".minecraft\runtime\", start.FullName)) return false; // 不筛查 PCL 的下载路径（#8928）
+                            FileSystemInfo? info = start;
                             do {
                                 if (info.Attributes.HasFlagF(FileAttributes.ReparsePoint)) return true;
                                 info = info is FileInfo fileInfo ? fileInfo.Directory : ((DirectoryInfo) info).Parent;

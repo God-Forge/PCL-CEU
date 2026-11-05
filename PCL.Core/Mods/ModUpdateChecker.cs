@@ -10,6 +10,9 @@ public sealed class ModUpdateResult {
     public string LocalVersion { get; init; } = "";
     public string? LatestVersion { get; init; }
     public string? ProjectSlug { get; init; }
+
+    /// <summary>新版本的文件信息（含下载地址与文件名），用于直接应用更新。</summary>
+    public ResourceVersionFile? LatestFile { get; init; }
     public bool HasUpdate { get; init; }
 
     /// <summary>检查失败的原因，成功时为 <c>null</c>。</summary>
@@ -74,6 +77,7 @@ public static class ModUpdateChecker {
                 LocalVersion = mod.Version,
                 LatestVersion = latest?.Version,
                 ProjectSlug = project.Slug,
+                LatestFile = latest,
                 HasUpdate = latest is not null && ResourceVersionSelector.IsUpdateAvailable(mod.Version, latest.Version)
             };
         } catch (OperationCanceledException) {

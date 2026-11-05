@@ -379,9 +379,52 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
             var message = $"可更新 {updatable.Count} 个，无更新 {results.Count - updatable.Count - failed.Count} 个";
             if (failed.Count > 0) message += $"，检查失败 {failed.Count} 个（多为 Modrinth 未收录）";
             NotificationService.Info(message, "Mod 更新检查");
+            if (updatable.Count > 0 && !string.IsNullOrWhiteSpace(_modsFolder)) {
+                await ApplyUpdatesAsync(updatable);
+            }
         } catch (Exception ex) {
             Logger.Error(ex, "检查 Mod 更新失败");
             NotificationService.Error("检查更新失败：" + ex.Message, "Mod 更新检查");
+        } finally {
+            BtnSelectUpdate.IsEnabled = true;
+        }
+    }
+
+    /// <summary>把检查到的更新逐个落地，先备份旧文件再替换。</summary>
+    private async Task ApplyUpdatesAsync(IReadOnlyList<ModUpdateResult> updatable) {
+        var confirm = System.Windows.MessageBox.Show(
+            $"发现 {updatable.Count} 个可更新的 Mod，是否立即更新？\r\n"
+            + "旧文件会备份到 mods/.backup，更新失败时原文件保留。",
+            "应用 Mod 更新", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes) return;
+        BtnSelectUpdate.IsEnabled = false;
+        var applier = new ModUpdateApplier();
+        var succeeded = 0;
+        var failures = new List<string>();
+        try {
+            foreach (var item in updatable) {
+                var mod = _mods.FirstOrDefault(candidate =>
+                    string.Equals(candidate.ModId, item.ModId, StringComparison.OrdinalIgnoreCase));
+                if (mod is null) continue;
+                var result = await applier.ApplyAsync(item, _modsFolder!, mod.FilePath);
+                if (result.Success) {
+                    succeeded++;
+                    Logger.Info($"[Mod 更新] {result.Message}");
+                } else {
+                    failures.Add($"{item.ModId}：{result.Message}");
+                }
+            }
+            await ReloadModsAsync();
+            var summary = $"已更新 {succeeded} 个 Mod";
+            if (failures.Count > 0) {
+                summary += $"，失败 {failures.Count} 个";
+                NotificationService.Warning(summary + "\r\n" + string.Join("\r\n", failures.Take(5)), "应用 Mod 更新");
+            } else {
+                NotificationService.Info(summary, "应用 Mod 更新");
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "应用 Mod 更新失败");
+            NotificationService.Error("更新失败：" + ex.Message, "应用 Mod 更新");
         } finally {
             BtnSelectUpdate.IsEnabled = true;
         }

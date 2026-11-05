@@ -6,7 +6,7 @@ namespace PCL.Core.Resources;
 /// <summary>
 /// Modrinth 搜索实现，输出统一的 <see cref="ResourceProject"/>。
 /// </summary>
-public sealed class ModrinthResourceService : IResourceSearchProvider {
+public sealed class ModrinthResourceService : IResourceSearchProvider, IResourceVersionSource {
 
     private const string SearchEndpoint = "https://api.modrinth.com/v2/search";
 

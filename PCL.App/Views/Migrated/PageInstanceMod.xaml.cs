@@ -5,8 +5,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using PCL.App.Controls;
 using PCL.App.Services;
+using MeloongCore;
 using PCL.Core.Minecraft;
 using PCL.Core.Mods;
+using PCL.Core.Resources;
 
 using Brushes = System.Windows.Media.Brushes;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
@@ -40,7 +42,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
     public PageInstanceMod() {
         InitializeComponent();
         BtnFilterCanUpdate.Visibility = Visibility.Collapsed;
-        BtnSelectUpdate.Visibility = Visibility.Collapsed;
+        BtnSelectUpdate.Visibility = Visibility.Visible;
         BtnFilterAll.IsChecked = true;
 
         SearchBox.TextChanged += (_, _) => {
@@ -66,7 +68,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         BtnSelectEnable.Click += (_, _) => SetSelectedEnabled(true);
         BtnSelectDisable.Click += (_, _) => SetSelectedEnabled(false);
         BtnSelectDelete.Click += (_, _) => DeleteMods(SelectedMods());
-        BtnSelectUpdate.Click += (_, _) => NotificationService.Info("当前版本尚未接入 Mod 自动更新。");
+        BtnSelectUpdate.Click += (_, _) => _ = CheckUpdatesAsync();
 
         Unloaded += (_, _) => _loadVersion++;
         Loaded += (_, _) => {
@@ -308,6 +310,36 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         if (failed > 0) NotificationService.Warning("部分 Mod 状态切换失败，请关闭正在运行的游戏后重试。");
         _selected.Clear();
         _ = ReloadModsAsync();
+    }
+
+    /// <summary>用本地 Mod ID 到 Modrinth 比对最新版本。</summary>
+    private async Task CheckUpdatesAsync() {
+        if (_mods.Count == 0) {
+            NotificationService.Info("当前没有可检查的 Mod。");
+            return;
+        }
+        BtnSelectUpdate.IsEnabled = false;
+        try {
+            var instance = string.IsNullOrWhiteSpace(AppServices.SelectedInstanceName)
+                ? null
+                : AppServices.MinecraftFolders.FindInstance(AppServices.SelectedInstanceName);
+            var minecraftVersion = instance?.Version.Id;
+            var loader = _mods.Select(mod => mod.Loader).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) && value != "unknown");
+            var results = await ModUpdateChecker.CheckAsync(_mods, new ModrinthResourceService(), minecraftVersion, loader);
+            var updatable = results.Where(result => result.HasUpdate).ToList();
+            var failed = results.Where(result => result.Error is not null).ToList();
+            foreach (var item in updatable) {
+                Logger.Info($"[Mod 更新] {item.ModId}：{item.LocalVersion} → {item.LatestVersion}");
+            }
+            var message = $"可更新 {updatable.Count} 个，无更新 {results.Count - updatable.Count - failed.Count} 个";
+            if (failed.Count > 0) message += $"，检查失败 {failed.Count} 个（多为 Modrinth 未收录）";
+            NotificationService.Info(message, "Mod 更新检查");
+        } catch (Exception ex) {
+            Logger.Error(ex, "检查 Mod 更新失败");
+            NotificationService.Error("检查更新失败：" + ex.Message, "Mod 更新检查");
+        } finally {
+            BtnSelectUpdate.IsEnabled = true;
+        }
     }
 
     private void ToggleMod(ModInfo mod) {

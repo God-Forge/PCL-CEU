@@ -345,6 +345,15 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         PanLaunching.Visibility = Visibility.Visible;
         PanLaunching.IsHitTestVisible = true;
         LaunchLogService.WriteLine("[启动] 失败：" + message);
+        // 自动分析日志，把可能原因与建议直接写在失败界面上
+        var instancePath = _current is null
+            ? null
+            : System.IO.Path.Combine(_current.Folder.Versions, _current.Version.Folder);
+        var hint = PCL.Core.Minecraft.CrashAnalysisService.BuildFailureHint(instancePath);
+        if (!string.IsNullOrWhiteSpace(hint)) {
+            LabLaunchingStage.Text = hint;
+            LaunchLogService.WriteLine("[启动] 分析结果：" + hint);
+        }
         NotificationService.Error("启动失败：" + message, "启动");
     }
 

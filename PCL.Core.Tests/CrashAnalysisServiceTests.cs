@@ -102,4 +102,48 @@ public class CrashAnalysisServiceTests {
         await Assert.That(CrashAnalysisService.LocateCrashLogs("").Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task 启动失败提示包含原因与建议() {
+        var root = Path.Combine(Path.GetTempPath(), "pcl-hint-" + Guid.NewGuid().ToString("N"));
+        try {
+            Directory.CreateDirectory(Path.Combine(root, "logs"));
+            File.WriteAllText(Path.Combine(root, "logs", "latest.log"), StackOverflowLog);
+            var hint = CrashAnalysisService.BuildFailureHint(root);
+            await Assert.That(hint).IsNotNull();
+            await Assert.That(hint!).Contains("堆栈溢出");
+            await Assert.That(hint!).Contains("-Xss4m");
+        } finally {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [Test]
+    public async Task 多个问题在提示中标注条数() {
+        var root = Path.Combine(Path.GetTempPath(), "pcl-hint2-" + Guid.NewGuid().ToString("N"));
+        try {
+            Directory.CreateDirectory(Path.Combine(root, "logs"));
+            File.WriteAllText(Path.Combine(root, "logs", "latest.log"),
+                StackOverflowLog + Environment.NewLine + NativeLog);
+            var hint = CrashAnalysisService.BuildFailureHint(root);
+            await Assert.That(hint!).Contains("另有");
+        } finally {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [Test]
+    public async Task 没有日志或无可识别特征时提示为空() {
+        var root = Path.Combine(Path.GetTempPath(), "pcl-hint3-" + Guid.NewGuid().ToString("N"));
+        try {
+            await Assert.That(CrashAnalysisService.BuildFailureHint(root)).IsNull();
+            await Assert.That(CrashAnalysisService.BuildFailureHint(null)).IsNull();
+            await Assert.That(CrashAnalysisService.BuildFailureHint("")).IsNull();
+            Directory.CreateDirectory(Path.Combine(root, "logs"));
+            File.WriteAllText(Path.Combine(root, "logs", "latest.log"), "一切正常");
+            await Assert.That(CrashAnalysisService.BuildFailureHint(root)).IsNull();
+        } finally {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
 }

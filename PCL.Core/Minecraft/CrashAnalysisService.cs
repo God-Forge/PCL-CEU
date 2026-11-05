@@ -70,6 +70,23 @@ public static class CrashAnalysisService {
         return result;
     }
 
+    /// <summary>
+    /// 启动失败后的简短提示：自动分析实例日志，有发现时返回一行摘要，否则返回 <c>null</c>。
+    /// 用于在失败界面直接给出下一步建议，而不是让用户自己去翻日志。
+    /// </summary>
+    public static string? BuildFailureHint(string? instanceFolder) {
+        if (string.IsNullOrWhiteSpace(instanceFolder)) return null;
+        var logs = LocateCrashLogs(instanceFolder);
+        if (logs.Count == 0) return null;
+        var report = AnalyzeFiles(logs);
+        if (!report.HasFindings) return null;
+        var first = report.Diagnoses[0];
+        var extra = report.Diagnoses.Count > 1 ? $"（另有 {report.Diagnoses.Count - 1} 个问题）" : "";
+        return string.IsNullOrWhiteSpace(first.Suggestion)
+            ? $"可能原因：{first.Reason}{extra}"
+            : $"可能原因：{first.Reason}{extra}。{first.Suggestion}";
+    }
+
     /// <summary>把报告格式化成可读文本。</summary>
     public static string Format(CrashAnalysisReport? report) {
         if (report is null) return "未获取到分析结果。";

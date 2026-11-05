@@ -47,6 +47,9 @@ public sealed class ThemePalette {
     /// <summary>CEU 固定饱和度。</summary>
     public const int DefaultSaturation = 85;
 
+    /// <summary>主背景纯色（未开启彩色背景时使用）。</summary>
+    public static readonly RgbColor PlainFormBackground = new(245, 245, 245);
+
     public int Hue { get; private init; }
     public int Saturation { get; private init; }
     public int LightAdjust { get; private init; }
@@ -97,7 +100,6 @@ public sealed class ThemePalette {
     /// 生成色板。默认值即 CEU 的固定蓝色主题。
     /// </summary>
     public static ThemePalette Create(int hue = DefaultHue, int saturation = DefaultSaturation, int lightAdjust = 0) {
-        var palette = new ThemePalette { Hue = hue, Saturation = saturation, LightAdjust = lightAdjust };
         var color1 = RgbColor.FromHsl(hue, saturation * 0.2, 25 + lightAdjust * 0.3);
         var color2 = RgbColor.FromHsl(hue, saturation, 45 + lightAdjust);
         var color3 = RgbColor.FromHsl(hue, saturation, 55 + lightAdjust);
@@ -126,5 +128,35 @@ public sealed class ThemePalette {
             ColorBg1 = color7
         };
     }
+
+    /// <summary>
+    /// 顶部标题条的三段渐变颜色（对应 VB 版 ThemeRefresh 里的顶条背景）。
+    /// <paramref name="delta"/> 为色相偏移量，三段分别为 -delta / 0 / +delta。
+    /// </summary>
+    public static IReadOnlyList<RgbColor> TopbarGradient(
+        double hue, double saturation, double lightAdjust, double delta) {
+        var offset = Math.Abs(delta);
+        return [
+            RgbColor.FromHsl(hue - offset, saturation, 48 + lightAdjust),
+            RgbColor.FromHsl(hue, saturation, 54 + lightAdjust),
+            RgbColor.FromHsl(hue + offset, saturation, 48 + lightAdjust)
+        ];
+    }
+
+    /// <summary>
+    /// 彩色主背景的对角渐变颜色（对应 UiBackgroundColorful 开启时的背景）。
+    /// </summary>
+    public static IReadOnlyList<RgbColor> FormGradient(double hue, double saturation) {
+        var desaturated = Math.Clamp(saturation * 0.8, 0, 100);
+        return [
+            RgbColor.FromHsl(hue - 15, desaturated, 91),
+            RgbColor.FromHsl(hue, desaturated, 91),
+            RgbColor.FromHsl(hue + 15, desaturated, 91)
+        ];
+    }
+
+    /// <summary>按开关返回主背景颜色：彩色时返回渐变中间色，否则返回纯色。</summary>
+    public static RgbColor FormBackground(bool colorful, double hue, double saturation) =>
+        colorful ? RgbColor.FromHsl(hue, Math.Clamp(saturation * 0.8, 0, 100), 91) : PlainFormBackground;
 
 }

@@ -57,6 +57,13 @@ public static class CliCommandService {
                 if (args.Length < 2) return MissingArgument("--mods <实例名>");
                 PrintMods(paths, args[1]);
                 return 0;
+            case "--mca":
+            case "--mca-selector":
+                Console.WriteLine("正在准备内置 MCA Selector……");
+                var mcaWorld = args.Length > 1 ? args[1] : null;
+                var mcaProcess = PCL.Core.Tools.McaSelectorService.Launch(paths.Base, mcaWorld);
+                Console.WriteLine("已启动 MCA Selector，PID " + mcaProcess.Id);
+                return 0;
             case "--payload-encode":
                 if (args.Length < 3) return MissingArgument("--payload-encode <文件夹> <输出.payload> [名称]");
                 Console.WriteLine("已打包：" + PCL.Core.Tools.PayloadService.Encode(
@@ -250,6 +257,7 @@ public static class CliCommandService {
         Console.WriteLine("  --payload-decode <文件> <文件夹>   解开 .payload");
         Console.WriteLine("  --javapkg-encode <Java 目录> <输出> 打包 Java");
         Console.WriteLine("  --javapkg-info <文件>             查看 Java 包信息");
+        Console.WriteLine("  --mca [存档目录]                启动内置 MCA Selector");
         Console.WriteLine("  --diagnostics <实例名> [输出]    导出诊断包");
         Console.WriteLine("  --luck                           今日人品");
         Console.WriteLine("  --memory                         清理当前进程工作集");

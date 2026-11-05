@@ -267,6 +267,28 @@ public class MySkin : System.Windows.Controls.ContentControl {
 
     private PCL.Core.Login.LoginProfile? _profile;
 
+    /// <summary>
+    /// 优先用本地缓存的皮肤图自行渲染头像（断网可用）；
+    /// 没有缓存时尝试下载并写入缓存，全部失败再回退网络头像。
+    /// </summary>
+    private async Task LoadAvatarAsync(PCL.Core.Login.LoginProfile? profile) {
+        byte[]? png = null;
+        try {
+            png = await PCL.App.Services.SkinCacheService.DownloadAsync(
+                PCL.App.Services.AppServices.Paths.Pcl, profile?.Uuid);
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "获取皮肤图失败");
+        }
+        var local = PCL.App.Services.SkinLocalRenderer.RenderAvatar(png, (int)Width);
+        if (local is not null) {
+            _avatar.Source = local;
+            return;
+        }
+        var info = PCL.Core.Login.SkinDisplayInfo.From(profile);
+        var image = await PCL.App.Services.SkinImageService.LoadAsync(info.AvatarUrl);
+        if (image is not null) _avatar.Source = image;
+    }
+
     /// <summary>双击头像打开全身预览。没有皮肤时不做任何事。</summary>
     private void OpenPreview() {
         if (!PCL.Core.Login.SkinDisplayInfo.From(_profile).HasSkin) return;
@@ -289,8 +311,7 @@ public class MySkin : System.Windows.Controls.ContentControl {
             _avatar.Source = null;
             return;
         }
-        var image = await PCL.App.Services.SkinImageService.LoadAsync(info.AvatarUrl);
-        if (image is not null) _avatar.Source = image;
+        await LoadAvatarAsync(profile);
     }
 
 }

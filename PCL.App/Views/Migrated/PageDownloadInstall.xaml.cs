@@ -389,11 +389,17 @@ public partial class PageDownloadInstall : PCL.App.Controls.MyPageRight {
 
     private void UpdateSelectedSummary() {
         LabSelectName.Visibility = Visibility.Visible;
-        if (_selectedLoader is null) {
-            LabSelectName.Text = string.IsNullOrWhiteSpace(_minecraftVersion) ? "未选择版本" : "原版 " + _minecraftVersion;
-        } else {
-            LabSelectName.Text = _selectedLoader.Loader + " " + (_selectedLoader.Display ?? _selectedLoader.Version);
-        }
+        // 用统一的目标模型描述当前选择，便于之后与初始目标对比
+        var target = new InstallTarget {
+            MinecraftVersion = _minecraftVersion ?? "",
+            ForgeVersion = _selectedLoader is { } loader && loader.Loader == "Forge" ? loader.Version : null,
+            NeoForgeVersion = _selectedLoader is { } neo && neo.Loader == "NeoForge" ? neo.Version : null,
+            FabricVersion = _selectedLoader is { } fabric && fabric.Loader == "Fabric" ? fabric.Version : null,
+            LiteLoaderVersion = _selectedLoader is { } lite && lite.Loader == "LiteLoader" ? lite.Version : null
+        };
+        LabSelectName.Text = _selectedLoader is null && string.IsNullOrWhiteSpace(_minecraftVersion)
+            ? "未选择版本"
+            : InstallTargetComparer.Describe(target);
     }
 
     private void UpdateInstallName() {

@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using PCL.Core.Modpack;
 using PCL.Core.Mods;
 using PCL.Core.Worlds;
 
@@ -28,28 +29,39 @@ public sealed class ProcessSample {
 /// </summary>
 public static class AdvancedMaintenanceService {
 
-    public static string ExportOfflinePack(string instanceFolder, string mcFolder, string outputZip) {
+    public static string ExportOfflinePack(string instanceFolder, string mcFolder, string outputZip) =>
+        ExportOfflinePack(instanceFolder, mcFolder, outputZip, new ModpackExportOptions());
+
+    /// <summary>
+    /// 导出离线整合包，并按 <paramref name="options"/> 决定包含哪些目录与资源。
+    /// </summary>
+    public static string ExportOfflinePack(
+        string instanceFolder,
+        string mcFolder,
+        string outputZip,
+        ModpackExportOptions options) {
+        ArgumentNullException.ThrowIfNull(options);
         var temp = Path.Combine(Path.GetTempPath(), "pcl-offline-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(temp);
         try {
             CopyDirectory(instanceFolder, Path.Combine(temp, "instance"), path => {
                 var relative = path.Substring(instanceFolder.Length + 1);
-                var top = relative.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar])[0];
-                return !top.Equals("logs", StringComparison.OrdinalIgnoreCase)
-                       && !top.Equals("crash-reports", StringComparison.OrdinalIgnoreCase);
+                return ModpackExportFilter.ShouldInclude(relative, options);
             });
             var jsonPath = Directory.EnumerateFiles(instanceFolder, "*.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
             if (jsonPath is not null) {
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
-                foreach (var library in LibraryResolver.Resolve(json, mcFolder)) {
-                    var source = Path.Combine(mcFolder, library.LocalPath);
-                    if (!File.Exists(source)) continue;
-                    var target = Path.Combine(temp, "libraries", library.LocalPath);
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Copy(source, target, true);
+                if (options.IncludeLibraries) {
+                    foreach (var library in LibraryResolver.Resolve(json, mcFolder)) {
+                        var source = Path.Combine(mcFolder, library.LocalPath);
+                        if (!File.Exists(source)) continue;
+                        var target = Path.Combine(temp, "libraries", library.LocalPath);
+                        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                        File.Copy(source, target, true);
+                    }
                 }
                 var assetIndex = json["assetIndex"]?["id"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(assetIndex)) {
+                if (options.IncludeAssets && !string.IsNullOrWhiteSpace(assetIndex)) {
                     var indexPath = Path.Combine(mcFolder, "assets", "indexes", assetIndex + ".json");
                     if (File.Exists(indexPath)) {
                         var indexTarget = Path.Combine(temp, "assets", "indexes", assetIndex + ".json");

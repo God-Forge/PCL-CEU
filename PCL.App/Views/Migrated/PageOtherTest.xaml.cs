@@ -102,6 +102,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         BtnDiagnosticShare.Click += (_, _) => CopyDiagnostic();
         BtnCrashHistory.Click += (_, _) => ShowCrashHistory();
         BtnCrashAnalyze.Click += (_, _) => AnalyzeCrashLogs();
+        BtnImportModpack.Click += (_, _) => ImportModpack();
         BtnLogViewer.Click += (_, _) => ShowLatestLog();
         BtnCrashCompare.Click += (_, _) => CompareCrashReports();
         BtnEnvironment.Click += (_, _) => ShowEnvironment();
@@ -363,6 +364,31 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             log.Lines);
         ClipboardService.SetText(text);
         NotificationService.Info("诊断摘要已复制到剪贴板。");
+    }
+
+    /// <summary>从本地 zip 导入整合包到当前版本目录。</summary>
+    private async void ImportModpack() {
+        var files = MeloongCore.Wpf.Dialogs.SelectFile("选择整合包", false, AppServices.Paths.Pcl,
+            "整合包|*.zip|所有文件|*.*");
+        if (files.Count == 0) return;
+        var zip = files[0];
+        var name = System.IO.Path.GetFileNameWithoutExtension(zip);
+        NotificationService.Info($"正在导入《{name}》，完成后会提示结果。", "导入整合包");
+        try {
+            var result = await new PCL.Core.Modpack.ModpackImportService()
+                .ImportAsync(zip, AppServices.Paths.Versions, name);
+            if (result.Success) {
+                Logger.Info($"[整合包] 已导入到 {result.TargetFolder}，下载 {result.Downloaded} 个文件");
+                NotificationService.Info(
+                    $"整合包已导入：{System.IO.Path.GetFileName(result.TargetFolder)}\r\n下载 {result.Downloaded} 个文件，解压 {result.Overrides} 个覆盖文件。",
+                    "导入整合包");
+            } else {
+                NotificationService.Error(result.Message, "导入整合包失败");
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "导入整合包失败");
+            NotificationService.Error("导入失败：" + ex.Message, "导入整合包失败");
+        }
     }
 
     /// <summary>分析实例日志或用户选定的崩溃日志，输出原因与修复建议。</summary>

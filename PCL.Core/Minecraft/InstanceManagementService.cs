@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json.Linq;
 using PCL.Core.Settings;
 
@@ -116,7 +117,7 @@ public static class InstanceManagementService {
             }
         }
 
-        Directory.Move(source, target);
+        MoveDirectoryWithRetry(source, target);
 
         MoveIfExists(Path.Combine(target, oldName + "-natives"), Path.Combine(target, newName + "-natives"));
         MoveIfExists(Path.Combine(target, oldName + ".jar"), Path.Combine(target, newName + ".jar"));
@@ -160,6 +161,22 @@ public static class InstanceManagementService {
         var expected = Path.Combine(folder, name + ".json");
         if (File.Exists(expected)) return expected;
         return Directory.EnumerateFiles(folder, "*.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// 移动目录，对短暂的占用（索引服务、杀毒扫描、尚未释放的句柄）做有限次重试。
+    /// </summary>
+    private static void MoveDirectoryWithRetry(string source, string target, int attempts = 5) {
+        for (var attempt = 1; ; attempt++) {
+            try {
+                Directory.Move(source, target);
+                return;
+            } catch (IOException) when (attempt < attempts) {
+                Thread.Sleep(60 * attempt);
+            } catch (UnauthorizedAccessException) when (attempt < attempts) {
+                Thread.Sleep(60 * attempt);
+            }
+        }
     }
 
     private static void MoveIfExists(string source, string target) {

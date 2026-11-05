@@ -367,6 +367,26 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         NotificationService.Info("诊断摘要已复制到剪贴板。");
     }
 
+    /// <summary>按导入目标安装加载器；能自动装的直接装，其余列成待办。</summary>
+    private async Task InstallLoadersAsync(PCL.Core.Minecraft.InstallTarget target) {
+        try {
+            var result = await new PCL.Core.Minecraft.LoaderInstallOrchestrator()
+                .InstallAsync(target, AppServices.Paths.Minecraft);
+            if (result.Installed.Count > 0) {
+                Logger.Info("[加载器] " + string.Join("；", result.Installed));
+                NotificationService.Info("已自动安装：" + string.Join("、", result.Installed), "安装加载器");
+            }
+            if (result.Pending.Count > 0) {
+                NotificationService.Warning(
+                    "以下加载器需要手动完成：\r\n" + string.Join("\r\n", result.Pending),
+                    "安装加载器");
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "安装加载器失败");
+            NotificationService.Warning("安装加载器失败：" + ex.Message, "安装加载器");
+        }
+    }
+
     /// <summary>从本地 zip 导入整合包到当前版本目录。</summary>
     private async void ImportModpack() {
         var files = MeloongCore.Wpf.Dialogs.SelectFile("选择整合包", false, AppServices.Paths.Pcl,
@@ -398,6 +418,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
                 NotificationService.Info(
                     $"整合包已导入：{System.IO.Path.GetFileName(result.TargetFolder)}\r\n下载 {result.Downloaded} 个文件，解压 {result.Overrides} 个覆盖文件。",
                     "导入整合包");
+                await InstallLoadersAsync(chosen);
             } else {
                 NotificationService.Error(result.Message, "导入整合包失败");
             }

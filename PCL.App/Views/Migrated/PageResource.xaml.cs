@@ -59,6 +59,30 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
         }
     }
 
+    /// <summary>读取「版本」下拉：选了具体版本才作为筛选条件，默认项不过滤。</summary>
+    private string? SelectedMinecraftVersion() {
+        if (TextSearchVersion.SelectedIndex <= 0) return null;
+        var text = TextSearchVersion.Text?.Trim();
+        return string.IsNullOrWhiteSpace(text) || text.StartsWith("全部", StringComparison.Ordinal) ? null : text;
+    }
+
+    /// <summary>读取「类型」下拉的 Tag（形如 406/worldgen），空选项不过滤。</summary>
+    private ResourceCategoryFilter? SelectedCategory() {
+        if (ComboSearchTag.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return null;
+        var filter = ResourceCategoryFilter.Parse(item.Tag as string ?? item.Tag?.ToString());
+        return filter.IsEmpty ? null : filter;
+    }
+
+    /// <summary>读取「来源」下拉，全部来源时返回 null。</summary>
+    private IReadOnlyList<ResourceSource>? SelectedSources() {
+        if (ComboSearchSource.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return null;
+        return item.Tag?.ToString() switch {
+            "1" => [ResourceSource.CurseForge],
+            "2" => [ResourceSource.Modrinth],
+            _ => null
+        };
+    }
+
     private ResourceKind Kind => PageType switch {
         "ResourcePack" => ResourceKind.ResourcePack,
         "Shader" => ResourceKind.ShaderPack,
@@ -77,7 +101,10 @@ public partial class PageResource : PCL.App.Controls.MyScrollViewer {
                 Text = TextSearchName.Text.Trim(),
                 Kind = Kind,
                 Offset = _offset,
-                Limit = 20
+                Limit = 20,
+                MinecraftVersion = SelectedMinecraftVersion(),
+                Category = SelectedCategory(),
+                Sources = SelectedSources()
             });
             var projects = result.Projects;
             _lastCount = projects.Count;

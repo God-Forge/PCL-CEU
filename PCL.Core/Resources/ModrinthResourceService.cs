@@ -80,6 +80,9 @@ public sealed class ModrinthResourceService : IResourceSearchProvider, IResource
         if (!string.IsNullOrWhiteSpace(query.Loader)) {
             groups.Add($"[\"categories:{query.Loader}\"]");
         }
+        if (!string.IsNullOrWhiteSpace(query.Category?.ModrinthSlug)) {
+            groups.Add($"[\"categories:{query.Category!.ModrinthSlug}\"]");
+        }
         return "[" + string.Join(",", groups) + "]";
     }
 

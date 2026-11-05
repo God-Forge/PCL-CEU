@@ -92,6 +92,9 @@ public sealed class CurseForgeResourceService : IResourceSearchProvider {
         if (!string.IsNullOrWhiteSpace(query.MinecraftVersion)) {
             url += "&gameVersion=" + Uri.EscapeDataString(query.MinecraftVersion);
         }
+        if (query.Category?.CurseForgeId is { } categoryId) {
+            url += "&categoryId=" + categoryId;
+        }
         if (!string.IsNullOrWhiteSpace(query.Loader) && ToModLoaderType(query.Loader) is { } loaderType) {
             url += "&modLoaderType=" + loaderType;
         }

@@ -63,6 +63,9 @@ public sealed class ResourceSearchQuery {
     /// <summary>按加载器过滤（fabric/forge/neoforge/quilt），为空则不过滤。</summary>
     public string? Loader { get; init; }
 
+    /// <summary>分类筛选，默认不过滤。</summary>
+    public ResourceCategoryFilter? Category { get; init; }
+
     public int Offset { get; init; }
     public int Limit { get; init; } = 20;
 

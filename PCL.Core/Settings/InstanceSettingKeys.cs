@@ -39,6 +39,12 @@ public static class InstanceSettingKeys {
     /// <summary>是否禁用 JWJGL 安全模式。</summary>
     public const string DisableJwjgl = "VersionAdvanceDisableJLW";
 
+    /// <summary>是否启用独立（Indie）安装方式。</summary>
+    public const string IndieInstall = "VersionArgumentIndieV2";
+
+    /// <summary>服务器登录方式（0 正版 / 1 第三方）。</summary>
+    public const string ServerLogin = "VersionServerLogin";
+
     /// <summary>全部实例级键。</summary>
     public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal) {
         JvmArguments,
@@ -50,7 +56,9 @@ public static class InstanceSettingKeys {
         RamCustom,
         RunCommand,
         Gc,
-        DisableJwjgl
+        DisableJwjgl,
+        IndieInstall,
+        ServerLogin
     };
 
     public static bool IsInstanceLevel(string key) => !string.IsNullOrEmpty(key) && All.Contains(key);
@@ -68,7 +76,9 @@ public static class InstanceSettingKeys {
         (RamCustom, 15),
         (RunCommand, ""),
         (Gc, 0),
-        (DisableJwjgl, false)
+        (DisableJwjgl, false),
+        (IndieInstall, false),
+        (ServerLogin, 0)
     ];
 
 }

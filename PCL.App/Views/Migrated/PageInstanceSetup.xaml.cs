@@ -72,14 +72,8 @@ public partial class PageInstanceSetup : PCL.App.Controls.MyPageRight {
     }
 
     private void RegisterSettings() {
-        try {
-            AppServices.Settings.Register("VersionArgumentIndieV2", true, SettingSource.Instance);
-            AppServices.Settings.Register("VersionArgumentJavaV2", 0, SettingSource.Instance);
-            AppServices.Settings.Register("VersionArgumentJavaPath", "", SettingSource.Instance);
-            AppServices.Settings.Register("VersionRamType", 2, SettingSource.Instance);
-            AppServices.Settings.Register("VersionServerLogin", 0, SettingSource.Instance);
-        } catch {
-        }
+        // 实例级设置统一由 AppServices.Initialize 按 InstanceSettingKeys.Definitions 注册，
+        // 这里不再重复注册，以免默认值与注册表不一致。
     }
 
     private void LoadInstance() {
@@ -232,7 +226,8 @@ public partial class PageInstanceSetup : PCL.App.Controls.MyPageRight {
             }
 
             ComboArgumentJavaSelect.IsEnabled = true;
-            var saved = GetInstanceSetting("VersionArgumentJavaPath", "");
+            var saved = GetInstanceSetting(PCL.Core.Settings.InstanceSettingKeys.JavaSelect, PCL.Core.Settings.InstanceSettingKeys.JavaSelectGlobal);
+            if (saved == PCL.Core.Settings.InstanceSettingKeys.JavaSelectGlobal) saved = "";
             var selected = ComboArgumentJavaSelect.Items.OfType<ComboBoxItem>().FirstOrDefault(item =>
                                string.Equals(item.Tag as string, saved, StringComparison.OrdinalIgnoreCase))
                            ?? ComboArgumentJavaSelect.Items[0] as ComboBoxItem;
@@ -246,7 +241,7 @@ public partial class PageInstanceSetup : PCL.App.Controls.MyPageRight {
     private void JavaSelection_Changed(object sender, SelectionChangedEventArgs e) {
         if (_loading || _updatingJava) return;
         if (ComboArgumentJavaSelect.SelectedItem is not ComboBoxItem item || item.Tag is not string path) return;
-        SetInstanceSetting("VersionArgumentJavaPath", path);
+        SetInstanceSetting(PCL.Core.Settings.InstanceSettingKeys.JavaSelect, path);
         LabArgumentJava.Text = item.Content?.ToString() ?? "";
         UpdateJavaHint();
     }

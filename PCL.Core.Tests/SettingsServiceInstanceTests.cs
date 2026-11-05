@@ -96,11 +96,28 @@ public class SettingsServiceInstanceTests {
 
     [Test]
     public async Task 键注册表覆盖VB的全部实例级设置() {
-        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(10);
-        await Assert.That(InstanceSettingKeys.Definitions.Count).IsEqualTo(10);
+        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(12);
+        await Assert.That(InstanceSettingKeys.Definitions.Count).IsEqualTo(12);
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionAdvanceJvm")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentJavaSelect")).IsTrue();
+        await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentIndieV2")).IsTrue();
+        await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionServerLogin")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("UiLanguage")).IsFalse();
+    }
+
+    [Test]
+    public async Task 页面用到的实例键都已注册() {
+        // PageInstanceSetup 会直接读写的实例键，缺一个就会在页面里抛 KeyNotFoundException
+        var required = new[] {
+            "VersionArgumentJavaV2",
+            InstanceSettingKeys.JavaSelect,
+            "VersionRamType",
+            "VersionArgumentIndieV2",
+            "VersionServerLogin"
+        };
+        foreach (var key in required) {
+            await Assert.That(InstanceSettingKeys.IsInstanceLevel(key)).IsTrue();
+        }
     }
 
 }

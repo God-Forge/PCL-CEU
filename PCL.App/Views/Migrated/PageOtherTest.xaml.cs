@@ -101,6 +101,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         BtnCrashDiagnostic.Click += (_, _) => ExportDiagnostic();
         BtnDiagnosticShare.Click += (_, _) => CopyDiagnostic();
         BtnCrashHistory.Click += (_, _) => ShowCrashHistory();
+        BtnCrashAnalyze.Click += (_, _) => AnalyzeCrashLogs();
         BtnLogViewer.Click += (_, _) => ShowLatestLog();
         BtnCrashCompare.Click += (_, _) => CompareCrashReports();
         BtnEnvironment.Click += (_, _) => ShowEnvironment();
@@ -362,6 +363,24 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             log.Lines);
         ClipboardService.SetText(text);
         NotificationService.Info("诊断摘要已复制到剪贴板。");
+    }
+
+    /// <summary>分析实例日志或用户选定的崩溃日志，输出原因与修复建议。</summary>
+    private void AnalyzeCrashLogs() {
+        var logs = CrashAnalysisService.LocateCrashLogs(InstancePath);
+        if (logs.Count == 0) {
+            var picked = MeloongCore.Wpf.Dialogs.SelectFile("选择崩溃日志", false, InstancePath,
+                "日志文件|*.log;*.txt|所有文件|*.*");
+            if (picked.Count == 0) {
+                NotificationService.Warning("实例中没有找到日志，也没有选择文件。", "崩溃分析");
+                return;
+            }
+            logs = picked;
+        }
+        var report = CrashAnalysisService.AnalyzeFiles(logs);
+        Logger.Info($"[崩溃分析] 分析了 {logs.Count} 个文件，发现 {report.Diagnoses.Count} 个问题");
+        System.Windows.MessageBox.Show(CrashAnalysisService.Format(report), "崩溃分析", MessageBoxButton.OK,
+            report.HasFindings ? MessageBoxImage.Warning : MessageBoxImage.Information);
     }
 
     private void ShowCrashHistory() {

@@ -22,6 +22,8 @@ public static class Program {
         Logger.Instance.MinLevel = LogLevel.Info;
         // 恢复上次的登录状态（需在日志初始化之后）
         LoginSessionService.Restore();
+        // 过期账号在后台续期，不阻塞启动
+        _ = LoginSessionService.RefreshExpiredAccountsAsync();
         Logger.Info("C# / .NET 8 主程序启动");
         Logger.Info("PCL 数据目录：" + AppServices.Paths.Pcl);
 

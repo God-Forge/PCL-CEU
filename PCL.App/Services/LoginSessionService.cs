@@ -78,6 +78,53 @@ public static class LoginSessionService {
         return true;
     }
 
+    /// <summary>后台刷新已过期的账号令牌，成功后更新当前登录态。</summary>
+    public static async Task RefreshExpiredAccountsAsync() {
+        if (_store.Accounts.Count == 0) return;
+        try {
+            var service = new AccountTokenRefreshService(new MicrosoftTokenRefresher());
+            var (updated, outcomes) = await service.RefreshAsync(_store, DateTimeOffset.Now);
+            if (outcomes.Count == 0) return;
+            var refreshed = outcomes.Count(item => item.Refreshed);
+            Logger.Info($"账号令牌刷新：成功 {refreshed} 个，失败 {outcomes.Count - refreshed} 个");
+            if (refreshed == 0) return;
+            _store = updated;
+            Persist();
+            var profile = _store.Current?.ToProfile();
+            if (profile is null) return;
+            AppServices.CurrentLogin = profile;
+            Changed?.Invoke(profile);
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "刷新账号令牌失败");
+        }
+    }
+
+    /// <summary>把微软登录服务适配成刷新接口；失败一律返回 null 交给上层处理。</summary>
+    private sealed class MicrosoftTokenRefresher : IAccountTokenRefresher {
+        private readonly MicrosoftLoginService? _service;
+
+        public MicrosoftTokenRefresher() {
+            // 与登录页一致：client id 通过环境变量提供，未配置时无法续期
+            var clientId = Environment.GetEnvironmentVariable("PCL_MS_CLIENT_ID") ?? "";
+            _service = string.IsNullOrWhiteSpace(clientId) ? null : new MicrosoftLoginService(clientId);
+        }
+
+        public async Task<MicrosoftOAuthTokens?> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default) {
+            if (_service is null) {
+                Logger.Info("未配置 PCL_MS_CLIENT_ID，跳过账号令牌刷新");
+                return null;
+            }
+            try {
+                return await _service.RefreshAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception ex) when (ex is not OutOfMemoryException) {
+                Logger.Warn(ex, "微软账号令牌刷新失败");
+                return null;
+            }
+        }
+    }
+
     private static void Persist() {
         try {
             AppServices.Settings.Set(AccountsKey, _store.Serialize());

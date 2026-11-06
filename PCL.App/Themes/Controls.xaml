@@ -81,7 +81,7 @@
     </Style>
 
     <Style TargetType="{x:Type local:MyIconButton}" BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="Padding" Value="{DynamicResource Space.XS}" />
+        <Setter Property="Padding" Value="{DynamicResource Padding.Icon}" />
     </Style>
 
     <Style TargetType="{x:Type local:MyIconTextButton}" BasedOn="{StaticResource {x:Type Button}}" />

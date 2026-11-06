@@ -96,8 +96,8 @@ public class SettingsServiceInstanceTests {
 
     [Test]
     public async Task 键注册表覆盖VB的全部实例级设置() {
-        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(12);
-        await Assert.That(InstanceSettingKeys.Definitions.Count).IsEqualTo(12);
+        await Assert.That(InstanceSettingKeys.All.Count).IsEqualTo(13);
+        await Assert.That(InstanceSettingKeys.Definitions.Count).IsEqualTo(13);
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionAdvanceJvm")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentJavaSelect")).IsTrue();
         await Assert.That(InstanceSettingKeys.IsInstanceLevel("VersionArgumentIndieV2")).IsTrue();

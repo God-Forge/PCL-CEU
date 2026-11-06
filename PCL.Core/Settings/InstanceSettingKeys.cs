@@ -1,4 +1,4 @@
-namespace PCL.Core.Settings;
+﻿namespace PCL.Core.Settings;
 
 /// <summary>
 /// 实例级设置键。对应 VB 版 Settings 中 <c>Source:=Sources.Instance</c> 的定义，
@@ -33,6 +33,9 @@ public static class InstanceSettingKeys {
     /// <summary>启动前执行的命令。</summary>
     public const string RunCommand = "VersionAdvanceRun";
 
+    /// <summary>启动前命令是否等待执行完成。</summary>
+    public const string RunWait = "VersionAdvanceRunWait";
+
     /// <summary>GC 参数预设。</summary>
     public const string Gc = "VersionAdvanceGC";
 
@@ -55,6 +58,7 @@ public static class InstanceSettingKeys {
         RamType,
         RamCustom,
         RunCommand,
+        RunWait,
         Gc,
         DisableJwjgl,
         IndieInstall,
@@ -75,6 +79,7 @@ public static class InstanceSettingKeys {
         (RamType, 2),
         (RamCustom, 15),
         (RunCommand, ""),
+        (RunWait, true),
         (Gc, 0),
         (DisableJwjgl, false),
         (IndieInstall, false),

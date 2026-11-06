@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -249,7 +249,9 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
                 null,
                 windowTitle,
                 extraJvm,
-                extraGame), cts.Token);
+                extraGame,
+                LaunchParameterService.ResolvePreLaunchCommand(instance),
+                LaunchParameterService.ResolvePreLaunchWait(instance)), cts.Token);
             var process = session.Process;
             if (cts.IsCancellationRequested) {
                 TryKill(process);

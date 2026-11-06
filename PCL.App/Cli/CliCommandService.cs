@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using MeloongCore;
 using PCL.App.Services;
 using PCL.Core.Download;
@@ -186,7 +186,9 @@ public static class CliCommandService {
                     null,
                     LaunchParameterService.ResolveWindowTitle(location),
                     LaunchParameterService.ResolveExtraJvmArguments(location),
-                    LaunchParameterService.ResolveExtraGameArguments(location));
+                    LaunchParameterService.ResolveExtraGameArguments(location),
+                    LaunchParameterService.ResolvePreLaunchCommand(location),
+                    LaunchParameterService.ResolvePreLaunchWait(location));
                 Console.WriteLine($"已启动 {location.Version.Id}，进程 {session.Process.Id}，Java {java.Version}");
                 return 0;
             case "--page-smoke":

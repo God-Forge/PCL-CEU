@@ -1,7 +1,8 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using PCL.Core.Java;
+using PCL.Core.Launch;
 using PCL.Core.Login;
 using PCL.Core.Minecraft;
 
@@ -26,8 +27,22 @@ public static class LaunchService {
         GameProcessWatcherOptions? watcherOptions = null,
         string? windowTitle = null,
         IReadOnlyList<string>? extraJvmArguments = null,
-        IReadOnlyList<string>? extraGameArguments = null) {
+        IReadOnlyList<string>? extraGameArguments = null,
+        string? preLaunchCommand = null,
+        bool waitForPreLaunch = true) {
         var json = JObject.Parse(File.ReadAllText(jsonPath));
+        // 启动前命令：在真正拉起游戏之前执行
+        if (!string.IsNullOrWhiteSpace(preLaunchCommand)) {
+            var commandResult = LaunchCommandRunner
+                .RunAsync(preLaunchCommand, instanceFolder, waitForPreLaunch)
+                .GetAwaiter()
+                .GetResult();
+            if (!commandResult.Success) {
+                Logger.Warn($"启动前命令执行失败：{commandResult.Error}");
+            } else if (commandResult.Waited && commandResult.ExitCode != 0) {
+                Logger.Warn($"启动前命令退出码 {commandResult.ExitCode}");
+            }
+        }
         var plan = LaunchPlanService.Build(json, mcFolder, instanceFolder, versionName, login, width, height, ramMb, windowType, extraJvmArguments, extraGameArguments);
         var startInfo = JavaProcessLauncher.BuildStartInfo(
             javaExe,

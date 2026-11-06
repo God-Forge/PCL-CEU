@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using PCL.App.Services;
@@ -52,7 +52,9 @@ public partial class HomeView : System.Windows.Controls.UserControl {
                 null,
                 LaunchParameterService.ResolveWindowTitle(instance),
                 LaunchParameterService.ResolveExtraJvmArguments(instance),
-                LaunchParameterService.ResolveExtraGameArguments(instance));
+                LaunchParameterService.ResolveExtraGameArguments(instance),
+                LaunchParameterService.ResolvePreLaunchCommand(instance),
+                LaunchParameterService.ResolvePreLaunchWait(instance));
             var process = session.Process;
             StatusText.Text = $"已启动 {instance.Version.Id}，进程 {process.Id}，Java {java.Version}";
             session.Watcher.StateChanged += (_, state) => DispatcherService.Invoke(() => {

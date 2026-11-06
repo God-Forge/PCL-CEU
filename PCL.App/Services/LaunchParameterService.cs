@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using MeloongCore;
 using PCL.Core.Minecraft;
 using PCL.Core.Native;
@@ -53,6 +53,27 @@ public static class LaunchParameterService {
         if (string.IsNullOrWhiteSpace(raw)) return [];
         return JavaArgumentParser.Split(raw);
     }
+
+    /// <summary>
+    /// 启动前要执行的命令（VersionAdvanceRun），已展开占位符。
+    /// 没有配置时返回空串。
+    /// </summary>
+    public static string ResolvePreLaunchCommand(MinecraftInstanceLocation? instance = null) {
+        if (instance is null) return "";
+        var raw = ResolveInstanceSetting(instance, InstanceSettingKeys.RunCommand, () => "");
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        var context = new PCL.Core.Launch.LaunchCommandContext {
+            LauncherPath = AppServices.Paths.Base,
+            MinecraftPath = AppServices.Paths.Minecraft,
+            InstancePath = InstancePath(instance),
+            PlayerName = AppServices.CurrentLogin?.Name ?? ""
+        };
+        return PCL.Core.Launch.LaunchCommandExpander.Expand(raw, context);
+    }
+
+    /// <summary>启动前命令是否等待执行完成（VersionAdvanceRunWait，默认等待）。</summary>
+    public static bool ResolvePreLaunchWait(MinecraftInstanceLocation? instance = null) =>
+        instance is null || ResolveInstanceSetting(instance, InstanceSettingKeys.RunWait, () => true);
 
     /// <summary>实例自定义游戏参数（VersionAdvanceGame），按空格切分。</summary>
     public static IReadOnlyList<string> ResolveExtraGameArguments(MinecraftInstanceLocation? instance = null) {

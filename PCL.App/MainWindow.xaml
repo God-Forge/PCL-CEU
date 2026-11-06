@@ -52,6 +52,9 @@
             </StackPanel>
         </Border>
 
+        <Border x:Name="PanBackground" Grid.Column="1" Margin="24" Visibility="Collapsed"
+                IsHitTestVisible="False" Panel.ZIndex="-1" />
+
         <ContentControl x:Name="ContentHost" Grid.Column="1" Margin="24" />
 
         <StackPanel x:Name="PanHint" Grid.ColumnSpan="2" Panel.ZIndex="10"

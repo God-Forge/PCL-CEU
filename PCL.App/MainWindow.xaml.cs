@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Windows;
 using MeloongCore;
 using PCL.App.Services;
@@ -17,10 +17,14 @@ public partial class MainWindow : Window {
         NavigationService.Initialize(ShowView);
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
         VersionText.Text = $"版本 0.24.0\n程序集 {version}";
-        ShowView(new LaunchPageView());
+        // 有自定义主页就优先展示，解析失败时回退默认启动页
+        ShowView(CustomHomeLoader.TryLoad(AppServices.Paths.Pcl) ?? new LaunchPageView());
         AllowDrop = true;
         Drop += OnFileDrop;
-        Loaded += (_, _) => InitializeMusic();
+        Loaded += (_, _) => {
+            InitializeMusic();
+            BackgroundService.Apply(PanBackground);
+        };
     }
 
     private void ShowView(UIElement view) => ContentHost.Content = view;

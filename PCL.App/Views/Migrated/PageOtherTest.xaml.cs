@@ -370,8 +370,15 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
     /// <summary>按导入目标安装加载器；能自动装的直接装，其余列成待办。</summary>
     private async Task InstallLoadersAsync(PCL.Core.Minecraft.InstallTarget target) {
         try {
+            // 安装 OptiFine / LiteLoader 需要 Java 运行安装器，先找一个可用版本
+            var java = JavaScanner.FindBest(JavaScanner.DefaultRoots(
+                AppServices.Paths.Base,
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)));
+            Logger.Info(java is null
+                ? "[加载器] 未找到可用 Java，仅能安装 Fabric"
+                : $"[加载器] 使用 Java：{java.JavaHome}（{java.Version}）");
             var result = await new PCL.Core.Minecraft.LoaderInstallOrchestrator()
-                .InstallAsync(target, AppServices.Paths.Minecraft);
+                .InstallAsync(target, AppServices.Paths.Minecraft, java?.JavaExe);
             if (result.Installed.Count > 0) {
                 Logger.Info("[加载器] " + string.Join("；", result.Installed));
                 NotificationService.Info("已自动安装：" + string.Join("、", result.Installed), "安装加载器");

@@ -1,4 +1,4 @@
-namespace PCL.Core.Minecraft;
+﻿namespace PCL.Core.Minecraft;
 
 /// <summary>加载器种类。</summary>
 public enum LoaderKind {
@@ -67,6 +67,11 @@ public static class LoaderInstallPlanner {
     }
 
     /// <summary>该步骤能否自动完成（目前只有 Fabric 不需要外部安装器）。</summary>
-    public static bool CanInstallAutomatically(LoaderInstallStep step) => step.Kind == LoaderKind.Fabric;
+    /// <summary>
+    /// 能否自动完成：Fabric 直接生成版本；LiteLoader 与 OptiFine 可下载安装器运行；
+    /// Forge 系需要 install_profile 与 processors，暂不自动。
+    /// </summary>
+    public static bool CanInstallAutomatically(LoaderInstallStep step) =>
+        step.Kind is LoaderKind.Fabric or LoaderKind.LiteLoader or LoaderKind.OptiFine;
 
 }

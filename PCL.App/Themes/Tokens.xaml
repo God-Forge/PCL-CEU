@@ -1,0 +1,69 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        设计令牌层（v1.0.3）
+        原则：只新增语义键，不删除或修改既有的 ColorBrushN / ColorObjectN，
+        因此 58 个页面 XAML 不需要任何改动就能继续工作。
+        新代码请使用这里的语义名，不要再硬编码颜色与尺寸。
+    -->
+
+    <!-- ===== 语义颜色 ===== -->
+    <!-- 表面：页面底色、卡片、悬停/按下 -->
+    <SolidColorBrush x:Key="Brush.Surface" Color="{DynamicResource ColorObject8}" />
+    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="#F5FFFFFF" />
+    <SolidColorBrush x:Key="Brush.SurfaceHover" Color="{DynamicResource ColorObject8}" />
+    <SolidColorBrush x:Key="Brush.SurfacePressed" Color="{DynamicResource ColorObject6}" />
+
+    <!-- 文本：三级层次 -->
+    <SolidColorBrush x:Key="Brush.Text.Primary" Color="{DynamicResource ColorObject1}" />
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="{DynamicResource ColorObjectGray2}" />
+    <SolidColorBrush x:Key="Brush.Text.Tertiary" Color="{DynamicResource ColorObjectGray3}" />
+    <SolidColorBrush x:Key="Brush.Text.OnAccent" Color="White" />
+
+    <!-- 强调与边框 -->
+    <SolidColorBrush x:Key="Brush.Accent" Color="{DynamicResource ColorObject3}" />
+    <SolidColorBrush x:Key="Brush.Accent.Hover" Color="{DynamicResource ColorObject4}" />
+    <SolidColorBrush x:Key="Brush.Accent.Pressed" Color="{DynamicResource ColorObject2}" />
+    <SolidColorBrush x:Key="Brush.Border" Color="{DynamicResource ColorObjectGray5}" />
+    <SolidColorBrush x:Key="Brush.Border.Strong" Color="{DynamicResource ColorObjectGray4}" />
+
+    <!-- 语义状态色 -->
+    <SolidColorBrush x:Key="Brush.Danger" Color="{DynamicResource ColorBrushRedDark}" />
+    <SolidColorBrush x:Key="Brush.Warning" Color="#E0A030" />
+    <SolidColorBrush x:Key="Brush.Success" Color="#2E9E5B" />
+
+    <!-- ===== 间距（8 的倍数） ===== -->
+    <sys:Double x:Key="Space.XS">4</sys:Double>
+    <sys:Double x:Key="Space.S">8</sys:Double>
+    <sys:Double x:Key="Space.M">16</sys:Double>
+    <sys:Double x:Key="Space.L">24</sys:Double>
+    <Thickness x:Key="Padding.Input">10,5</Thickness>
+    <Thickness x:Key="Padding.Page">24</Thickness>
+
+    <!-- ===== 圆角 ===== -->
+    <CornerRadius x:Key="Radius.Button">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Card">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Input">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Hint">6</CornerRadius>
+
+    <!-- ===== 字号阶梯（只保留四档） ===== -->
+    <sys:Double x:Key="Text.Caption">11</sys:Double>
+    <sys:Double x:Key="Text.Body">13</sys:Double>
+    <sys:Double x:Key="Text.Title">15</sys:Double>
+    <sys:Double x:Key="Text.Display">22</sys:Double>
+
+    <!-- ===== 阴影层级 ===== -->
+    <DropShadowEffect x:Key="Elevation.1" Color="{DynamicResource ColorObject1}"
+                      BlurRadius="8" ShadowDepth="1" Opacity="0.07" />
+    <DropShadowEffect x:Key="Elevation.2" Color="{DynamicResource ColorObject1}"
+                      BlurRadius="16" ShadowDepth="3" Opacity="0.12" />
+    <DropShadowEffect x:Key="Elevation.Hover" Color="{DynamicResource ColorObject4}"
+                      BlurRadius="14" ShadowDepth="2" Opacity="0.28" />
+
+    <!-- ===== 动效 ===== -->
+    <Duration x:Key="Duration.Fast">0:0:0.12</Duration>
+    <Duration x:Key="Duration.Normal">0:0:0.2</Duration>
+
+</ResourceDictionary>

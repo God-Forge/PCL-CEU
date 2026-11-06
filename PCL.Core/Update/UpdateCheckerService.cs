@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PCL.Core.Net;
 
 namespace PCL.Core.Update;
@@ -10,6 +10,12 @@ public sealed class UpdateInfo {
     public bool HasUpdate { get; init; }
     public string Url { get; init; } = "";
     public bool Prerelease { get; init; }
+
+    /// <summary>发布说明（Release body），用作启动公告的内容。</summary>
+    public string ReleaseNotes { get; init; } = "";
+
+    /// <summary>发布时间；解析失败为 <c>null</c>。</summary>
+    public DateTimeOffset? PublishedAt { get; init; }
 
 }
 
@@ -33,7 +39,11 @@ public static class UpdateCheckerService {
             LatestVersion = latest,
             HasUpdate = Compare(latestVersion, current) > 0,
             Url = json["html_url"]?.ToString() ?? "",
-            Prerelease = json["prerelease"]?.ToObject<bool>() == true
+            Prerelease = json["prerelease"]?.ToObject<bool>() == true,
+            ReleaseNotes = json["body"]?.ToString() ?? "",
+            PublishedAt = DateTimeOffset.TryParse(json["published_at"]?.ToString(), out var published)
+                ? published
+                : null
         };
     }
 

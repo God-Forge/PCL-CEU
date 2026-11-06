@@ -58,6 +58,8 @@ public static class Program {
         };
         Logger.Info("创建主窗口");
         var window = new MainWindow();
+        // 界面就绪后在后台检查更新，有新版本时以公告形式提示
+        UpdateAnnouncementService.StartBackgroundCheck();
         var tray = new TrayService();
         tray.Initialize(window);
         app.Exit += (_, _) => tray.Dispose();

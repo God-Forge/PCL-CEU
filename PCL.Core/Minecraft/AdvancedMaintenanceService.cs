@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,14 +39,18 @@ public static class AdvancedMaintenanceService {
         string instanceFolder,
         string mcFolder,
         string outputZip,
-        ModpackExportOptions options) {
+        ModpackExportOptions options,
+        ExportRuleSet? rules = null) {
         ArgumentNullException.ThrowIfNull(options);
         var temp = Path.Combine(Path.GetTempPath(), "pcl-offline-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(temp);
         try {
             CopyDirectory(instanceFolder, Path.Combine(temp, "instance"), path => {
                 var relative = path.Substring(instanceFolder.Length + 1);
-                return ModpackExportFilter.ShouldInclude(relative, options);
+                // 有勾选规则时逐文件匹配，否则退回粗粒度开关
+                return rules is { IsEmpty: false }
+                    ? rules.ShouldInclude(relative)
+                    : ModpackExportFilter.ShouldInclude(relative, options);
             });
             var jsonPath = Directory.EnumerateFiles(instanceFolder, "*.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
             if (jsonPath is not null) {

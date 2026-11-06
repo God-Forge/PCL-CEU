@@ -206,7 +206,9 @@
         </Style.Triggers>
     </Style>
 
-    <Style TargetType="{x:Type local:MyRadioBox}">
+    <!-- MyRadioBox 与 MyRadioButton 是兄弟类型，不能互相 BasedOn；
+         直接定义在 RadioButton 基类上，两个子类都会自动继承 -->
+    <Style TargetType="{x:Type RadioButton}">
         <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
         <Setter Property="FontSize" Value="{DynamicResource Text.Body}" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
@@ -223,8 +225,6 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-
-    <Style TargetType="{x:Type local:MyRadioButton}" BasedOn="{StaticResource {x:Type local:MyRadioBox}}" />
 
     <Style TargetType="ScrollViewer">
         <Setter Property="PanningMode" Value="VerticalOnly" />

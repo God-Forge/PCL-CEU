@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    统一构建输出位置：所有项目的生成产物放到仓库根的 dists\bin\<项目名>\ 下，
+    不再散落在各项目自己的 bin 目录里。
+    obj 中间文件仍留在各项目内（它必须按项目隔离，移动会破坏增量构建）。
+  -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)dists\bin\$(MSBuildProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+
+  <!--
+    单文件发布默认输出到 dists\publish\<RID>\，
+    这样 dotnet publish 不带 -o 也不会落到项目内的 publish 目录。
+  -->
+  <PropertyGroup Condition="'$(PublishDir)' == '' or '$(PublishDir)' == '$(OutputPath)' or '$(PublishDir)' == 'bin\$(Configuration)\$(TargetFramework)\publish\'">
+    <PublishDir>$(MSBuildThisFileDirectory)dists\publish\$(RuntimeIdentifier)\</PublishDir>
+  </PropertyGroup>
+
+</Project>

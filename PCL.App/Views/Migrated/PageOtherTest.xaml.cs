@@ -103,6 +103,12 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         BtnCrashHistory.Click += (_, _) => ShowCrashHistory();
         BtnCrashAnalyze.Click += (_, _) => AnalyzeCrashLogs();
         BtnCrashFixUndo.Click += (_, _) => UndoLastAutoFix();
+        BtnAccounts.Click += (_, _) => {
+            var dialog = new PCL.App.Dialogs.AccountManagerDialog {
+                Owner = System.Windows.Window.GetWindow(this)
+            };
+            dialog.ShowDialog();
+        };
         BtnImportModpack.Click += (_, _) => ImportModpack();
         BtnLogViewer.Click += (_, _) => ShowLatestLog();
         BtnCrashCompare.Click += (_, _) => CompareCrashReports();

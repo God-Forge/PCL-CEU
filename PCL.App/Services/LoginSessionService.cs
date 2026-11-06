@@ -1,4 +1,4 @@
-using MeloongCore;
+﻿using MeloongCore;
 using PCL.Core.Login;
 
 namespace PCL.App.Services;
@@ -14,20 +14,75 @@ public static class LoginSessionService {
 
     public static LoginProfile? Current => AppServices.CurrentLogin;
 
-    /// <summary>持久化登录状态的设置键。</summary>
+    /// <summary>旧的单账号缓存键（仅用于迁移）。</summary>
     public const string CacheKey = "LoginCacheJson";
 
-    /// <summary>从设置中恢复上次的登录状态。启动时调用。</summary>
+    /// <summary>多账号列表的设置键。</summary>
+    public const string AccountsKey = "AccountsJson";
+
+    private static AccountStore _store = AccountStore.Empty;
+
+    /// <summary>已保存的账号列表。</summary>
+    public static IReadOnlyList<AccountEntry> Accounts => _store.Accounts;
+
+    /// <summary>当前账号的标识。</summary>
+    public static string? CurrentKey => _store.CurrentKey;
+
+    /// <summary>从设置中恢复账号列表与当前登录状态。启动时调用。</summary>
     public static void Restore() {
         try {
-            var cached = AppServices.Settings.Get<string>(CacheKey);
-            var profile = LoginCache.Deserialize(cached);
-            if (profile is null) return;
-            AppServices.CurrentLogin = profile;
-            Logger.Info($"已恢复登录状态：{profile.Name}（{profile.UserType}）");
-            Changed?.Invoke(profile);
+            var json = AppServices.Settings.Get<string>(AccountsKey);
+            _store = AccountStore.Parse(json);
+            if (_store.Accounts.Count == 0) {
+                // 兼容旧版本的单账号缓存
+                var legacy = LoginCache.Deserialize(AppServices.Settings.Get<string>(CacheKey));
+                if (legacy is not null) {
+                    _store = AccountStore.Empty.Upsert(AccountEntry.FromProfile(legacy));
+                    Persist();
+                    Logger.Info("已把旧的单账号缓存迁移为账号列表");
+                }
+            }
+            var current = _store.Current?.ToProfile();
+            if (current is null) return;
+            AppServices.CurrentLogin = current;
+            Logger.Info($"已恢复登录状态：{current.Name}（{current.UserType}），共 {_store.Accounts.Count} 个账号");
+            Changed?.Invoke(current);
         } catch (Exception ex) when (ex is not OutOfMemoryException) {
             Logger.Warn(ex, "恢复登录状态失败");
+        }
+    }
+
+    /// <summary>切换到指定账号。</summary>
+    public static bool SwitchTo(string? key) {
+        var next = _store.Select(key);
+        if (ReferenceEquals(next, _store)) return false;
+        _store = next;
+        var profile = _store.Current?.ToProfile();
+        AppServices.CurrentLogin = profile;
+        Persist();
+        Changed?.Invoke(profile);
+        Logger.Info($"已切换账号：{profile?.Name ?? "（无）"}");
+        return true;
+    }
+
+    /// <summary>删除账号；删的是当前账号时自动切到下一个。</summary>
+    public static bool RemoveAccount(string? key) {
+        var next = _store.Remove(key);
+        if (ReferenceEquals(next, _store)) return false;
+        _store = next;
+        var profile = _store.Current?.ToProfile();
+        AppServices.CurrentLogin = profile;
+        Persist();
+        Changed?.Invoke(profile);
+        Logger.Info($"已删除账号 {key}，当前账号：{profile?.Name ?? "（无）"}");
+        return true;
+    }
+
+    private static void Persist() {
+        try {
+            AppServices.Settings.Set(AccountsKey, _store.Serialize());
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "保存账号列表失败");
         }
     }
 
@@ -67,7 +122,13 @@ public static class LoginSessionService {
     private static void Update(LoginProfile? profile) {
         AppServices.CurrentLogin = profile;
         try {
-            AppServices.Settings.Set(CacheKey, LoginCache.Serialize(profile));
+            if (profile is null) {
+                // 退出登录：保留账号列表，只取消当前选择
+                _store = _store.Deselect();
+            } else {
+                _store = _store.Upsert(AccountEntry.FromProfile(profile));
+            }
+            Persist();
         } catch (Exception ex) when (ex is not OutOfMemoryException) {
             Logger.Warn(ex, "保存登录状态失败");
         }

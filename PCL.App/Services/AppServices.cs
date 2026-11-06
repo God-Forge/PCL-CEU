@@ -52,6 +52,8 @@ public static class AppServices {
         Settings.Register("LoginLegacyName", "");
         // 登录状态持久化：存储当前账号（加密），对应 VB 的 CacheMs* 系列缓存
         Settings.Register("LoginCacheJson", "", encrypted: true);
+        // 多账号列表（加密），兼容旧版单账号缓存
+        Settings.Register("AccountsJson", "", encrypted: true);
         Settings.Register("VersionServerAuthServer", "");
         Settings.Register("VersionServerNide", "");
         Settings.Register("LaunchFolders", "");

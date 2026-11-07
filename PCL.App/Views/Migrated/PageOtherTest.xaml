@@ -90,6 +90,43 @@
                     </StackPanel>
                 </StackPanel>
             </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="Mod 配置档">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="把当前 mods 目录的启用/禁用状态保存成一套配置档（性能档、光影档、纯净档……），之后一键切换。只切换 .jar / .jar.disabled 后缀，不删除、不移动任何 Mod 文件。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnProfileCapture" Text="保存当前组合" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProfileApply" Text="应用配置档" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProfileDiff" Text="对比差异" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProfileDelete" Text="删除配置档" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProfileExport" Text="导出配置档" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnProfileImport" Text="导入配置档" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="实例健康分">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="给当前实例打 0~100 分并记录趋势：基础文件与 Mod 问题按严重度扣分。缺失的原版文件支持「一键修复」，其余问题会列出处理建议。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <TextBlock x:Name="LabHealthScore" Text="尚未评分。" TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.8" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnHealthCheck" Text="评估健康分" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnHealthTrend" Text="查看趋势" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnHealthFix" Text="一键修复" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="一键搬机">
+                <StackPanel Margin="21,40,21,16">
+                    <TextBlock Text="把当前实例、实例级启动设置与可选的 Java 运行时打包成一个 .pcltransfer 文件，在另一台电脑导入即可继续玩。不会包含任何账号令牌。"
+                               TextWrapping="Wrap" LineHeight="18" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnTransferExport" Text="打包当前实例" MinWidth="170" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnTransferImport" Text="导入搬机包" MinWidth="170" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnTransferOpen" Text="打开搬机包目录" MinWidth="180" Height="35" Margin="0,0,10,10" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="实例高级工具">
                 <StackPanel Margin="21,40,21,16">
                     <TextBlock Text="诊断包会收集实例日志、崩溃报告、Mod 列表与系统信息，并自动脱敏访问令牌和用户路径。"
@@ -106,6 +143,7 @@
                         <local:MyButton x:Name="BtnCrashAnalyze" Text="分析崩溃日志" MinWidth="150" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnCrashFixUndo" Text="撤销上次修复" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnAccounts" Text="账号管理" MinWidth="150" Height="35" Margin="0,0,10,10" />
+                        <local:MyButton x:Name="BtnJvmTuner" Text="JVM 调优" MinWidth="150" Height="35" ColorType="Highlight" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnImportModpack" Text="导入整合包" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnLogViewer" Text="查看最新日志" MinWidth="150" Height="35" Margin="0,0,10,10" />
                         <local:MyButton x:Name="BtnDiagnosticShare" Text="复制诊断摘要" MinWidth="170" Height="35" Margin="0,0,10,10" />

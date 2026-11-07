@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -14,6 +14,7 @@ using PCL.Core.Minecraft;
 using PCL.Core.Mods;
 using PCL.Core.Settings;
 using PCL.Core.Tools;
+using PCL.Core.Transfer;
 using PCL.Core.Worlds;
 
 namespace PCL.App.Views.Migrated;
@@ -33,6 +34,7 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             PCL.App.Controls.SettingService.BindAll(this);
             WireEvents();
             RefreshMemoryStatus();
+            RefreshHealthLabel();
         };
         Unloaded += (_, _) => StopLiveLog();
         _liveLogTimer.Tick += (_, _) => ReadLiveLog();
@@ -98,11 +100,27 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         BtnInstanceCheck.Click += (_, _) => CheckInstance();
         BtnInstanceRepair.Click += (_, _) => _ = RepairInstanceAsync();
         BtnModsCheck.Click += (_, _) => CheckMods();
+
+        BtnProfileCapture.Click += (_, _) => CaptureModProfile();
+        BtnProfileApply.Click += (_, _) => ApplyModProfile();
+        BtnProfileDiff.Click += (_, _) => DiffModProfile();
+        BtnProfileDelete.Click += (_, _) => DeleteModProfile();
+        BtnProfileExport.Click += (_, _) => ExportModProfile();
+        BtnProfileImport.Click += (_, _) => ImportModProfile();
+
+        BtnHealthCheck.Click += (_, _) => CheckHealth();
+        BtnHealthTrend.Click += (_, _) => ShowHealthTrend();
+        BtnHealthFix.Click += (_, _) => _ = FixHealthIssuesAsync();
+
+        BtnTransferExport.Click += (_, _) => ExportMachineTransfer();
+        BtnTransferImport.Click += (_, _) => ImportMachineTransfer();
+        BtnTransferOpen.Click += (_, _) => OpenFolder(AppServices.Paths.Pcl);
         BtnCrashDiagnostic.Click += (_, _) => ExportDiagnostic();
         BtnDiagnosticShare.Click += (_, _) => CopyDiagnostic();
         BtnCrashHistory.Click += (_, _) => ShowCrashHistory();
         BtnCrashAnalyze.Click += (_, _) => AnalyzeCrashLogs();
         BtnCrashFixUndo.Click += (_, _) => UndoLastAutoFix();
+        BtnJvmTuner.Click += (_, _) => RunJvmTuner();
         BtnAccounts.Click += (_, _) => {
             var dialog = new PCL.App.Dialogs.AccountManagerDialog {
                 Owner = System.Windows.Window.GetWindow(this)
@@ -349,6 +367,269 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             result.HasErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
     }
 
+    private static string HealthHistoryPath => InstanceHealthHistoryService.GetDefaultPath(AppServices.Paths.Pcl);
+
+    /// <summary>确认当前有可用实例，否则给出提示。</summary>
+    private static bool RequireInstance() {
+        if (!string.IsNullOrWhiteSpace(InstancePath) && Directory.Exists(InstancePath)) return true;
+        NotificationService.Warning("请先在启动页选择一个实例。");
+        return false;
+    }
+
+    private void RefreshHealthLabel() {
+        try {
+            var trend = InstanceHealthHistoryService.GetTrend(HealthHistoryPath, InstanceName, 1);
+            LabHealthScore.Text = trend.Count == 0
+                ? "尚未评分。点「评估健康分」开始记录。"
+                : $"最近一次：{trend[0].Score} 分（{InstanceHealthService.GradeText(trend[0].Grade)}） · "
+                  + trend[0].EvaluatedUtc.ToLocalTime().ToString("MM-dd HH:mm");
+        } catch {
+            LabHealthScore.Text = "尚未评分。";
+        }
+    }
+
+    private void CheckHealth() {
+        if (!RequireInstance()) return;
+        try {
+            var report = InstanceHealthService.Evaluate(InstancePath, MinecraftPath);
+            InstanceHealthHistoryService.Append(HealthHistoryPath, report);
+            RefreshHealthLabel();
+            System.Windows.MessageBox.Show(InstanceHealthService.FormatReport(report), "实例健康分",
+                MessageBoxButton.OK, report.Grade >= InstanceHealthGrade.B ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        } catch (Exception ex) {
+            NotificationService.Error("评估健康分失败：" + ex.Message);
+        }
+    }
+
+    private void ShowHealthTrend() {
+        var entries = InstanceHealthHistoryService.GetTrend(HealthHistoryPath, InstanceName, 10);
+        if (entries.Count == 0) {
+            NotificationService.Warning("还没有健康分记录，先点「评估健康分」。");
+            return;
+        }
+        var detail = string.Join(Environment.NewLine, entries.Select(entry =>
+            $"{entry.EvaluatedUtc.ToLocalTime():MM-dd HH:mm}  {entry.Score} 分（{InstanceHealthService.GradeText(entry.Grade)}）"));
+        System.Windows.MessageBox.Show(
+            InstanceHealthHistoryService.FormatTrend(entries) + Environment.NewLine + Environment.NewLine + detail,
+            "健康分趋势", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private async Task FixHealthIssuesAsync() {
+        if (!RequireInstance()) return;
+        try {
+            var report = InstanceHealthService.Evaluate(InstancePath, MinecraftPath);
+            var fixable = report.FixActions.Where(action => action.CanAutoFix).ToList();
+            if (fixable.Count == 0) {
+                NotificationService.Warning($"当前健康分 {report.Score}，没有可自动修复的问题。");
+                return;
+            }
+            var detail = string.Join(Environment.NewLine, fixable.Select(action => "· " + action.Title + "：" + action.Detail));
+            var confirm = System.Windows.MessageBox.Show(
+                $"当前健康分 {report.Score} 分。" + Environment.NewLine + "将执行：" + Environment.NewLine + detail
+                + Environment.NewLine + Environment.NewLine + "是否继续？",
+                "一键修复", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            var result = await new VanillaInstallService().RepairAsync(MinecraftPath, InstancePath, InstanceName);
+            NotificationService.Info(result);
+            var after = InstanceHealthService.Evaluate(InstancePath, MinecraftPath);
+            InstanceHealthHistoryService.Append(HealthHistoryPath, after);
+            RefreshHealthLabel();
+            NotificationService.Info($"修复后健康分：{after.Score}（{InstanceHealthService.GradeText(after.Grade)}）");
+        } catch (Exception ex) {
+            NotificationService.Error("一键修复失败：" + ex.Message);
+        }
+    }
+
+    private void CaptureModProfile() {
+        if (!RequireInstance()) return;
+        var name = InputDialog.Show("保存 Mod 配置档", "输入配置档名称，例如「性能档」「光影档」「纯净档」。", "性能档");
+        if (string.IsNullOrWhiteSpace(name)) return;
+        try {
+            var profile = ModProfileService.Capture(InstancePath, name);
+            NotificationService.Info($"已保存「{profile.Name}」：共 {profile.Entries.Count} 个 Mod，其中启用 {profile.EnabledCount} 个。");
+        } catch (Exception ex) {
+            NotificationService.Error("保存配置档失败：" + ex.Message);
+        }
+    }
+
+    private ModProfile? ChooseProfile(string title) {
+        var library = ModProfileService.Load(InstancePath);
+        if (library.Profiles.Count == 0) {
+            NotificationService.Warning("当前实例还没有配置档，先点「保存当前组合」。");
+            return null;
+        }
+        var items = library.Profiles
+            .Select(profile => $"{profile.Name}（启用 {profile.EnabledCount}/{profile.Entries.Count}）")
+            .ToList();
+        var selected = ChooseItem(items, title);
+        if (selected is null) return null;
+        return library.Profiles[items.IndexOf(selected)];
+    }
+
+    private void ApplyModProfile() {
+        if (!RequireInstance()) return;
+        var profile = ChooseProfile("选择要应用的配置档");
+        if (profile is null) return;
+        try {
+            var diff = ModProfileService.Diff(InstancePath, profile);
+            var disableUnlisted = true;
+            if (!diff.IsEmpty) {
+                var choice = System.Windows.MessageBox.Show(
+                    $"「{profile.Name}」与当前状态：{diff.Summary}" + Environment.NewLine + Environment.NewLine
+                    + "是：应用并禁用配置档之外的 Mod（纯净档/性能档常用）" + Environment.NewLine
+                    + "否：应用，但保留其它 Mod 的当前状态",
+                    "应用配置档", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                if (choice == MessageBoxResult.Cancel) return;
+                disableUnlisted = choice == MessageBoxResult.Yes;
+            }
+            var result = ModProfileService.Apply(InstancePath, profile, disableUnlisted);
+            NotificationService.Info($"已应用「{profile.Name}」：{result.Summary}");
+        } catch (Exception ex) {
+            NotificationService.Error("应用配置档失败：" + ex.Message);
+        }
+    }
+
+    private void DiffModProfile() {
+        if (!RequireInstance()) return;
+        var profile = ChooseProfile("选择要对比的配置档");
+        if (profile is null) return;
+        var diff = ModProfileService.Diff(InstancePath, profile);
+        if (diff.IsEmpty) {
+            System.Windows.MessageBox.Show("配置档与当前状态完全一致。", "配置档对比",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var lines = new List<string> { diff.Summary, "" };
+        if (diff.WillEnable.Count > 0) lines.Add("将启用：" + string.Join("、", diff.WillEnable.Take(10)));
+        if (diff.WillDisable.Count > 0) lines.Add("将禁用：" + string.Join("、", diff.WillDisable.Take(10)));
+        if (diff.Missing.Count > 0) lines.Add("配置档有、实例缺少：" + string.Join("、", diff.Missing.Take(10)));
+        if (diff.Unlisted.Count > 0) lines.Add("不在配置档中：" + string.Join("、", diff.Unlisted.Take(10)));
+        System.Windows.MessageBox.Show(string.Join(Environment.NewLine, lines), "配置档对比",
+            MessageBoxButton.OK, diff.Missing.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+    }
+
+    private void DeleteModProfile() {
+        if (!RequireInstance()) return;
+        var profile = ChooseProfile("选择要删除的配置档");
+        if (profile is null) return;
+        if (System.Windows.MessageBox.Show($"确定删除配置档「{profile.Name}」？不会影响 Mod 文件。", "删除配置档",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try {
+            NotificationService.Info(ModProfileService.Remove(InstancePath, profile.Id)
+                ? $"已删除配置档「{profile.Name}」。"
+                : "配置档不存在，可能已被删除。");
+        } catch (Exception ex) {
+            NotificationService.Error("删除配置档失败：" + ex.Message);
+        }
+    }
+
+    private void ExportModProfile() {
+        if (!RequireInstance()) return;
+        var profile = ChooseProfile("选择要导出的配置档");
+        if (profile is null) return;
+        var path = MeloongCore.Wpf.Dialogs.SaveFile("导出 Mod 配置档", profile.Name + ".modprofile.json",
+            AppServices.Paths.Pcl, [("json", "配置档 JSON")]);
+        if (string.IsNullOrWhiteSpace(path)) return;
+        try {
+            ModProfileService.Export(path, profile);
+            NotificationService.Info("配置档已导出：" + path);
+        } catch (Exception ex) {
+            NotificationService.Error("导出配置档失败：" + ex.Message);
+        }
+    }
+
+    private void ImportModProfile() {
+        if (!RequireInstance()) return;
+        var files = MeloongCore.Wpf.Dialogs.SelectFile("导入 Mod 配置档", false, AppServices.Paths.Pcl,
+            "配置档 JSON|*.json");
+        if (files.Count == 0) return;
+        try {
+            var profile = ModProfileService.Import(InstancePath, files[0]);
+            NotificationService.Info($"已导入配置档「{profile.Name}」，共 {profile.Entries.Count} 个 Mod。");
+        } catch (Exception ex) {
+            NotificationService.Error("导入配置档失败：" + ex.Message);
+        }
+    }
+
+    private void ExportMachineTransfer() {
+        if (!RequireInstance()) return;
+        var path = MeloongCore.Wpf.Dialogs.SaveFile("导出搬机包", MachineTransferService.DefaultFileName(InstanceName),
+            AppServices.Paths.Pcl, [("pcltransfer", "PCL 搬机包")]);
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        string? javaHome = null;
+        var includeJava = System.Windows.MessageBox.Show(
+            "是否把 Java 运行时一起打包？" + Environment.NewLine + "包会明显变大，但换机后不用另外安装 Java。",
+            "一键搬机", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        if (includeJava) {
+            var files = MeloongCore.Wpf.Dialogs.SelectFile("选择该实例使用的 java.exe", false,
+                AppServices.Paths.Java, "java.exe|java.exe");
+            if (files.Count == 0) return;
+            javaHome = Path.GetDirectoryName(Path.GetDirectoryName(files[0]));
+            if (string.IsNullOrWhiteSpace(javaHome)) {
+                NotificationService.Error("无法识别 Java 主目录。");
+                return;
+            }
+        }
+
+        var defaults = InstanceSettingKeys.Definitions.ToDictionary(item => item.Key, item => item.DefaultValue);
+        var settings = InstanceSettingKeys.All.ToDictionary(
+            key => key,
+            key => GetInstanceSetting(key, defaults.TryGetValue(key, out var value) ? value! : ""));
+        try {
+            var result = MachineTransferService.Export(new MachineTransferOptions {
+                InstanceFolder = InstancePath,
+                OutputPath = path,
+                IncludeJava = includeJava,
+                JavaHome = javaHome,
+                Settings = settings
+            });
+            NotificationService.Info($"搬机包已导出：{path}{Environment.NewLine}{result.FileCount} 个文件，{FormatSize(result.Size)}。");
+        } catch (Exception ex) {
+            NotificationService.Error("导出搬机包失败：" + ex.Message);
+        }
+    }
+
+    private void ImportMachineTransfer() {
+        var files = MeloongCore.Wpf.Dialogs.SelectFile("选择搬机包", false, AppServices.Paths.Pcl,
+            "PCL 搬机包|*.pcltransfer|所有文件|*.*");
+        if (files.Count == 0) return;
+        try {
+            var preview = MachineTransferService.Inspect(files[0]);
+            var manifest = preview.Manifest;
+            var info = $"实例：{manifest.InstanceName}{Environment.NewLine}"
+                       + $"MC 版本：{manifest.MinecraftVersion}{Environment.NewLine}"
+                       + $"Java：{(manifest.IncludesJava ? manifest.JavaVersion + " " + manifest.JavaType : "未包含")}{Environment.NewLine}"
+                       + $"文件：{manifest.FileCount} 个，{FormatSize(preview.PackageSize)}";
+            if (System.Windows.MessageBox.Show(info + Environment.NewLine + Environment.NewLine + "导入到当前 Minecraft 文件夹？",
+                    "导入搬机包", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+            var targetName = manifest.InstanceName;
+            if (Directory.Exists(Path.Combine(MinecraftPath, "versions", targetName))) {
+                targetName = InputDialog.Show("实例已存在", "输入新的实例名。", targetName + "-导入");
+                if (string.IsNullOrWhiteSpace(targetName)) return;
+            }
+
+            var result = MachineTransferService.Import(files[0], MinecraftPath, targetName, AppServices.Paths.Java);
+            foreach (var pair in result.Settings) {
+                try {
+                    AppServices.Settings.Set(pair.Key, pair.Value, result.InstancePath);
+                } catch {
+                    // 键未注册时忽略，不影响导入
+                }
+            }
+            AppServices.SelectedInstanceName = result.InstanceName;
+            var javaText = string.IsNullOrWhiteSpace(result.JavaHome)
+                ? ""
+                : $"{Environment.NewLine}Java 已释放到：{result.JavaHome}";
+            NotificationService.Info($"已导入实例「{result.InstanceName}」（{result.FileCount} 个文件）。{javaText}");
+        } catch (Exception ex) {
+            NotificationService.Error("导入搬机包失败：" + ex.Message);
+        }
+    }
+
+
     private void ExportDiagnostic() {
         var path = MeloongCore.Wpf.Dialogs.SaveFile("导出崩溃诊断包", $"{InstanceName}-diagnostic.zip",
             AppServices.Paths.Pcl, [("zip", "ZIP 压缩包")]);
@@ -438,6 +719,41 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
         } catch (Exception ex) when (ex is not OutOfMemoryException) {
             Logger.Error(ex, "导入整合包失败");
             NotificationService.Error("导入失败：" + ex.Message, "导入整合包失败");
+        }
+    }
+
+    /// <summary>按机器条件推荐 JVM 参数，并可选写入当前实例。</summary>
+    private void RunJvmTuner() {
+        try {
+            var instanceName = AppServices.SelectedInstanceName;
+            if (string.IsNullOrWhiteSpace(instanceName)) {
+                NotificationService.Warning("请先在实例页选择一个实例。", "JVM 调优");
+                return;
+            }
+            var instance = AppServices.MinecraftFolders.FindInstance(instanceName);
+            if (instance is null) {
+                NotificationService.Warning("找不到当前实例。", "JVM 调优");
+                return;
+            }
+            var cores = Environment.ProcessorCount;
+            var totalMb = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024 / 1024;
+            var javaMajor = instance.Version.JavaVersionMajor;
+            if (javaMajor <= 0) javaMajor = 17;
+            var recommendation = PCL.Core.Minecraft.JvmTuner.Recommend(cores, totalMb, javaMajor);
+            var instancePath = System.IO.Path.Combine(instance.Folder.Versions, instance.Version.Folder);
+            var message = recommendation.Summary + "\r\n\r\n" + "是否把该配置写入当前实例？";
+            var confirm = System.Windows.MessageBox.Show(
+                message, "JVM 调优", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes) return;
+            foreach (var (key, value) in PCL.Core.Minecraft.JvmTuner.ToInstanceSettings(recommendation)) {
+                AppServices.Settings.Set(key, value, instancePath);
+            }
+            Logger.Info($"[JVM 调优] {instanceName}：{recommendation.Summary}");
+            NotificationService.Info(
+                $"已写入：{recommendation.RamMb} MB，{recommendation.GcName}", "JVM 调优");
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "JVM 调优失败");
+            NotificationService.Error("调优失败：" + ex.Message, "JVM 调优");
         }
     }
 

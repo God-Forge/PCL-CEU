@@ -330,6 +330,8 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
         LabLaunchingStage.Text = "启动完成";
         UpdateLaunchingStage("启动完成", 1);
         BtnCancel.Text = "返回";
+        // 开始滚动采样，进程退出时生成报告
+        PerformanceMonitorService.Start(process);
         LaunchLogService.WriteLine($"[启动] 游戏进程已启动，PID {process.Id}");
         WindowVisibilityService.ApplyAfterLaunch();
     }
@@ -402,6 +404,12 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             ProgressLaunchingFinished.Width = new GridLength(1, GridUnitType.Star);
             ProgressLaunchingUnfinished.Width = new GridLength(0, GridUnitType.Star);
             BtnCancel.Text = "返回";
+            // 停止采样并生成启动性能报告
+            var report = PerformanceMonitorService.Stop();
+            if (!string.IsNullOrWhiteSpace(report)) {
+                LaunchLogService.WriteLine("[性能报告]" + Environment.NewLine + report);
+                NotificationService.Info(report, "启动性能报告");
+            }
         });
     }
 

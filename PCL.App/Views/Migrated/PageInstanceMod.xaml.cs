@@ -445,6 +445,8 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
                 var result = await applier.ApplyAsync(item, _modsFolder!, mod.FilePath);
                 if (result.Success) {
                     succeeded++;
+                    RecentChangeService.Record(PCL.Core.Minecraft.RecentChangeKind.ModUpdate,
+                        item.ModId, $"{item.LocalVersion} → {item.LatestVersion}");
                     entries.Add(new ModUpdateSnapshotEntry {
                         ModId = item.ModId,
                         OldFileName = mod.FileName,

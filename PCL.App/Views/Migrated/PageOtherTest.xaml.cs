@@ -748,6 +748,8 @@ public partial class PageOtherTest : PCL.App.Controls.MyPageRight {
             foreach (var (key, value) in PCL.Core.Minecraft.JvmTuner.ToInstanceSettings(recommendation)) {
                 AppServices.Settings.Set(key, value, instancePath);
             }
+            RecentChangeService.Record(PCL.Core.Minecraft.RecentChangeKind.SettingChange,
+                "JVM 参数", $"{recommendation.RamMb} MB，{recommendation.GcName}");
             Logger.Info($"[JVM 调优] {instanceName}：{recommendation.Summary}");
             NotificationService.Info(
                 $"已写入：{recommendation.RamMb} MB，{recommendation.GcName}", "JVM 调优");

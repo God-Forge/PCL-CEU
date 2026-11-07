@@ -97,6 +97,8 @@ public partial class MainWindow : Window {
             }
         }
         if (copied > 0) {
+            RecentChangeService.Record(PCL.Core.Minecraft.RecentChangeKind.ModInstall,
+                $"{copied} 个 Mod 文件", "拖拽导入到当前实例");
             NotificationService.Info($"已导入 {copied} 个 Mod 文件。", "拖拽导入");
         } else {
             NotificationService.Warning("没有可导入的 Mod 文件。", "拖拽导入");

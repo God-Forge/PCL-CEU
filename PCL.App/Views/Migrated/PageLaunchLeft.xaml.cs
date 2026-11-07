@@ -358,6 +358,16 @@ public partial class PageLaunchLeft : PCL.App.Controls.MyPageLeft {
             LabLaunchingStage.Text = hint;
             LaunchLogService.WriteLine("[启动] 分析结果：" + hint);
         }
+        // 附上最近改动，帮助定位是不是刚装的 Mod / 刚改的设置引入的问题
+        try {
+            var recent = RecentChangeService.DescribeRecent();
+            if (!string.IsNullOrWhiteSpace(recent)) {
+                LaunchLogService.WriteLine("[启动] 最近改动：" + Environment.NewLine + recent);
+                NotificationService.Info("最近改动（可能相关）：" + Environment.NewLine + recent, "启动失败");
+            }
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "读取最近改动失败");
+        }
         TryOfferAutoFix(instancePath);
         NotificationService.Error("启动失败：" + message, "启动");
     }

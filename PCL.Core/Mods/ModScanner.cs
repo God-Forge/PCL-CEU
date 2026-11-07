@@ -32,6 +32,12 @@ public sealed record ModInfo {
     public string Sha256 { get; init; } = "";
     public IReadOnlyList<ModDependency> Dependencies { get; init; } = Array.Empty<ModDependency>();
 
+    /// <summary>JAR 内声明的 mixin 配置文件名，用于检测同名冲突。</summary>
+    public IReadOnlyList<string> MixinConfigs { get; init; } = Array.Empty<string>();
+
+    /// <summary>声明的 Java 最低版本（目前仅 Fabric 的 depends.java 可得）。</summary>
+    public int? RequiredJavaMajor { get; init; }
+
 }
 
 public sealed class ModIssue {
@@ -59,7 +65,7 @@ public static class ModScanner {
         "minecraft", "forge", "neoforge", "fabricloader", "fabric", "fabric-api", "java", "quilt_loader", "quilted_fabric_api"
     };
 
-    public static ModScanResult Scan(string modsFolder) {
+    public static ModScanResult Scan(string modsFolder, int? instanceJavaMajor = null) {
         var mods = new List<ModInfo>();
         var issues = new List<ModIssue>();
         if (!Directory.Exists(modsFolder)) return new ModScanResult { Mods = mods, Issues = issues };
@@ -91,6 +97,7 @@ public static class ModScanner {
         AddDuplicateIssues(mods, issues);
         AddMissingDependencyIssues(mods, issues);
         AddLoaderConflictIssues(mods, issues);
+        issues.AddRange(ModConflictAnalyzer.Analyze(mods, instanceJavaMajor));
         return new ModScanResult {
             Mods = mods.OrderBy(mod => mod.FileName, StringComparer.OrdinalIgnoreCase).ToList(),
             Issues = issues
@@ -116,7 +123,9 @@ public static class ModScanner {
                 Version = json["version"]?.ToString() ?? "",
                 Environment = json["environment"]?.ToString(),
                 Sha256 = hash,
-                Dependencies = ReadFabricDependencies(json)
+                Dependencies = ReadFabricDependencies(json),
+                MixinConfigs = ReadMixinConfigs(archive),
+                RequiredJavaMajor = ParseJavaRequirement(json["depends"]?["java"]?.ToString())
             };
         }
 
@@ -134,7 +143,8 @@ public static class ModScanner {
                 Version = quiltLoader?["version"]?.ToString() ?? "",
                 Environment = quiltLoader?["metadata"]?["environment"]?.ToString(),
                 Sha256 = hash,
-                Dependencies = ReadQuiltDependencies(quiltLoader)
+                Dependencies = ReadQuiltDependencies(quiltLoader),
+                MixinConfigs = ReadMixinConfigs(archive)
             };
         }
 
@@ -152,6 +162,28 @@ public static class ModScanner {
             Enabled = enabled,
             Sha256 = hash
         };
+    }
+
+    /// <summary>列出 JAR 根目录下的 mixin 配置文件。</summary>
+    private static IReadOnlyList<string> ReadMixinConfigs(ZipArchive archive) {
+        var result = new List<string>();
+        foreach (var entry in archive.Entries) {
+            var name = entry.FullName;
+            if (!name.EndsWith(".mixins.json", StringComparison.OrdinalIgnoreCase)) continue;
+            if (name.Contains('/')) continue; // 只看根目录下的主配置
+            result.Add(name);
+        }
+        return result;
+    }
+
+    /// <summary>从形如 "&gt;=17" / "1.8+" / "17" 的声明中提取 Java 主版本。</summary>
+    public static int? ParseJavaRequirement(string? text) {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var digits = new string(text.Where(char.IsDigit).ToArray());
+        if (digits.Length == 0) return null;
+        // 兼容 "1.8" 这种老写法
+        if (digits.StartsWith("18") && text.Contains('.')) return 8;
+        return int.TryParse(digits.Length > 2 ? digits[..2] : digits, out var major) ? major : null;
     }
 
     private static IReadOnlyList<ModDependency> ReadFabricDependencies(JObject json) {

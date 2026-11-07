@@ -101,7 +101,12 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
 
             _modsFolder = InstanceManagementService.GetFolders(instancePath).Mods;
             var folder = _modsFolder;
-            var result = await Task.Run(() => ModScanner.Scan(folder));
+            // 把实例的 Java 主版本带进去，用于检查 Mod 的 Java 要求
+            var scannerInstance = string.IsNullOrWhiteSpace(AppServices.SelectedInstanceName)
+                ? null
+                : AppServices.MinecraftFolders.FindInstance(AppServices.SelectedInstanceName);
+            var javaMajor = scannerInstance?.Version.JavaVersionMajor is > 0 and var major ? major : (int?)null;
+            var result = await Task.Run(() => ModScanner.Scan(folder, javaMajor));
             if (version != _loadVersion) return;
 
             _mods.Clear();

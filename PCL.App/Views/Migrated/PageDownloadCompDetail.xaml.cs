@@ -1,4 +1,5 @@
-using PCL.App.Controls;
+using MeloongCore;
+﻿using PCL.App.Controls;
 using PCL.App.Services;
 using PCL.Core.Resources;
 using System.Windows;
@@ -20,6 +21,7 @@ public partial class PageDownloadCompDetail : PCL.App.Controls.MyPageRight {
         BtnIntroWeb.Click += (_, _) => OpenProjectWebsite();
         BtnIntroWiki.Click += (_, _) => OpenWikiWebsite();
         BtnIntroCopy.Click += (_, _) => CopyProjectName();
+        BtnDependencyGraph.Click += (_, _) => _ = ShowDependencyGraphAsync();
         Loaded += (_, _) => {
             PageAnimationService.FadeIn(this);
             PCL.App.Controls.SettingService.BindAll(this);
@@ -131,6 +133,44 @@ public partial class PageDownloadCompDetail : PCL.App.Controls.MyPageRight {
             Margin = new Thickness(0, 0, 0, 12)
         };
         PanResults.Children.Insert(0, hint);
+    }
+
+    /// <summary>解析当前项目的依赖并弹出依赖图；只读取，不下载。</summary>
+    private async Task ShowDependencyGraphAsync() {
+        if (string.IsNullOrWhiteSpace(ProjectSlug)) {
+            NotificationService.Warning("当前项目没有可用的标识，无法解析依赖。", "依赖关系");
+            return;
+        }
+        BtnDependencyGraph.IsEnabled = false;
+        try {
+            var kind = ProjectType switch {
+                "resourcepack" => PCL.Core.Resources.ResourceKind.ResourcePack,
+                "shader" => PCL.Core.Resources.ResourceKind.ShaderPack,
+                "datapack" => PCL.Core.Resources.ResourceKind.DataPack,
+                _ => PCL.Core.Resources.ResourceKind.Mod
+            };
+            var project = new PCL.Core.Resources.ResourceProject {
+                Id = ProjectSlug, Kind = kind, Title = ProjectName ?? ProjectSlug, Slug = ProjectSlug
+            };
+            var instance = string.IsNullOrWhiteSpace(AppServices.SelectedInstanceName)
+                ? null
+                : AppServices.MinecraftFolders.FindInstance(AppServices.SelectedInstanceName);
+            var plan = await new PCL.Core.Resources.ResourceInstaller()
+                .PreviewDependenciesAsync(project, instance?.Version.Id);
+            if (plan is null) {
+                NotificationService.Warning("没有找到可用版本，无法解析依赖。", "依赖关系");
+                return;
+            }
+            var window = new PCL.App.Dialogs.DependencyGraphWindow(plan, $"依赖关系 - {ProjectName ?? ProjectSlug}") {
+                Owner = System.Windows.Window.GetWindow(this)
+            };
+            window.ShowDialog();
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "解析依赖失败");
+            NotificationService.Error("解析依赖失败：" + ex.Message, "依赖关系");
+        } finally {
+            BtnDependencyGraph.IsEnabled = true;
+        }
     }
 
     private void OpenProjectWebsite() {

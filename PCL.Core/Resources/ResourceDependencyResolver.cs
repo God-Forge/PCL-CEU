@@ -1,4 +1,4 @@
-namespace PCL.Core.Resources;
+﻿namespace PCL.Core.Resources;
 
 /// <summary>
 /// 按项目 ID 获取版本列表的能力。用于依赖解析，便于在测试中替换成假实现。
@@ -26,6 +26,9 @@ public sealed class ResourceDependencyPlan {
     /// <summary>因超出深度或循环而跳过的项目 ID。</summary>
     public IReadOnlyList<string> Skipped { get; init; } = [];
 
+    /// <summary>依赖关系边：从父资源指向其依赖，用于绘制依赖图。</summary>
+    public IReadOnlyList<DependencyEdge> Edges { get; init; } = [];
+
     public bool IsComplete => Unresolved.Count == 0;
 
 }
@@ -50,6 +53,7 @@ public static class ResourceDependencyResolver {
         ArgumentNullException.ThrowIfNull(source);
 
         var files = new List<ResourceVersionFile> { root };
+        var edges = new List<DependencyEdge>();
         var unresolved = new List<string>();
         var skipped = new List<string>();
         // 以项目 ID 去重，根资源自身的 ID 也计入已访问
@@ -90,15 +94,20 @@ public static class ResourceDependencyResolver {
                     continue;
                 }
                 files.Add(latest);
+                edges.Add(new DependencyEdge(version.Id ?? version.FileName, latest.Id ?? latest.FileName));
                 queue.Enqueue((latest, depth + 1));
             }
         }
 
         return new ResourceDependencyPlan {
             Files = files,
+            Edges = edges,
             Unresolved = unresolved,
             Skipped = skipped
         };
     }
 
 }
+
+/// <summary>依赖图中的一条边：父资源指向其依赖。</summary>
+public sealed record DependencyEdge(string FromId, string ToId);

@@ -1,4 +1,4 @@
-using PCL.Core.Net;
+﻿using PCL.Core.Net;
 
 namespace PCL.Core.Resources;
 
@@ -56,6 +56,33 @@ public sealed class ResourceInstaller {
     /// <summary>
     /// 直接从资源项目安装：先查版本并挑选兼容的最新文件，再走完整安装流程。
     /// </summary>
+    /// <summary>
+    /// 只解析依赖并返回计划，不下载任何文件。用于展示依赖图与安装前预览。
+    /// </summary>
+    public async Task<ResourceDependencyPlan?> PreviewDependenciesAsync(
+        ResourceProject project,
+        string? minecraftVersion = null,
+        string? loader = null,
+        CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(project);
+        IReadOnlyList<ResourceVersionFile> versions;
+        try {
+            versions = await _source
+                .GetVersionsAsync(project.Id, project.Kind, minecraftVersion, loader, cancellationToken)
+                .ConfigureAwait(false);
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Warn(ex, "获取版本列表失败，无法解析依赖");
+            return null;
+        }
+        var latest = ResourceVersionSelector.SelectLatest(versions, minecraftVersion, loader);
+        if (latest is null) return null;
+        return await ResourceDependencyResolver
+            .ResolveAsync(latest, _source, minecraftVersion, loader, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<ResourceInstallReport> InstallProjectAsync(
         ResourceProject project,
         string instanceFolder,

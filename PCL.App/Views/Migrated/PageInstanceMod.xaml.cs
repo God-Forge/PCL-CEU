@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -61,6 +61,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         BtnManageDownload.Click += (_, _) => NotificationService.Info("请在下载页面安装 Mod；当前页面仅管理本地 Mod 文件。");
         BtnHintDownload.Click += (_, _) => NotificationService.Info("请在下载页面安装 Mod；当前页面仅管理本地 Mod 文件。");
         BtnManageSelectAll.Click += (_, _) => SelectAllFiltered();
+        BtnRollbackUpdate.Click += (_, _) => RollbackLastUpdate();
 
         BtnSelectCancel.Click += (_, _) => {
             _selected.Clear();
@@ -390,6 +391,35 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         }
     }
 
+    /// <summary>回滚最近一次批量更新（恢复旧文件、删除新文件）。</summary>
+    private void RollbackLastUpdate() {
+        if (string.IsNullOrWhiteSpace(_modsFolder)) return;
+        var snapshots = ModUpdateSnapshotStore.List(_modsFolder);
+        if (snapshots.Count == 0) {
+            NotificationService.Info("没有可回滚的更新记录。", "回滚更新");
+            return;
+        }
+        var latest = snapshots[0];
+        var confirm = System.Windows.MessageBox.Show(
+            $"将回滚「{latest.Describe()}」，恢复旧文件并删除新文件。\r\n是否继续？",
+            "回滚更新", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes) return;
+        try {
+            var result = ModUpdateSnapshotStore.Rollback(_modsFolder, latest.Id);
+            if (result.Success) {
+                Logger.Info($"[Mod 回滚] {result.Message}");
+                NotificationService.Info(result.Message, "回滚更新");
+            } else {
+                NotificationService.Warning(
+                    result.Message + "\r\n" + string.Join("\r\n", result.Failures.Take(5)), "回滚更新");
+            }
+            _ = ReloadModsAsync();
+        } catch (Exception ex) when (ex is not OutOfMemoryException) {
+            Logger.Error(ex, "回滚更新失败");
+            NotificationService.Error("回滚失败：" + ex.Message, "回滚更新");
+        }
+    }
+
     /// <summary>把检查到的更新逐个落地，先备份旧文件再替换。</summary>
     private async Task ApplyUpdatesAsync(IReadOnlyList<ModUpdateResult> updatable) {
         var confirm = System.Windows.MessageBox.Show(
@@ -401,6 +431,7 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
         var applier = new ModUpdateApplier();
         var succeeded = 0;
         var failures = new List<string>();
+        var entries = new List<ModUpdateSnapshotEntry>();
         try {
             foreach (var item in updatable) {
                 var mod = _mods.FirstOrDefault(candidate =>
@@ -409,13 +440,22 @@ public partial class PageInstanceMod : PCL.App.Controls.MyPageRight {
                 var result = await applier.ApplyAsync(item, _modsFolder!, mod.FilePath);
                 if (result.Success) {
                     succeeded++;
+                    entries.Add(new ModUpdateSnapshotEntry {
+                        ModId = item.ModId,
+                        OldFileName = mod.FileName,
+                        NewFileName = Path.GetFileName(result.NewPath),
+                        BackupPath = result.BackupPath ?? ""
+                    });
                     Logger.Info($"[Mod 更新] {result.Message}");
                 } else {
                     failures.Add($"{item.ModId}：{result.Message}");
                 }
             }
+            // 记录快照，便于整体回滚
+            var snapshot = ModUpdateSnapshotStore.Record(_modsFolder!, entries);
             await ReloadModsAsync();
-            var summary = $"已更新 {succeeded} 个 Mod";
+            var summary = $"已更新 {succeeded} 个 Mod"
+                          + (snapshot is null ? "" : "（已记录快照，可回滚）");
             if (failures.Count > 0) {
                 summary += $"，失败 {failures.Count} 个";
                 NotificationService.Warning(summary + "\r\n" + string.Join("\r\n", failures.Take(5)), "应用 Mod 更新");

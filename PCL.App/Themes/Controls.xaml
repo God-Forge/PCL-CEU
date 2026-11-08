@@ -226,6 +226,11 @@
         </Style.Triggers>
     </Style>
 
+    <!-- 所有窗口统一使用应用图标；主窗口已显式设置，不受影响 -->
+    <Style TargetType="{x:Type Window}">
+        <Setter Property="Icon" Value="/Assets/app.ico" />
+    </Style>
+
     <Style TargetType="ScrollViewer">
         <Setter Property="PanningMode" Value="VerticalOnly" />
     </Style>

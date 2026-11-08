@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -11,6 +11,8 @@
         <AssemblyName>PCL</AssemblyName>
         <RootNamespace>PCL.App</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <!-- 可执行文件图标：资源管理器 / 任务栏 / 窗口标题栏都取自这里 -->
+        <ApplicationIcon>Assets/app.ico</ApplicationIcon>
         <Version>0.24.0</Version>
         <AssemblyVersion>0.24.0.0</AssemblyVersion>
         <FileVersion>0.24.0.0</FileVersion>
@@ -26,6 +28,12 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- 作为 WPF 资源嵌入，供 Window.Icon 引用 -->
+        <Resource Include="Assets/app.ico" />
+        <Resource Include="Assets/app-256.png" />
     </ItemGroup>
 
 </Project>
